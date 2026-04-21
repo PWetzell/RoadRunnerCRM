@@ -1,10 +1,10 @@
 /**
  * HR Staffing vertical — terminology + pipeline configuration.
  *
- * Every user-facing string in the "Sales / Deals" section of the app reads
- * from this file instead of hard-coding "Deal", "Lead", etc. That way
- * future verticals (real estate, consulting, executive search) are a
- * simple swap of this module, not a codebase-wide rewrite.
+ * The Sales section keeps its generic "Sales / Deal" labels. This file
+ * provides the HR-specific overlays: Candidate vs Client labels on deals,
+ * recruiting-stage names, and candidate sources. Future verticals
+ * (real estate, consulting, executive search) can swap this module.
  *
  * Internal type names (Deal, DealStage, etc.) intentionally stay as-is so
  * the data model and store code are vertical-neutral.
@@ -16,15 +16,15 @@
  */
 export const LABELS = {
   // Nav + page titles
-  navSales: 'Placements',
-  pageSalesTitle: 'Placements',
-  pageSalesSubtitle: 'Track candidates from sourcing to placement',
+  navSales: 'Sales',
+  pageSalesTitle: 'Sales',
+  pageSalesSubtitle: 'Track deals from first contact to close',
 
   // Record nouns (singular / plural)
-  deal: 'placement',
-  deals: 'placements',
-  Deal: 'Placement',
-  Deals: 'Placements',
+  deal: 'deal',
+  deals: 'deals',
+  Deal: 'Deal',
+  Deals: 'Deals',
 
   // Who the deal represents
   personLead: 'Candidate',       // when deal.type === 'person'
@@ -35,17 +35,17 @@ export const LABELS = {
   Leads: 'Candidates',
 
   // Actions
-  newDeal: 'New Placement',
-  addDeal: 'Add Placement',
+  newDeal: 'New Deal',
+  addDeal: 'Add Deal',
   newLeadPerson: 'Add Candidate',
   newLeadCompany: 'Add Client',
 
   // Pipeline / stage
-  pipeline: 'Placement Pipeline',
+  pipeline: 'Sales Pipeline',
   stage: 'Stage',
 
   // Empty states
-  noDeals: 'No placements yet',
+  noDeals: 'No deals yet',
   noDealsHint: 'Start by adding a candidate or client.',
 } as const;
 

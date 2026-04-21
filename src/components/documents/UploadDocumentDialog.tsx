@@ -5,6 +5,7 @@ import { UploadSimple, X, File as FileIcon } from '@phosphor-icons/react';
 import { useDocumentStore } from '@/stores/document-store';
 import { DOCUMENT_CATEGORIES, DocumentCategory, formatFileSize } from '@/types/document';
 import { useUserStore } from '@/stores/user-store';
+import { toast } from '@/lib/toast';
 
 interface Props {
   open: boolean;
@@ -41,6 +42,7 @@ export default function UploadDocumentDialog({ open, onClose, defaultContactId, 
 
   const handleUpload = () => {
     if (!file) return;
+    const name = file.name;
     attachFile(file, {
       category,
       description: description.trim() || undefined,
@@ -48,6 +50,7 @@ export default function UploadDocumentDialog({ open, onClose, defaultContactId, 
       dealId: defaultDealId,
       uploadedBy: user.name,
     });
+    toast.success('Document uploaded', { description: name });
     setFile(null);
     setDescription('');
     setCategory('other');

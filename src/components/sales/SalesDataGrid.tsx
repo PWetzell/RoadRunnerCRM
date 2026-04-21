@@ -11,10 +11,11 @@ import { useContactStore } from '@/stores/contact-store';
 import { useGridLayoutStore } from '@/stores/grid-layout-store';
 import { fmtDate, getAvatarColor, initials, uid } from '@/lib/utils';
 import {
-  DotsThree, ArrowSquareOut, Trash, Phone, EnvelopeSimple, ChatCircle,
+  DotsThree, ArrowSquareOut, Trash, PencilSimple, Phone, EnvelopeSimple, ChatCircle,
   Users, FileText, Handshake, Warning, Columns, FloppyDisk, Check,
   ArrowClockwise, Tag,
 } from '@phosphor-icons/react';
+import { toast } from '@/lib/toast';
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -359,6 +360,8 @@ export default function SalesDataGrid() {
   const sortField = useSalesStore((s) => s.sortField);
   const sortDir = useSalesStore((s) => s.sortDir);
   const deleteDeal = useSalesStore((s) => s.deleteDeal);
+  const addDeal = useSalesStore((s) => s.addDeal);
+  const deals = useSalesStore((s) => s.deals);
   const contacts = useContactStore((s) => s.contacts);
   const memberships = useListStore((s) => s.memberships);
 
@@ -501,32 +504,26 @@ export default function SalesDataGrid() {
               </button>
             );
           }
+          const deal = r as Deal;
           return (
-            <div className="relative">
+            <>
               <button
-                onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === (r as Deal).id ? null : (r as Deal).id); }}
-                aria-label="Deal actions"
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--text-primary)] bg-transparent border-none cursor-pointer hover:bg-[var(--surface-raised)]"
+                onClick={(e) => { e.stopPropagation(); router.push(`/sales/${deal.id}`); }}
+                aria-label="Edit deal"
+                title="Edit deal"
+                className="p-1 text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
               >
-                <DotsThree size={18} weight="bold" />
+                <PencilSimple size={14} />
               </button>
-              {openMenuId === (r as Deal).id && (
-                <div ref={menuRef} className="absolute right-2 top-9 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg z-50 w-36 py-1">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); router.push(`/sales/${(r as Deal).id}`); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] bg-transparent border-none cursor-pointer text-left"
-                  >
-                    <ArrowSquareOut size={12} /> Open deal
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setConfirmDelete((r as Deal).id); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[var(--danger)] hover:bg-[var(--danger-bg)] bg-transparent border-none cursor-pointer text-left"
-                  >
-                    <Trash size={12} /> Delete
-                  </button>
-                </div>
-              )}
-            </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setConfirmDelete(deal.id); }}
+                aria-label="Delete deal"
+                title="Delete deal"
+                className="p-1 text-[var(--text-tertiary)] hover:text-[var(--danger)] bg-transparent border-none cursor-pointer"
+              >
+                <Trash size={14} />
+              </button>
+            </>
           );
         }}
       />
@@ -537,7 +534,17 @@ export default function SalesDataGrid() {
         message="This cannot be undone. The linked contacts will not be affected."
         confirmLabel="Delete"
         confirmVariant="danger"
-        onConfirm={() => { if (confirmDelete) { deleteDeal(confirmDelete); setConfirmDelete(null); } }}
+        onConfirm={() => {
+          if (confirmDelete) {
+            const snapshot = deals.find((d) => d.id === confirmDelete);
+            deleteDeal(confirmDelete);
+            toast.success('Deal deleted', {
+              description: snapshot?.name,
+              action: snapshot ? { label: 'Undo', onClick: () => addDeal(snapshot) } : undefined,
+            });
+            setConfirmDelete(null);
+          }
+        }}
         onCancel={() => setConfirmDelete(null)}
       />
     </div>

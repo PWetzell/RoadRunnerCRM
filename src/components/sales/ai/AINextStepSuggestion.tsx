@@ -8,8 +8,8 @@ const SUGGESTIONS: Record<string, { action: string; rationale: string }> = {
   qualified: { action: 'Run an intake session', rationale: 'Search agreement signed — capture role spec, must-haves, and ideal candidate profile.' },
   discovery: { action: 'Send first candidate slate', rationale: 'Sourcing in progress — clients expect a slate within 14 days of intake or momentum stalls.' },
   proposal: { action: 'Push for interviews on shortlist', rationale: 'Slate sent — first interviews scheduled within 7 days move 2x more candidates to offer.' },
-  negotiation: { action: 'Mediate offer details', rationale: 'Offer extended — track candidate response, fee terms, and start date to lock the placement.' },
-  'closed-won': { action: 'Confirm start date and bill', rationale: 'Placement made — confirm candidate start, send invoice, and begin guarantee period tracking.' },
+  negotiation: { action: 'Mediate offer details', rationale: 'Offer extended — track candidate response, fee terms, and start date to close the deal.' },
+  'closed-won': { action: 'Confirm start date and bill', rationale: 'Deal closed — confirm candidate start, send invoice, and begin guarantee period tracking.' },
   'closed-lost': { action: 'Capture the loss reason', rationale: 'Note why the search ended (budget, candidate dropout, lost to competitor) for forecasting.' },
 };
 

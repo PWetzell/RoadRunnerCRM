@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkle, Info, LinkSimple, Plus, X as XIcon, Buildings, User, MagnifyingGlass } from '@phosphor-icons/react';
 import Topbar from '@/components/layout/Topbar';
@@ -17,6 +17,7 @@ import { enrichCompany, EnrichmentField, EnrichmentResult } from '@/lib/data/moc
 import { OrgDuplicateCandidate } from '@/lib/data/mock-ai/duplicate-orgs';
 import { Relationship, RelationshipKind, RELATIONSHIP_META, validKindsFor } from '@/types/relationship';
 import { isUrl, isPhone } from '@/lib/validation';
+import { toast } from '@/lib/toast';
 
 type StepId = 'details' | 'enrichment' | 'relationships' | 'confirm';
 
@@ -79,6 +80,17 @@ export default function NewCompanyPage() {
     if (description && description.length > 500) e.description = 'Must be at most 500 characters';
     return e;
   }, [companyName, website, phone, founded, hq, description]);
+
+  // ESC silently closes the flow and returns to the contact list — pairs
+  // with the always-visible "X" close button in the top-right of the form
+  // card, plus the breadcrumb and the Cancel button at the bottom.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') router.push('/contacts');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [router]);
 
   const canProceedFromDetails =
     companyName.trim().length >= 2 && !Object.values(detailsErrors).some(Boolean);
@@ -150,6 +162,11 @@ export default function NewCompanyPage() {
     } as ContactWithEntries;
 
     addContact(contact);
+    toast.success('Client saved', {
+      description: pendingRels.length > 0
+        ? `${companyName.trim()} added with ${pendingRels.length} relationship${pendingRels.length === 1 ? '' : 's'}.`
+        : `${companyName.trim()} added to your companies.`,
+    });
 
     // Commit any pending relationships
     for (const pr of pendingRels) {
@@ -171,11 +188,19 @@ export default function NewCompanyPage() {
       <Topbar title="Contacts" />
       <div className="flex-1 overflow-y-auto">
         <div className="px-6 pt-4 text-[13px]">
-          <button onClick={() => router.push('/contacts')} className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold">
+          <button
+            onClick={() => router.push('/contacts')}
+            className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold"
+          >
             Contacts
           </button>
           <span className="text-[var(--text-secondary)] mx-1">/</span>
-          <span className="text-[var(--text-primary)] font-semibold">Add Company</span>
+          <button
+            onClick={() => router.push('/contacts?add=1')}
+            className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold"
+          >
+            Add Company
+          </button>
           <span className="text-[var(--text-secondary)] mx-1">/</span>
           <span className="text-[var(--text-primary)] font-semibold">Step {STEPS.findIndex((s) => s.id === currentStep) + 1} of {STEPS.length}: {STEP_TITLES[currentStep]}</span>
         </div>
@@ -198,7 +223,17 @@ export default function NewCompanyPage() {
             </>
           ) : (
             <div className="grid grid-cols-[1fr_380px] gap-4 items-start">
-              <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6">
+              <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6 relative">
+                {/* Prominent close button — mirrors the X pattern users know
+                    from the right-pane SlidePanel. Also responds to the ESC key. */}
+                <button
+                  onClick={() => router.push('/contacts')}
+                  aria-label="Close and return to Contacts"
+                  title="Close (Esc)"
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] bg-transparent border border-[var(--border)] cursor-pointer transition-all z-10"
+                >
+                  <XIcon size={14} weight="bold" />
+                </button>
                 {currentStep === 'details' && (
                   <DetailsStep
                     companyName={companyName} setCompanyName={setCompanyName}
@@ -237,7 +272,7 @@ export default function NewCompanyPage() {
 
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--border)]">
                   {currentStep === 'details' ? (
-                    <button onClick={() => router.push('/contacts/new')} className="text-[13px] font-semibold text-[var(--text-secondary)] bg-transparent border-none cursor-pointer hover:text-[var(--brand-primary)]">
+                    <button onClick={() => router.push('/contacts?add=1')} className="text-[13px] font-semibold text-[var(--text-secondary)] bg-transparent border-none cursor-pointer hover:text-[var(--brand-primary)]">
                       Cancel
                     </button>
                   ) : (

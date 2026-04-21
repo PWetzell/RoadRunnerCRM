@@ -6,6 +6,7 @@ import { Deal, DEAL_STAGES, STAGE_META } from '@/types/deal';
 import { ContactWithEntries } from '@/types/contact';
 import { WidgetConfig, ContentTextSize } from '@/types/dashboard';
 import { fmtDate } from '@/lib/utils';
+import { paletteColor, ChartPaletteId } from '@/lib/chart-palettes';
 
 interface Props {
   viewName: string;
@@ -102,7 +103,7 @@ function computeKpi(type: string, deals: Deal[], contacts: ContactWithEntries[])
     }
     case 'kpi-total-revenue': {
       const won = deals.filter((d) => d.stage === 'closed-won');
-      return { value: fmtMoney(won.reduce((s, d) => s + d.amount, 0)), subtitle: `${won.length} placements` };
+      return { value: fmtMoney(won.reduce((s, d) => s + d.amount, 0)), subtitle: `${won.length} deals` };
     }
     case 'kpi-deals-count':
       return { value: String(deals.length), subtitle: `${contacts.length} contacts` };
@@ -260,12 +261,20 @@ function PrintKpiTile({ widget, deals, contacts }: { widget: WidgetConfig; deals
 
 function PrintPipelineChart({ widget, deals }: { widget: WidgetConfig; deals: Deal[] }) {
   const chartType = (widget.config?.chartType as string) || 'bar';
+  const palette = (widget.config?.chartPalette as ChartPaletteId) || 'default';
   const rows = useMemo(() => {
-    return DEAL_STAGES.filter((s) => s.isOpen || s.id === 'closed-won').map((s) => {
+    const filtered = DEAL_STAGES.filter((s) => s.isOpen || s.id === 'closed-won');
+    return filtered.map((s, i) => {
       const stageDeals = deals.filter((d) => d.stage === s.id);
-      return { stage: s, count: stageDeals.length, total: stageDeals.reduce((sum, d) => sum + d.amount, 0) };
+      // Print is always rendered with the light-mode palette variant.
+      const color = palette === 'default' ? s.color : paletteColor(palette, i, false);
+      return {
+        stage: { ...s, color },
+        count: stageDeals.length,
+        total: stageDeals.reduce((sum, d) => sum + d.amount, 0),
+      };
     });
-  }, [deals]);
+  }, [deals, palette]);
   const maxAmount = Math.max(1, ...rows.map((r) => r.total));
   const totalCount = rows.reduce((s, r) => s + r.count, 0);
 

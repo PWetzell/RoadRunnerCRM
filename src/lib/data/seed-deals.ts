@@ -108,7 +108,7 @@ export const SEED_DEALS: Deal[] = [
     expectedCloseDate: '2026-08-30', source: 'Outbound', priority: 'low',
     lastCommunication: { type: 'Left Message', date: '2026-04-05' },
     owner: 'Paul Wentzell',
-    notes: 'Cold outreach reply — interest in advisory placement. No req yet.',
+    notes: 'Cold outreach reply — interest in an advisory role. No req yet.',
     createdAt: '2026-04-05', lastUpdated: '2026-04-05',
   },
   {
@@ -120,7 +120,7 @@ export const SEED_DEALS: Deal[] = [
     lastCommunication: { type: 'Phone Call', date: '2026-01-31' },
     owner: 'Paul Wentzell',
     initiative: 'Head of Engineering — first exec hire',
-    notes: 'First placement that opened the Vertex relationship. Candidate started 02/03.',
+    notes: 'First deal that opened the Vertex relationship. Candidate started 02/03.',
     createdAt: '2025-11-08', lastUpdated: '2026-01-31',
     closedAt: '2026-01-31',
   },

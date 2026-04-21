@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   X, BookOpen, Compass, Play, Question, Sparkle, House, Users, CurrencyDollar,
   UsersFour, Files, ChartPieSlice, UserCircleGear, Keyboard, ChatCircle, Lifebuoy,
-  ArrowRight, GraduationCap, Lightning, Flag, BellRinging, Gear,
+  ArrowRight, GraduationCap, Lightning, Flag, BellRinging, Gear, GridFour,
 } from '@phosphor-icons/react';
 // TourSpotlight rendering moved to ActiveTourOverlay (independent of panel open/close)
 import { TOUR_STEPS, getTourForPath, TourStep } from '@/lib/tour-steps';
@@ -94,7 +94,7 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'The pipeline shows candidates flowing through recruiting stages.',
       'AI match scores indicate how well a candidate fits the role.',
       'Click any candidate card to see their deal details.',
-      'Data comes from your Sales deals — person-type deals are treated as placements.',
+      'Data comes from your Sales deals — person-type deals become candidates in the recruiting pipeline.',
     ],
     walkthrough: [
       'The Recruiting pipeline visualizes your candidate flow.',
@@ -181,6 +181,27 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'Notifications fine-tunes weekly emails, stale-contact alerts, and AI suggestion bubbles.',
     ],
   },
+  'grids': {
+    title: 'Grids',
+    icon: <GridFour size={14} weight="duotone" />,
+    tips: [
+      'Every grid (Contacts, Sales, Recruiting, Documents) shares the same toolbar — learn it once.',
+      'Click Columns to show/hide, drag to reorder, or pin a column to the left or right edge.',
+      'Views let you save custom column layouts you can switch between.',
+      'Density picks row height — Compact, Comfortable, or Spacious. Zebra striping toggles alternating rows.',
+      'The Actions column is always pinned to the right edge — icons appear on row hover.',
+      'Reset restores the default layout. Saved views are unaffected.',
+    ],
+    walkthrough: [
+      "Every grid in the CRM uses the same toolbar — learn it once and you'll know how to work with every list in the app.",
+      'Views save snapshots of your grid layout. Change columns and sort, then save it as "My view" to switch back anytime.',
+      'Columns controls which columns are visible, their order, and their pinning. Pin left to keep Name visible; pin right to keep Actions visible.',
+      'Density picks row height: Compact (info-dense), Comfortable (default), Spacious (easy scanning). Zebra striping is separate.',
+      'Column headers are interactive — click to sort, drag the ⋮⋮ handle to reorder, click the funnel for a per-column filter, drag the right edge to resize.',
+      'The Actions column (right edge) is always pinned. Edit and delete icons appear when you hover a row.',
+      'Reset restores defaults. Saved views are untouched — switch to them from View: [name].',
+    ],
+  },
   '/notifications': {
     title: 'Notifications',
     icon: <BellRinging size={14} weight="duotone" />,
@@ -202,11 +223,14 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
   },
 };
 
+type HelpTab = 'tips' | 'tours' | 'resources';
+
 export default function HelpPanel({ onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const [subPanel, setSubPanel] = useState<'whats-new' | 'report-bug' | null>(null);
+  const [activeTab, setActiveTab] = useState<HelpTab>('tips');
 
   // Tour state lives in Zustand — survives unmount/remount during navigation
   const activeWalkthrough = useTourStore((s) => s.activeWalkthrough);
@@ -343,127 +367,212 @@ export default function HelpPanel({ onClose }: Props) {
           </div>
         ) : (
           <>
-            {/* AI Help — top of panel */}
-            <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
-              <div className="bg-[var(--ai-bg)] border border-[var(--ai-border)] rounded-lg p-3 flex items-start gap-2.5">
-                <Sparkle size={16} weight="duotone" className="text-[var(--ai)] flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-[12px] font-bold text-[var(--text-primary)] mb-0.5">Ask AI for help</div>
-                  <div className="text-[10px] text-[var(--text-secondary)] mb-2">
-                    Describe what you're trying to do and AI will guide you.
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      placeholder="How do I add a new deal?"
-                      className="flex-1 h-[28px] px-2.5 text-[11px] bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none focus:border-[var(--ai)]"
-                    />
-                    <button className="h-[28px] px-3 text-[10px] font-bold text-white bg-[var(--ai)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90">
-                      Ask
-                    </button>
-                  </div>
+            {/* AI Help — compact single-row */}
+            <div className="px-4 py-2.5 border-b border-[var(--border-subtle)]">
+              <div className="bg-[var(--ai-bg)] border border-[var(--ai-border)] rounded-lg p-2 flex items-center gap-2">
+                <Sparkle size={14} weight="duotone" className="text-[var(--ai)] flex-shrink-0" />
+                <input
+                  placeholder="Ask AI: How do I add a deal?"
+                  className="flex-1 h-[26px] px-2 text-[11px] bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none focus:border-[var(--ai)]"
+                />
+                <button className="h-[26px] px-2.5 text-[10px] font-bold text-white bg-[var(--ai)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90 whitespace-nowrap">
+                  Ask
+                </button>
+              </div>
+            </div>
+
+            {/* Tab bar — pill-segment control (matches List/Card toggle pattern) */}
+            <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex-shrink-0">
+              <div className="flex items-center gap-0.5 bg-[var(--surface-raised)] border border-[var(--border)] rounded-full p-1 w-full">
+                <TabButton active={activeTab === 'tips'} onClick={() => setActiveTab('tips')} label="Tips" icon={<Lightning size={12} weight="fill" />} />
+                <TabButton active={activeTab === 'tours'} onClick={() => setActiveTab('tours')} label="Tours" icon={<Play size={10} weight="fill" />} />
+                <TabButton active={activeTab === 'resources'} onClick={() => setActiveTab('resources')} label="Resources" icon={<BookOpen size={12} weight="bold" />} />
+              </div>
+            </div>
+
+            {/* Tab: Tips */}
+            {activeTab === 'tips' && (
+              <div className="px-4 py-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  {section.icon}
+                  <span className="text-[11px] font-extrabold text-[var(--text-primary)]">{section.title} Tips</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Context-sensitive tips for current page */}
-            <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
-              <div className="flex items-center gap-1.5 mb-2">
-                {section.icon}
-                <span className="text-[11px] font-extrabold text-[var(--text-primary)]">{section.title} Tips</span>
-              </div>
-              <ul className="flex flex-col gap-1.5">
-                {section.tips.map((tip, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[11px] text-[var(--text-secondary)]">
-                    <Lightning size={10} weight="fill" className="text-[var(--warning)] mt-0.5 flex-shrink-0" />
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Guided walkthroughs */}
-            <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
-                Guided Walkthroughs
-              </div>
-              <div className="flex flex-col gap-1.5">
-                {Object.entries(SECTION_HELP).map(([key, s]) => {
-                  const hasTour = TOUR_STEPS[key] && TOUR_STEPS[key].length > 0;
-                  const stepCount = hasTour ? TOUR_STEPS[key].length : s.walkthrough.length;
+                <ul className="flex flex-col gap-1.5">
+                  {section.tips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[11px] text-[var(--text-secondary)]">
+                      <Lightning size={10} weight="fill" className="text-[var(--warning)] mt-0.5 flex-shrink-0" />
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+                {/* CTA to start the tour for this section */}
+                {(() => {
+                  const hasSectionTour = TOUR_STEPS[sectionKey] && TOUR_STEPS[sectionKey].length > 0;
+                  if (!hasSectionTour) return null;
                   return (
                     <button
-                      key={key}
-                      onClick={() => {
-                        // Don't navigate for non-page tours like /notifications
-                        if (pathname !== key && key !== '/' && key !== '/notifications') {
-                          router.push(key);
-                        }
-                        startTour(key);
-                      }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[var(--brand-bg)] border border-[var(--brand-primary)]/20 hover:border-[var(--brand-primary)] cursor-pointer text-left w-full transition-all group"
+                      onClick={() => startTour(sectionKey)}
+                      className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-[var(--brand-primary)] text-white text-[11px] font-bold border-none cursor-pointer hover:opacity-90"
                     >
-                      <div className="w-7 h-7 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Play size={12} weight="fill" className="text-white ml-0.5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-bold text-[var(--brand-primary)]">{s.title} Tour</div>
-                        <div className="text-[10px] text-[var(--text-tertiary)]">{stepCount} steps · interactive walkthrough</div>
-                      </div>
+                      <Play size={11} weight="fill" /> Start {section.title} tour · {TOUR_STEPS[sectionKey].length} steps
                     </button>
                   );
-                })}
+                })()}
               </div>
-            </div>
+            )}
 
-            {/* Quick links */}
-            <div className="px-4 py-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
-                Quick Links
+            {/* Tab: Tours — compact rows, with recommended tour pinned first */}
+            {activeTab === 'tours' && (
+              <div className="px-4 py-3">
+                {(() => {
+                  const entries = Object.entries(SECTION_HELP);
+                  const recommendedKey =
+                    Object.keys(SECTION_HELP).find((k) => k !== 'grids' && pathname.startsWith(k))
+                    || '/dashboard';
+                  const recommended = entries.find(([k]) => k === recommendedKey);
+                  const rest = entries.filter(([k]) => k !== recommendedKey);
+                  return (
+                    <>
+                      {recommended && (
+                        <>
+                          <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--brand-primary)] mb-1.5">
+                            Recommended for this page
+                          </div>
+                          <TourRow entry={recommended} pathname={pathname} router={router} startTour={startTour} highlight />
+                          <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-3 mb-1.5">
+                            All tours
+                          </div>
+                        </>
+                      )}
+                      <div className="flex flex-col">
+                        {rest.map((entry) => (
+                          <TourRow key={entry[0]} entry={entry} pathname={pathname} router={router} startTour={startTour} />
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
-              <div className="flex flex-col gap-1">
-                <HelpLink
-                  icon={<Keyboard size={12} />}
-                  label="Keyboard shortcuts"
-                  onClick={() => {
-                    onClose();
-                    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
-                  }}
-                />
-                <HelpLink
-                  icon={<BookOpen size={12} />}
-                  label="Documentation"
-                  onClick={() => {
-                    onClose();
-                    router.push('/admin');
-                  }}
-                  hint="Opens Admin → system docs"
-                />
-                <HelpLink
-                  icon={<ChatCircle size={12} />}
-                  label="Contact support"
-                  onClick={() => {
-                    window.open('mailto:paul@paulwentzellux.com?subject=Roadrunner CRM Support', '_blank');
-                  }}
-                  hint="Opens email"
-                />
-                <HelpLink
-                  icon={<Compass size={12} />}
-                  label="What's new"
-                  onClick={() => setSubPanel('whats-new')}
-                />
-                <HelpLink
-                  icon={<Flag size={12} />}
-                  label="Report a bug"
-                  onClick={() => setSubPanel('report-bug')}
-                />
+            )}
+
+            {/* Tab: Resources */}
+            {activeTab === 'resources' && (
+              <div className="px-4 py-3">
+                <div className="flex flex-col gap-1">
+                  <HelpLink
+                    icon={<Keyboard size={12} />}
+                    label="Keyboard shortcuts"
+                    onClick={() => {
+                      onClose();
+                      document.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+                    }}
+                  />
+                  <HelpLink
+                    icon={<BookOpen size={12} />}
+                    label="Documentation"
+                    onClick={() => {
+                      onClose();
+                      router.push('/admin');
+                    }}
+                    hint="Opens Admin → system docs"
+                  />
+                  <HelpLink
+                    icon={<ChatCircle size={12} />}
+                    label="Contact support"
+                    onClick={() => {
+                      window.open('mailto:paul@paulwentzellux.com?subject=Roadrunner CRM Support', '_blank');
+                    }}
+                    hint="Opens email"
+                  />
+                  <HelpLink
+                    icon={<Compass size={12} />}
+                    label="What's new"
+                    onClick={() => setSubPanel('whats-new')}
+                  />
+                  <HelpLink
+                    icon={<Flag size={12} />}
+                    label="Report a bug"
+                    onClick={() => setSubPanel('report-bug')}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>
       </>
       )}
     </div>
+  );
+}
+
+function TabButton({ active, onClick, label, count, icon }: { active: boolean; onClick: () => void; label: string; count?: number; icon?: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${
+        active
+          ? 'bg-[var(--brand-primary)] text-white shadow-sm'
+          : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+      }`}
+    >
+      {icon && <span className={active ? 'text-white' : 'text-[var(--text-tertiary)]'}>{icon}</span>}
+      <span>{label}</span>
+      {typeof count === 'number' && (
+        <span className={`px-1.5 py-0 rounded-full text-[9px] font-extrabold ${
+          active ? 'bg-white/20 text-white' : 'bg-[var(--surface-card)] text-[var(--text-tertiary)] border border-[var(--border)]'
+        }`}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function TourRow({
+  entry,
+  pathname,
+  router,
+  startTour,
+  highlight,
+}: {
+  entry: [string, { title: string; icon: React.ReactNode; tips: string[]; walkthrough: string[] }];
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+  startTour: (key: string) => void;
+  highlight?: boolean;
+}) {
+  const [key, s] = entry;
+  const hasTour = TOUR_STEPS[key] && TOUR_STEPS[key].length > 0;
+  const stepCount = hasTour ? TOUR_STEPS[key].length : s.walkthrough.length;
+  const GRID_PAGES = ['/contacts', '/sales', '/recruiting', '/documents'];
+  const isGridTour = key === 'grids';
+  return (
+    <button
+      onClick={() => {
+        if (isGridTour) {
+          if (!GRID_PAGES.some((p) => pathname.startsWith(p))) router.push('/contacts');
+        } else if (pathname !== key && key !== '/' && key !== '/notifications' && key !== 'grids') {
+          router.push(key);
+        }
+        startTour(key);
+      }}
+      className={`flex items-center gap-2 px-2 py-1.5 rounded-md bg-transparent cursor-pointer text-left w-full group transition-colors ${
+        highlight
+          ? 'bg-[var(--brand-bg)] border border-[var(--brand-primary)]/20 hover:border-[var(--brand-primary)]'
+          : 'border border-transparent hover:bg-[var(--surface-raised)]'
+      }`}
+    >
+      <span className={highlight ? 'text-[var(--brand-primary)]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--brand-primary)]'}>
+        {s.icon}
+      </span>
+      <span className={`flex-1 text-[12px] font-semibold ${highlight ? 'text-[var(--brand-primary)]' : 'text-[var(--text-primary)]'}`}>
+        {s.title}
+      </span>
+      <span className="text-[9px] font-bold text-[var(--text-tertiary)]">{stepCount} steps</span>
+      <Play size={10} weight="fill" className={highlight ? 'text-[var(--brand-primary)]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--brand-primary)]'} />
+    </button>
   );
 }
 

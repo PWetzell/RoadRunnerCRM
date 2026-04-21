@@ -4,7 +4,7 @@ export const SEED_ALERTS: CrmAlert[] = [
   {
     id: 'alert-1', type: 'deal-won', severity: 'success',
     title: 'Deal closed — Vertex Head of Engineering',
-    message: 'Placement confirmed. $88K fee invoiced.',
+    message: 'Deal closed. $88K fee invoiced.',
     href: '/sales/deal-9', createdAt: '2026-04-15T09:00:00Z', read: false, dismissed: false,
   },
   {
@@ -144,7 +144,7 @@ export const SEED_REMINDERS: AlertReminder[] = [
   {
     id: 'rem-2',
     title: 'Weekly Meridian check-in',
-    message: 'Touch base with Sarah Chen on RPO advisor program. Review placement pipeline.',
+    message: 'Touch base with Sarah Chen on RPO advisor program. Review deal pipeline.',
     severity: 'warning',
     scheduledAt: nextMonday9am(),
     recurrence: 'weekly',

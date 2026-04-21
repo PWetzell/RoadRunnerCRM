@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Info } from '@phosphor-icons/react';
+import { Info, X as XIcon } from '@phosphor-icons/react';
 import Topbar from '@/components/layout/Topbar';
 import { FormField } from '@/components/ui/FormField';
 import { AIDuplicateDetection } from '@/components/contact-flow/ai/AIDuplicateDetection';
@@ -17,6 +17,7 @@ import { ContactWithEntries } from '@/types/contact';
 import { CrmDocument, getFileFamily } from '@/types/document';
 import { uid } from '@/lib/utils';
 import { isEmail, isPhone } from '@/lib/validation';
+import { toast } from '@/lib/toast';
 
 const NAME_PREFIXES = ['Mr.', 'Mrs.', 'Ms.', 'Miss', 'Mx.', 'Dr.', 'Prof.', 'Rev.', 'Hon.', 'Sir', 'Dame'];
 const NAME_SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V', 'PhD', 'MD', 'DDS', 'Esq.', 'CPA', 'RN', 'MBA'];
@@ -209,6 +210,11 @@ export default function NewPersonPage() {
     } as ContactWithEntries;
 
     addContact(contact);
+    toast.success('Candidate saved', {
+      description: resumeBanner
+        ? `${fullName} added with resume attached.`
+        : `${fullName} added to your contacts.`,
+    });
 
     // If the user uploaded a resume on the picker, attach the original file
     // to this person's Documents. The bytes are stashed as base64 in
@@ -250,16 +256,35 @@ export default function NewPersonPage() {
 
   const stepTitle = STEPS.find((s) => s.id === currentStep)?.label || '';
 
+  // ESC silently closes the flow and returns to the contact list — pairs
+  // with the always-visible "X" close button in the top-right of the form
+  // card, plus the breadcrumb and the Cancel button at the bottom.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') router.push('/contacts');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [router]);
+
   return (
     <>
       <Topbar title="Contacts" />
       <div className="flex-1 overflow-y-auto">
         <div className="px-6 pt-4 text-[13px]">
-          <button onClick={() => router.push('/contacts')} className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold">
+          <button
+            onClick={() => router.push('/contacts')}
+            className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold"
+          >
             Contacts
           </button>
           <span className="text-[var(--text-secondary)] mx-1">/</span>
-          <span className="text-[var(--text-primary)] font-semibold">Add Person</span>
+          <button
+            onClick={() => router.push('/contacts?add=1')}
+            className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold"
+          >
+            Add Person
+          </button>
           <span className="text-[var(--text-secondary)] mx-1">/</span>
           <span className="text-[var(--text-primary)] font-semibold">Step {STEPS.findIndex((s) => s.id === currentStep) + 1} of {STEPS.length}: {stepTitle}</span>
         </div>
@@ -267,7 +292,18 @@ export default function NewPersonPage() {
         <div className="px-6 py-6">
           <div className="grid grid-cols-[1fr_380px] gap-4 items-start">
             {/* Main form */}
-            <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6 relative">
+              {/* Prominent close button — mirrors the X pattern users already
+                  know from the right-pane SlidePanel and from every dialog
+                  on the web. Also responds to the ESC key. */}
+              <button
+                onClick={() => router.push('/contacts')}
+                aria-label="Close and return to Contacts"
+                title="Close (Esc)"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] bg-transparent border border-[var(--border)] cursor-pointer transition-all z-10"
+              >
+                <XIcon size={14} weight="bold" />
+              </button>
               {resumeBanner && (
                 <div className="mb-4 flex items-start gap-2.5 p-3 bg-[var(--ai-bg)] border border-[var(--ai-border)] rounded-[var(--radius-md)] animate-[fadeUp_0.3s_ease-out]">
                   <Info size={16} className="text-[var(--ai)] flex-shrink-0 mt-0.5" />
@@ -330,7 +366,7 @@ export default function NewPersonPage() {
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--border)]">
                 {currentStep === 'basic' ? (
                   <button
-                    onClick={() => router.push('/contacts/new')}
+                    onClick={() => router.push('/contacts?add=1')}
                     className="text-[13px] font-semibold text-[var(--text-secondary)] bg-transparent border-none cursor-pointer hover:text-[var(--brand-primary)]"
                   >
                     Cancel
@@ -535,7 +571,7 @@ function BasicInfoStep(props: any) {
 function OrganizationStep(props: any) {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-[18px] font-extrabold text-[var(--text-primary)]">Organization Placement</h2>
+      <h2 className="text-[18px] font-extrabold text-[var(--text-primary)]">Organization</h2>
       <p className="text-[12px] text-[var(--text-secondary)] -mt-2">Associate {props.contactName} with a company and define reporting.</p>
 
       <div>

@@ -7,6 +7,7 @@ import AuthGate from "@/components/auth/AuthGate";
 import KeyboardShortcuts from "@/components/keyboard/KeyboardShortcuts";
 import AlertAutoGenMount from "@/components/alerts/AlertAutoGenMount";
 import ManageListsDialog from "@/components/lists/ManageListsDialog";
+import ToastHost from "@/components/ui/ToastHost";
 
 const mulish = Mulish({
   variable: "--font-mulish",
@@ -53,6 +54,7 @@ export default function RootLayout({
           <KeyboardShortcuts />
           <AlertAutoGenMount />
           <ManageListsDialog />
+          <ToastHost />
         </AuthGate>
       </body>
     </html>

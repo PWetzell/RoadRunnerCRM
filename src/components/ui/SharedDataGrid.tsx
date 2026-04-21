@@ -226,8 +226,10 @@ function ColumnDropdownRow({ id, label, visible, onToggle, pinned, onPin, onAuto
         onClick={(e) => { e.stopPropagation(); onPin(active ? false : side); }}
         title={active ? `Unpin from ${side}` : `Pin ${side}`}
         aria-label={title}
-        className={`opacity-0 group-hover:opacity-100 w-5 h-5 inline-flex items-center justify-center rounded bg-transparent border-none cursor-pointer ${
-          active ? 'text-[var(--brand-primary)] !opacity-100' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+        className={`w-5 h-5 inline-flex items-center justify-center rounded bg-transparent border-none cursor-pointer transition-colors ${
+          active
+            ? 'text-[var(--brand-primary)]'
+            : 'text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--surface-raised)]'
         }`}
       >
         <PushPin size={11} weight={active ? 'fill' : 'regular'} className={side === 'right' ? 'scale-x-[-1]' : ''} />
@@ -375,9 +377,19 @@ export default function SharedDataGrid<T>({
 
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ left: [], right: [] });
   const gridLayoutRaw = useGridLayoutStore((s) => s.grids[gridId]);
   const columnWidths = gridLayoutRaw?.columnWidths ?? EMPTY_WIDTHS;
+
+  // Column pinning — hydrated from the persisted store so pins survive refreshes.
+  const persistedPinning = gridLayoutRaw?.columnPinning ?? { left: [], right: [] };
+  const setStoreColumnPinning = useGridLayoutStore((s) => s.setColumnPinning);
+  const columnPinning: ColumnPinningState = persistedPinning;
+  const setColumnPinning = useCallback((updater: ColumnPinningState | ((prev: ColumnPinningState) => ColumnPinningState)) => {
+    // Read the latest value from the store (not the closure) so batched updates don't stomp each other.
+    const current = useGridLayoutStore.getState().grids[gridId]?.columnPinning ?? { left: [], right: [] };
+    const next = typeof updater === 'function' ? (updater as (p: ColumnPinningState) => ColumnPinningState)(current) : updater;
+    setStoreColumnPinning(gridId, { left: next.left ?? [], right: next.right ?? [] });
+  }, [setStoreColumnPinning, gridId]);
 
   // Density + zebra (global, per-user)
   const gridDensity = useUserStore((s) => s.gridDensity);
@@ -437,7 +449,7 @@ export default function SharedDataGrid<T>({
   const tableWidth = useMemo(() => {
     const headers = table.getHeaderGroups()[0]?.headers || [];
     const total = headers.reduce((sum, h) => sum + (columnWidths[h.id] || h.getSize()), 0);
-    return total + (renderActions ? 60 : 0);
+    return total + (renderActions ? 72 : 0);
   }, [table, columnWidths, renderActions]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -488,8 +500,8 @@ export default function SharedDataGrid<T>({
   const resetView = () => {
     setColumnOrder(currentColumnIds);
     useGridLayoutStore.getState().setColumnWidths(gridId, {});
+    useGridLayoutStore.getState().setColumnPinning(gridId, { left: [], right: [] });
     setColumnVisibility({});
-    setColumnPinning({ left: [], right: [] });
     setSorting(defaultSorting ?? []);
     setColumnFilters([]);
     setActiveViewId(null);
@@ -510,9 +522,9 @@ export default function SharedDataGrid<T>({
   return (
     <div className="flex flex-col h-full gap-2">
       {/* Grid Toolbar -- View first, then Columns, then Reset */}
-      <div className="flex items-center gap-2 flex-wrap min-h-[34px]">
+      <div data-tour="grid-toolbar" className="flex items-center gap-2 flex-wrap min-h-[34px]">
         {/* Views -- FIRST */}
-        <div className="relative">
+        <div className="relative" data-tour="grid-view-menu">
           <button
             onClick={() => setShowViewMenu(!showViewMenu)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
@@ -533,7 +545,7 @@ export default function SharedDataGrid<T>({
         </div>
 
         {/* Column visibility toggle */}
-        <div className="relative" ref={columnMenuRef}>
+        <div className="relative" ref={columnMenuRef} data-tour="grid-columns-menu">
           <button
             onClick={() => setShowColumnMenu(!showColumnMenu)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
@@ -590,7 +602,7 @@ export default function SharedDataGrid<T>({
         </div>
 
         {/* Density + zebra */}
-        <div className="relative" ref={densityMenuRef}>
+        <div className="relative" ref={densityMenuRef} data-tour="grid-density-menu">
           <button
             onClick={() => setShowDensityMenu(!showDensityMenu)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
@@ -636,6 +648,7 @@ export default function SharedDataGrid<T>({
 
         <button
           onClick={resetView}
+          data-tour="grid-reset"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <ArrowClockwise size={14} weight="bold" /> Reset
@@ -643,7 +656,7 @@ export default function SharedDataGrid<T>({
 
         {/* Count (right) */}
         {countLabel && (
-          <span className="ml-auto text-[11px] font-semibold text-[var(--text-tertiary)]">
+          <span data-tour="grid-count" className="ml-auto text-[11px] font-semibold text-[var(--text-tertiary)]">
             {data.length} {data.length === 1 ? countLabel.replace(/s$/, '') : countLabel}
           </span>
         )}
@@ -660,7 +673,7 @@ export default function SharedDataGrid<T>({
           <table className="border-collapse" style={{ tableLayout: 'fixed', width: tableWidth, minWidth: '100%' }}>
             <thead className="sticky top-0 z-10">
               <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
-                <tr>
+                <tr data-tour="grid-header-row">
                   {table.getHeaderGroups()[0]?.headers.map((header) => {
                     const pinned = header.column.getIsPinned();
                     const pinStyle: React.CSSProperties = pinned === 'left'
@@ -680,7 +693,21 @@ export default function SharedDataGrid<T>({
                     );
                   })}
                   {renderActions && (
-                    <th className="w-[60px] bg-[var(--grid-header-bg)] border-b border-[var(--grid-header-border)]" />
+                    <th
+                      data-tour="grid-actions-col"
+                      className="w-[72px] bg-[var(--grid-header-bg)] border-b border-[var(--grid-header-border)] border-l border-l-[var(--border-subtle)] text-left font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3"
+                      style={{
+                        position: 'sticky',
+                        right: 0,
+                        zIndex: 12,
+                        paddingTop: 'var(--grid-header-py, 10px)',
+                        paddingBottom: 'var(--grid-header-py, 10px)',
+                        fontSize: 'var(--grid-header-font, 11px)',
+                        boxShadow: '-4px 0 6px -4px rgba(0,0,0,0.08)',
+                      }}
+                    >
+                      Actions
+                    </th>
                   )}
                 </tr>
               </SortableContext>
@@ -730,8 +757,16 @@ export default function SharedDataGrid<T>({
                   })}
                   {renderActions && (
                     <td
-                      className="px-2 w-[60px]"
-                      style={{ paddingTop: 'var(--grid-row-py, 10px)', paddingBottom: 'var(--grid-row-py, 10px)' }}
+                      className="px-2 w-[72px] border-l border-l-[var(--border-subtle)]"
+                      style={{
+                        position: 'sticky',
+                        right: 0,
+                        zIndex: 2,
+                        background: rowBg,
+                        paddingTop: 'var(--grid-row-py, 10px)',
+                        paddingBottom: 'var(--grid-row-py, 10px)',
+                        boxShadow: '-4px 0 6px -4px rgba(0,0,0,0.08)',
+                      }}
                     >
                       <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
                         {renderActions(row.original)}

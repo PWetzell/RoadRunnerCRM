@@ -110,9 +110,15 @@ export default function ConfigurableCard({ cardId, title, defaultIconName = 'Fil
     subtitleColor: style.subtitleColor,
     subtitleSize: style.subtitleSize,
     contentAlign: style.contentAlign,
+    innerTileBg: style.innerTileBg,
+    tagTextColor: style.tagTextColor,
+    tagBg: style.tagBg,
+    tagBorderColor: style.tagBorderColor,
   };
 
-  // CSS vars for text styling
+  // CSS vars for text styling + backgrounds. The inner-tile variable is read
+  // by children that opt in (admin MetricBox, HealthItem, etc.) so card-level
+  // customization cascades into per-tile overrides.
   const cssVars: React.CSSProperties = {
     ['--widget-title-color' as string]: style.titleColor || 'var(--text-primary)',
     ['--widget-title-scale' as string]: TEXT_SIZE_VAR[style.titleSize || 'md'],
@@ -125,6 +131,11 @@ export default function ConfigurableCard({ cardId, title, defaultIconName = 'Fil
     ['--widget-tertiary-text' as string]: style.subtitleColor || (style.contentTextColor
       ? `color-mix(in srgb, ${style.contentTextColor} 55%, var(--surface-card))`
       : 'var(--text-tertiary)'),
+    ['--card-inner-tile-bg' as string]: style.innerTileBg || 'var(--surface-raised)',
+    // Tag variables — opt-in on the renderer side. Fall back keeps existing tag styling.
+    ['--card-tag-text' as string]: style.tagTextColor || '',
+    ['--card-tag-bg' as string]: style.tagBg || '',
+    ['--card-tag-border' as string]: style.tagBorderColor || '',
   };
 
   const align = style.contentAlign || 'left';
@@ -180,6 +191,7 @@ export default function ConfigurableCard({ cardId, title, defaultIconName = 'Fil
               widget={fakeWidget}
               widgetType={'kpi-open-deals' as WidgetType}
               title={title}
+              hasTags
               onClose={() => setSettingsOpen(false)}
               onRemove={() => setSettingsOpen(false)}
               onStyleChange={(patch) => setStyle(cardId, patch as Partial<CardStyle>)}

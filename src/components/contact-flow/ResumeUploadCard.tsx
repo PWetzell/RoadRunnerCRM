@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileArrowUp, CheckCircle, Warning, Sparkle, Spinner } from '@phosphor-icons/react';
+import { toast } from '@/lib/toast';
 
 /**
  * Drop a resume here → AI parses it → routes to the new-person wizard
@@ -44,8 +45,10 @@ export function ResumeUploadCard() {
       setState('done');
       router.push('/contacts/new/person?from=resume');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Parse failed');
+      const msg = err instanceof Error ? err.message : 'Parse failed';
+      setError(msg);
       setState('error');
+      toast.error('Resume parse failed', { description: msg });
     }
   };
 

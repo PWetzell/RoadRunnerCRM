@@ -15,6 +15,7 @@ import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
 import { initials, getAvatarColor, fmtDate } from '@/lib/utils';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import SharedDataGrid, { ColumnDef } from '@/components/ui/SharedDataGrid';
+import { toast } from '@/lib/toast';
 
 // ─── Helpers ───
 function IncompletePill() {
@@ -334,10 +335,12 @@ export default function DataGrid() {
   const searchParams = useSearchParams();
   const listId = searchParams.get('list');
   const favOnly = searchParams.get('fav') === '1';
+  const privateOnly = searchParams.get('private') === '1';
   const contacts = useContactStore((s) => s.contacts);
   const filter = useContactStore((s) => s.filter);
   const search = useContactStore((s) => s.search);
   const deleteContact = useContactStore((s) => s.deleteContact);
+  const addContact = useContactStore((s) => s.addContact);
   const memberships = useListStore((s) => s.memberships);
 
   const [deleteTarget, setDeleteTarget] = useState<ContactWithEntries | null>(null);
@@ -380,8 +383,11 @@ export default function DataGrid() {
       const favIds = new Set(memberships.filter((m) => m.listId === FAVORITES_LIST_IDS.contact).map((m) => m.entityId));
       result = result.filter((c) => favIds.has(c.id));
     }
+    if (privateOnly) {
+      result = result.filter((c) => c.isPrivate);
+    }
     return result;
-  }, [contacts, filter, search, listId, favOnly, memberships]);
+  }, [contacts, filter, search, listId, favOnly, privateOnly, memberships]);
 
   return (
     <>
@@ -417,7 +423,17 @@ export default function DataGrid() {
         message={deleteTarget ? <>Delete <strong>{deleteTarget.name}</strong>? This cannot be undone.</> : ''}
         confirmLabel="Delete"
         confirmVariant="danger"
-        onConfirm={() => { if (deleteTarget) { deleteContact(deleteTarget.id); setDeleteTarget(null); } }}
+        onConfirm={() => {
+          if (deleteTarget) {
+            const snapshot = deleteTarget;
+            deleteContact(snapshot.id);
+            toast.success('Contact deleted', {
+              description: snapshot.name,
+              action: { label: 'Undo', onClick: () => addContact(snapshot) },
+            });
+            setDeleteTarget(null);
+          }
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
     </>

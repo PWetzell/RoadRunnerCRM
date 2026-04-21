@@ -41,7 +41,7 @@ export default function KeyboardShortcuts() {
     { keys: ['g', 'a'],  label: 'Go to Admin',               category: 'Navigation', action: () => router.push('/admin') },
     { keys: ['g', 't'],  label: 'Go to To-dos',              category: 'Navigation', action: () => router.push('/todos') },
 
-    { keys: ['c'],       label: 'Create new contact',        category: 'Actions', action: () => router.push('/contacts/new') },
+    { keys: ['c'],       label: 'Create new contact',        category: 'Actions', action: () => router.push('/contacts?add=1') },
     { keys: ['d'],       label: 'Create new deal',           category: 'Actions', action: () => router.push('/sales/new') },
   ];
 

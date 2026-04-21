@@ -15,11 +15,12 @@ import AIDealScoring from '@/components/sales/ai/AIDealScoring';
 import { isDate, isNonNegativeNumber, maxLength as maxLenRule } from '@/lib/validation';
 import { Warning } from '@phosphor-icons/react';
 import { LABELS, CANDIDATE_SOURCES } from '@/lib/vertical/hr-staffing';
+import { toast } from '@/lib/toast';
 
 type StepId = 'details' | 'contacts' | 'pricing';
 
 const STEPS = [
-  { id: 'details' as const, label: 'Placement Details' },
+  { id: 'details' as const, label: 'Deal Details' },
   { id: 'contacts' as const, label: 'Candidate & Client' },
   { id: 'pricing' as const, label: 'Fee & Forecast' },
 ];
@@ -71,7 +72,7 @@ export default function NewLeadPage() {
   const today = new Date().toISOString().split('T')[0];
   const detailsErrors = useMemo(() => {
     const e: Record<string, string | undefined> = {};
-    if (!name.trim()) e.name = 'Placement title is required';
+    if (!name.trim()) e.name = 'Deal title is required';
     else if (name.trim().length < 2) e.name = 'Must be at least 2 characters';
     else if (name.length > 120) e.name = 'Must be at most 120 characters';
     if (expectedCloseDate) {
@@ -151,6 +152,9 @@ export default function NewLeadPage() {
       lastUpdated: today,
     };
     addDeal(deal);
+    toast.success('Deal saved', {
+      description: `${name.trim()} added to the pipeline.`,
+    });
     router.push(`/sales/saved/${id}`);
   }
 
@@ -165,7 +169,7 @@ export default function NewLeadPage() {
           <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
               <h2 className="text-[15px] font-extrabold text-[var(--text-primary)]">
-                {currentStep === 'details' && 'Placement Details'}
+                {currentStep === 'details' && 'Deal Details'}
                 {currentStep === 'contacts' && 'Link Candidate & Client'}
                 {currentStep === 'pricing' && 'Fee & Forecast'}
               </h2>
@@ -181,7 +185,7 @@ export default function NewLeadPage() {
             <div className="px-6 py-5 flex flex-col gap-4">
               {currentStep === 'details' && (
                 <>
-                  <Field label="Placement title *" error={detailsErrors.name}>
+                  <Field label="Deal title *" error={detailsErrors.name}>
                     <input
                       type="text"
                       value={name}
@@ -270,7 +274,7 @@ export default function NewLeadPage() {
 
               {currentStep === 'pricing' && (
                 <>
-                  <Field label="Placement fee (USD)" error={pricingErrors.amount}>
+                  <Field label="Deal amount (USD)" error={pricingErrors.amount}>
                     <input
                       type="number"
                       min={0}
@@ -328,7 +332,7 @@ export default function NewLeadPage() {
                   disabled={!canSave}
                   className="px-3 py-1.5 text-[12px] font-semibold text-white bg-[var(--success)] border-none rounded-md cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                 >
-                  <FloppyDisk size={12} weight="bold" /> Save placement
+                  <FloppyDisk size={12} weight="bold" /> Save deal
                 </button>
               )}
             </div>

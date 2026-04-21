@@ -13,6 +13,7 @@ import { useContactStore } from '@/stores/contact-store';
 import { DealStage, DEAL_STAGES } from '@/types/deal';
 import { Deal } from '@/types/deal';
 import { getAvatarColor, initials, fmtDate } from '@/lib/utils';
+import { toast } from '@/lib/toast';
 import { useIsDark } from '@/hooks/useIsDark';
 import { useCardStyleStore, CardStyle } from '@/stores/card-style-store';
 
@@ -68,11 +69,21 @@ export default function SalesKanban() {
       const newStage = overId.slice('stage-'.length) as DealStage;
       const deal = allDeals.find((d) => d.id === dealId);
       if (deal && deal.stage !== newStage) {
+        const prevStage = deal.stage;
         updateDeal(dealId, {
           stage: newStage,
           ...(newStage === 'closed-lost' || newStage === 'closed-won'
             ? { closedAt: new Date().toISOString().split('T')[0] }
             : {}),
+        });
+        const newLabel = DEAL_STAGES.find((s) => s.id === newStage)?.label || newStage;
+        toast.success(`Moved to ${newLabel}`, {
+          description: `${deal.name}`,
+          // Undo the move — restores prior stage + clears closedAt if applicable
+          action: {
+            label: 'Undo',
+            onClick: () => updateDeal(dealId, { stage: prevStage, closedAt: undefined }),
+          },
         });
       }
     }

@@ -7,6 +7,7 @@ import { DEAL_STAGES } from '@/types/deal';
 import Widget from '../Widget';
 import { useIsDark } from '@/hooks/useIsDark';
 import { dc } from '@/lib/pill-colors';
+import { paletteColor, ChartPaletteId } from '@/lib/chart-palettes';
 
 const fmtMoney = (n: number) => {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
@@ -20,15 +21,20 @@ export default function PipelineChartWidget({ widget }: { widget: WidgetConfig }
   const deals = useSalesStore((s) => s.deals);
   const isDark = useIsDark();
   const chartType = (widget.config?.chartType as ChartType) || 'bar';
+  const palette = (widget.config?.chartPalette as ChartPaletteId) || 'default';
 
   const rows = useMemo(() => {
-    return DEAL_STAGES.map((s) => {
+    return DEAL_STAGES.map((s, i) => {
       const stageDeals = deals.filter((d) => d.stage === s.id);
       const total = stageDeals.reduce((sum, d) => sum + d.amount, 0);
-      const color = dc(s, isDark).color;
+      // Palette 'default' preserves each stage's native color; any other
+      // palette overrides with sequential palette colors.
+      const color = palette === 'default'
+        ? dc(s, isDark).color
+        : paletteColor(palette, i, isDark);
       return { stage: s, count: stageDeals.length, total, color };
     });
-  }, [deals, isDark]);
+  }, [deals, isDark, palette]);
 
   const maxCount = Math.max(1, ...rows.map((r) => r.count));
   const maxAmount = Math.max(1, ...rows.map((r) => r.total));

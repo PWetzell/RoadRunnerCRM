@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { ContactWithEntries, ContactType } from '@/types/contact';
 import { Note } from '@/types/note';
 import { Relationship } from '@/types/relationship';
@@ -48,7 +49,9 @@ interface ContactStore {
   getRelationshipsForContact: (contactId: string) => Relationship[];
 }
 
-export const useContactStore = create<ContactStore>((set, get) => ({
+export const useContactStore = create<ContactStore>()(
+  persist(
+    (set, get) => ({
   contacts: SEED_CONTACTS,
   notes: SEED_NOTES,
   relationships: SEED_RELATIONSHIPS,
@@ -146,4 +149,14 @@ export const useContactStore = create<ContactStore>((set, get) => ({
   getRelationshipsForContact: (contactId) => {
     return get().relationships.filter((r) => r.fromContactId === contactId || r.toContactId === contactId);
   },
-}));
+    }),
+    {
+      name: 'roadrunner-contacts',
+      partialize: (s) => ({
+        contacts: s.contacts,
+        notes: s.notes,
+        relationships: s.relationships,
+      }),
+    }
+  )
+);

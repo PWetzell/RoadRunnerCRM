@@ -148,7 +148,7 @@ export const TOUR_STEPS: Record<string, TourStep[]> = {
   ],
   '/recruiting': [
     {
-      content: 'The Recruiting module visualizes your candidate pipeline. Data is projected from your Sales deals — person-type deals become placements.',
+      content: 'The Recruiting module visualizes your candidate pipeline. Data is projected from your Sales deals — person-type deals become candidates.',
       target: 'recruiting-insights',
       placement: 'bottom',
     },
@@ -320,6 +320,55 @@ export const TOUR_STEPS: Record<string, TourStep[]> = {
       content: 'Data Management has tools for bulk import, export, deduplication, and cleanup. Use this to maintain data quality.',
       target: 'admin-data-mgmt',
       placement: 'bottom',
+    },
+  ],
+  /**
+   * Route-agnostic tour — teaches the shared grid controls that appear in
+   * every list view (Contacts, Sales, Recruiting, Documents, Custom Reports).
+   * Launched from the Help panel with a preceding navigate-to /contacts so
+   * there's always a grid on screen.
+   */
+  'grids': [
+    {
+      content: "Every grid in the CRM uses the same toolbar. Learn it once and you'll know how to work with lists of contacts, deals, candidates, and documents.",
+      target: 'grid-toolbar',
+      placement: 'bottom',
+    },
+    {
+      content: 'Views save a snapshot of your grid layout — which columns are shown, in what order, sorted how. Click Save to keep a custom view you can switch back to anytime.',
+      target: 'grid-view-menu',
+      placement: 'bottom',
+    },
+    {
+      content: 'Click Columns to show or hide any column, drag the ⋮⋮ handles to reorder them, or click a pin icon to lock a column to the left or right edge — great for keeping the Name column visible when scrolling.',
+      target: 'grid-columns-menu',
+      placement: 'bottom',
+      clickTarget: true,
+    },
+    {
+      content: 'Density controls row height — Compact fits more rows on screen, Spacious gives each row room to breathe. Zebra striping alternates row backgrounds so your eye tracks across wide tables.',
+      target: 'grid-density-menu',
+      placement: 'bottom',
+    },
+    {
+      content: 'Click a header to sort. Drag the ⋮⋮ handle to reorder columns inline. The funnel icon opens a per-column filter. Drag the right edge of a header to resize.',
+      target: 'grid-header-row',
+      placement: 'bottom',
+    },
+    {
+      content: 'The Actions column is always pinned to the right edge. Edit and delete icons appear when you hover a row — no scrolling back to the start of the row.',
+      target: 'grid-actions-col',
+      placement: 'left',
+    },
+    {
+      content: 'Lost track of your layout? Reset restores the default columns, widths, sorting, filters, and pinning. Saved views are unaffected.',
+      target: 'grid-reset',
+      placement: 'bottom',
+    },
+    {
+      content: 'The count on the right updates live as you filter or search. Combine it with the search bar, list filter, and type pills at the top to narrow results.',
+      target: 'grid-count',
+      placement: 'left',
     },
   ],
 };

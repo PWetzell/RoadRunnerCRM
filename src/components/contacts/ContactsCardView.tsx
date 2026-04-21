@@ -31,6 +31,7 @@ export default function ContactsCardView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listId = searchParams.get('list');
+  const urlPrivate = searchParams.get('private') === '1';
   const contacts = useContactStore((s) => s.contacts);
   const filter = useContactStore((s) => s.filter);
   const search = useContactStore((s) => s.search);
@@ -70,8 +71,8 @@ export default function ContactsCardView() {
     if (dateTo) l = l.filter((c) => c.lastUpdated <= dateTo);
     // Created by
     if (createdByFilter) l = l.filter((c) => c.createdBy === createdByFilter || c.assignedTo === createdByFilter);
-    // Private only
-    if (privateOnly) l = l.filter((c) => c.isPrivate);
+    // Private only (either the URL ?private=1 from the top-level toggle OR the local advanced-panel checkbox)
+    if (privateOnly || urlPrivate) l = l.filter((c) => c.isPrivate);
     // List filter
     if (listId) {
       const memberIds = new Set(memberships.filter((m) => m.listId === listId).map((m) => m.entityId));
@@ -88,7 +89,7 @@ export default function ContactsCardView() {
       }
     });
     return l;
-  }, [contacts, filter, search, sortBy, statusFilter, dateFrom, dateTo, createdByFilter, privateOnly, listId, memberships]);
+  }, [contacts, filter, search, sortBy, statusFilter, dateFrom, dateTo, createdByFilter, privateOnly, urlPrivate, listId, memberships]);
 
   const activeFilterCount = [statusFilter !== 'all', !!dateFrom, !!dateTo, !!createdByFilter, privateOnly, sortBy !== 'lastUpdated'].filter(Boolean).length;
 

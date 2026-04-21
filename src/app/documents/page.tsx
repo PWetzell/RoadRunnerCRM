@@ -10,6 +10,7 @@ import DocumentCardView from '@/components/documents/DocumentCardView';
 import DocumentPreviewPanel from '@/components/documents/DocumentPreviewPanel';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { toast } from '@/lib/toast';
 import ListFilterChip from '@/components/lists/ListFilterChip';
 import { useDocumentStore } from '@/stores/document-store';
 import { useUserStore } from '@/stores/user-store';
@@ -75,7 +76,13 @@ export default function DocumentsPage() {
         confirmLabel="Remove"
         confirmVariant="danger"
         onConfirm={() => {
-          if (removeTarget) removeDocument(removeTarget);
+          if (removeTarget) {
+            const doc = getDocument(removeTarget);
+            removeDocument(removeTarget);
+            toast.success('Document removed', {
+              description: doc ? doc.name : 'File removed from CRM.',
+            });
+          }
           setRemoveTarget(null);
         }}
         onCancel={() => setRemoveTarget(null)}

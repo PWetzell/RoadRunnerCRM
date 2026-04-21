@@ -127,7 +127,7 @@ export function SuccessScreen({ title, subtitle, summary, contactId, contactType
             View {contactType === 'person' ? 'Contact Profile' : 'Company Profile'}
           </button>
           <button
-            onClick={() => router.push('/contacts/new')}
+            onClick={() => router.push('/contacts?add=1')}
             className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold text-[var(--text-secondary)] border border-[var(--border-strong)] rounded-[var(--radius-md)] bg-transparent cursor-pointer hover:border-[var(--brand-primary)]"
           >
             <Plus size={12} weight="bold" /> Add {contactType === 'person' ? 'Another' : 'Another Company'}

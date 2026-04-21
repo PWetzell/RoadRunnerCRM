@@ -49,12 +49,15 @@ export default function SlidePanel({ open, onClose, title, width = 580, children
         className="absolute right-0 top-0 bottom-0 bg-[var(--surface-card)] border-l border-[var(--border)] shadow-[-8px_0_24px_rgba(0,0,0,0.12)] flex flex-col animate-slide-in-right"
         style={{ width }}
       >
-        {/* Header */}
+        {/* Header — three ways to close the panel: click the X, press ESC,
+            or click the backdrop behind the panel. All wired; the X button
+            advertises the ESC shortcut via its tooltip. */}
         <div className="flex-shrink-0 px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <h2 className="text-[16px] font-extrabold text-[var(--text-primary)]">{title}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Close (or press Escape)"
+            title="Close (Esc)"
             className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] bg-transparent border-none cursor-pointer"
           >
             <X size={16} weight="bold" />

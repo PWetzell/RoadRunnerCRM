@@ -103,7 +103,7 @@ export default function KPIWidget({ widget }: { widget: WidgetConfig }) {
       case 'kpi-total-revenue': {
         const won = deals.filter((d) => d.stage === 'closed-won');
         const sum = won.reduce((s, d) => s + d.amount, 0);
-        return { value: fmtMoney(sum), subtitle: `${won.length} placements` };
+        return { value: fmtMoney(sum), subtitle: `${won.length} deals` };
       }
       case 'kpi-deals-count': {
         return { value: String(deals.length), subtitle: `${contacts.length} contacts` };

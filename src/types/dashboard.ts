@@ -91,6 +91,15 @@ export interface WidgetConfig {
   subtitleColor?: string;
   /** Secondary "subtitle" text size scale. */
   subtitleSize?: ContentTextSize;
+  /** Inner stat-tile background color — for cards that contain small
+   *  per-metric tiles (e.g. AI Usage: Calls Today / This Month). Hex. */
+  innerTileBg?: string;
+  /** Text color for inline tags/chips (e.g. user role badges). */
+  tagTextColor?: string;
+  /** Background color for inline tags/chips. */
+  tagBg?: string;
+  /** Border color for inline tags/chips. */
+  tagBorderColor?: string;
   /** Free-form config bag for widgets that need state (e.g., todo items). */
   config?: Record<string, unknown>;
 }
@@ -116,7 +125,8 @@ export const WIDGET_ICON_SUGGESTIONS: Partial<Record<WidgetType, string[]>> = {
 /** Where a new widget goes when you add it via the toolbar. */
 export type InsertPosition = 'end' | 'start' | { afterId: string };
 
-/** Palette offered by the header-color picker. Neutral B2B friendly set. */
+/** Saturated colors offered by the widget color pickers. Neutral B2B set
+ *  with Ink (near-black) + Paper (white) as neutrals at the end of the row. */
 export const WIDGET_HEADER_COLORS: { value: string; name: string }[] = [
   { value: '#1955A6', name: 'Brand' },
   { value: '#0E7490', name: 'Teal' },
@@ -126,6 +136,25 @@ export const WIDGET_HEADER_COLORS: { value: string; name: string }[] = [
   { value: '#7C3AED', name: 'Violet' },
   { value: '#BE185D', name: 'Pink' },
   { value: '#475569', name: 'Slate' },
+  { value: '#0F172A', name: 'Ink' },           // near-black for text/heavy accents
+  { value: '#FFFFFF', name: 'Paper' },         // pure white for backgrounds on dark themes
+];
+
+/** Matching tint for each saturated color above — same hue, medium-light.
+ *  Calibrated to be clearly colored (not barely-there pastel) while still
+ *  reading as a tint suitable for backgrounds + tag fills. Ordering matches
+ *  WIDGET_HEADER_COLORS exactly so the picker can show both rows paired. */
+export const WIDGET_HEADER_TINTS: { value: string; name: string }[] = [
+  { value: '#BFDBFE', name: 'Brand tint' },    // blue-200
+  { value: '#99F6E4', name: 'Teal tint' },     // teal-200
+  { value: '#BBF7D0', name: 'Green tint' },    // green-200
+  { value: '#FDE68A', name: 'Amber tint' },    // amber-200
+  { value: '#FECACA', name: 'Red tint' },      // red-200
+  { value: '#DDD6FE', name: 'Violet tint' },   // violet-200
+  { value: '#FBCFE8', name: 'Pink tint' },     // pink-200
+  { value: '#E2E8F0', name: 'Slate tint' },    // slate-200
+  { value: '#94A3B8', name: 'Gray' },          // slate-400 — the "Ink tint"
+  { value: '#E8EEF5', name: 'Off-white' },     // between slate-100 and slate-200 — distinctly off-white, not a whisper
 ];
 
 /** A saved dashboard layout. */

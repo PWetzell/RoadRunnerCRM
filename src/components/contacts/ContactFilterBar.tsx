@@ -4,6 +4,7 @@ import { Plus, Rows, SquaresFour } from '@phosphor-icons/react';
 import { useSearchParams } from 'next/navigation';
 import { useContactStore } from '@/stores/contact-store';
 import FavoritesToggle from '@/components/lists/FavoritesToggle';
+import PrivateToggle from '@/components/contacts/PrivateToggle';
 
 interface ContactFilterBarProps {
   onAddContact?: () => void;
@@ -68,6 +69,10 @@ export default function ContactFilterBar({ onAddContact }: ContactFilterBarProps
 
       <div className={`transition-opacity ${listFilterActive ? 'opacity-60' : ''}`}>
         <FavoritesToggle />
+      </div>
+
+      <div className={`transition-opacity ${listFilterActive ? 'opacity-60' : ''}`}>
+        <PrivateToggle />
       </div>
 
       {/* New Contact */}

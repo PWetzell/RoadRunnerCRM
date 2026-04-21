@@ -3,10 +3,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+interface ColumnPinning {
+  left: string[];
+  right: string[];
+}
+
 interface GridLayout {
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
   columnWidths: Record<string, number>;
+  columnPinning: ColumnPinning;
 }
 
 interface GridLayoutStore {
@@ -16,16 +22,22 @@ interface GridLayoutStore {
   setColumnVisibility: (gridId: string, vis: Record<string, boolean>) => void;
   setColumnWidths: (gridId: string, widths: Record<string, number>) => void;
   updateColumnWidth: (gridId: string, colId: string, width: number) => void;
+  setColumnPinning: (gridId: string, pinning: ColumnPinning) => void;
   resetGrid: (gridId: string) => void;
 }
 
-const EMPTY_LAYOUT: GridLayout = { columnOrder: [], columnVisibility: {}, columnWidths: {} };
+const EMPTY_LAYOUT: GridLayout = { columnOrder: [], columnVisibility: {}, columnWidths: {}, columnPinning: { left: [], right: [] } };
 
 export const useGridLayoutStore = create<GridLayoutStore>()(
   persist(
     (set, get) => ({
       grids: {},
-      getGrid: (gridId) => get().grids[gridId] || EMPTY_LAYOUT,
+      getGrid: (gridId) => {
+        const g = get().grids[gridId];
+        if (!g) return EMPTY_LAYOUT;
+        // Defensive hydration: older persisted layouts may predate columnPinning.
+        return g.columnPinning ? g : { ...g, columnPinning: { left: [], right: [] } };
+      },
       setColumnOrder: (gridId, order) => set((s) => ({
         grids: { ...s.grids, [gridId]: { ...(s.grids[gridId] || EMPTY_LAYOUT), columnOrder: order } },
       })),
@@ -41,6 +53,9 @@ export const useGridLayoutStore = create<GridLayoutStore>()(
           grids: { ...s.grids, [gridId]: { ...grid, columnWidths: { ...grid.columnWidths, [colId]: width } } },
         };
       }),
+      setColumnPinning: (gridId, pinning) => set((s) => ({
+        grids: { ...s.grids, [gridId]: { ...(s.grids[gridId] || EMPTY_LAYOUT), columnPinning: pinning } },
+      })),
       resetGrid: (gridId) => set((s) => {
         const next = { ...s.grids };
         delete next[gridId];

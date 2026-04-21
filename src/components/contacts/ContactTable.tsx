@@ -7,6 +7,7 @@ import { useContactStore } from '@/stores/contact-store';
 import { Contact, ContactWithEntries } from '@/types/contact';
 import { initials, fmtDate, getAvatarColor } from '@/lib/utils';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { toast } from '@/lib/toast';
 
 export default function ContactTable() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function ContactTable() {
   const sortDir = useContactStore((s) => s.sortDir);
   const toggleSort = useContactStore((s) => s.toggleSort);
   const deleteContact = useContactStore((s) => s.deleteContact);
+  const addContact = useContactStore((s) => s.addContact);
   const [deleteTarget, setDeleteTarget] = useState<ContactWithEntries | null>(null);
 
   const filteredContacts = useMemo(() => {
@@ -100,7 +102,12 @@ export default function ContactTable() {
         confirmLabel="Delete Contact"
         onConfirm={() => {
           if (deleteTarget) {
-            deleteContact(deleteTarget.id);
+            const snapshot = deleteTarget;
+            deleteContact(snapshot.id);
+            toast.success('Contact deleted', {
+              description: snapshot.name,
+              action: { label: 'Undo', onClick: () => addContact(snapshot) },
+            });
             setDeleteTarget(null);
           }
         }}

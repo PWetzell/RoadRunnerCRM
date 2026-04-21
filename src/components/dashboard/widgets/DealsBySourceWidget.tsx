@@ -5,7 +5,10 @@ import { WidgetConfig } from '@/types/dashboard';
 import { useSalesStore } from '@/stores/sales-store';
 import { DEAL_SOURCES, DealSource } from '@/types/deal';
 import Widget from '../Widget';
+import { useIsDark } from '@/hooks/useIsDark';
+import { paletteColor, ChartPaletteId } from '@/lib/chart-palettes';
 
+/** Native (default-palette) colors for each deal source. */
 const SOURCE_COLORS: Record<DealSource, string> = {
   Inbound: '#1955A6',
   Outbound: '#0E7490',
@@ -17,13 +20,21 @@ const SOURCE_COLORS: Record<DealSource, string> = {
 
 export default function DealsBySourceWidget({ widget }: { widget: WidgetConfig }) {
   const deals = useSalesStore((s) => s.deals);
+  const isDark = useIsDark();
+  const palette = (widget.config?.chartPalette as ChartPaletteId) || 'default';
 
   const rows = useMemo(() => {
-    return DEAL_SOURCES.map((source) => ({
-      source,
-      count: deals.filter((d) => d.source === source).length,
-    })).filter((r) => r.count > 0);
-  }, [deals]);
+    return DEAL_SOURCES.map((source, i) => {
+      const color = palette === 'default'
+        ? SOURCE_COLORS[source]
+        : paletteColor(palette, i, isDark);
+      return {
+        source,
+        count: deals.filter((d) => d.source === source).length,
+        color,
+      };
+    }).filter((r) => r.count > 0);
+  }, [deals, isDark, palette]);
 
   const total = rows.reduce((s, r) => s + r.count, 0) || 1;
 
@@ -45,7 +56,7 @@ export default function DealsBySourceWidget({ widget }: { widget: WidgetConfig }
               <div
                 key={r.source}
                 title={`${r.source}: ${r.count}`}
-                style={{ width: `${(r.count / total) * 100}%`, background: SOURCE_COLORS[r.source] }}
+                style={{ width: `${(r.count / total) * 100}%`, background: r.color }}
               />
             ))}
           </div>
@@ -53,7 +64,7 @@ export default function DealsBySourceWidget({ widget }: { widget: WidgetConfig }
           <ul className="flex flex-col gap-1 @md:gap-1.5 @xl:gap-2">
             {rows.map((r) => (
               <li key={r.source} className="flex items-center gap-1.5 @md:gap-2 @xl:gap-3 text-[calc(11px*var(--content-scale,1))] @md:text-[calc(12px*var(--content-scale,1))] @xl:text-[calc(14px*var(--content-scale,1))]">
-                <span className="w-2 h-2 @md:w-2.5 @md:h-2.5 @xl:w-3 @xl:h-3 rounded-full flex-shrink-0" style={{ background: SOURCE_COLORS[r.source] }} />
+                <span className="w-2 h-2 @md:w-2.5 @md:h-2.5 @xl:w-3 @xl:h-3 rounded-full flex-shrink-0" style={{ background: r.color }} />
                 <span className="text-[var(--widget-primary-text)] font-semibold flex-1">{r.source}</span>
                 <span className="text-[var(--widget-tertiary-text)]">{r.count} · {Math.round((r.count / total) * 100)}%</span>
               </li>

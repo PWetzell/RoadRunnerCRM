@@ -24,6 +24,14 @@ export interface CardStyle {
   subtitleColor?: string;
   subtitleSize?: ContentTextSize;
   contentAlign?: 'left' | 'center' | 'right';
+  /** Background color for inner stat tiles (when the card body contains them). */
+  innerTileBg?: string;
+  /** Text color for inline tags/chips (e.g. role badges). */
+  tagTextColor?: string;
+  /** Background color for inline tags/chips. */
+  tagBg?: string;
+  /** Border color for inline tags/chips. */
+  tagBorderColor?: string;
 }
 
 const EMPTY_STYLE: CardStyle = {};

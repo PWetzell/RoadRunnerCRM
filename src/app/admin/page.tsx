@@ -118,22 +118,99 @@ export default function AdminPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ConfigurableCard cardId="admin-user-mgmt" title="User Management" defaultIconName="UsersThree" headerExtra={<button className="flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer hover:underline"><Plus size={12} weight="bold" /> Invite</button>}>
-              {DEMO_USERS.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--border-subtle)] last:border-0">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white flex-shrink-0" style={{ background: u.color }}>{u.name.split(' ').map(n=>n[0]).join('')}</div>
-                  <div className="flex-1 min-w-0"><div className="text-[12px] font-bold text-[var(--text-primary)] truncate">{u.name}</div><div className="text-[10px] text-[var(--text-tertiary)] truncate">{u.email}</div></div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${u.role === 'Admin' ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]' : 'bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--border)]'}`}>{u.role}</span>
-                  <span className={`text-[10px] font-bold ${u.status === 'Active' ? 'text-[var(--success)]' : 'text-[var(--text-tertiary)]'}`}>{u.status}</span>
-                </div>
-              ))}
+              {DEMO_USERS.map((u) => {
+                // Admin tag uses brand colors by default; other roles use neutral.
+                // Both override with the card's custom tag vars when set.
+                const isAdmin = u.role === 'Admin';
+                const tagBg = isAdmin ? 'var(--card-tag-bg, var(--brand-bg))' : 'var(--card-tag-bg, var(--surface-raised))';
+                const tagText = isAdmin ? 'var(--card-tag-text, var(--brand-primary))' : 'var(--card-tag-text, var(--text-secondary))';
+                const tagBorder = isAdmin ? 'var(--card-tag-border, var(--brand-primary))' : 'var(--card-tag-border, var(--border))';
+                return (
+                  <div key={u.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--border-subtle)] last:border-0">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white flex-shrink-0" style={{ background: u.color }}>{u.name.split(' ').map(n=>n[0]).join('')}</div>
+                    <div className="flex-1 min-w-0">
+                      {/* Name reads the card's Value (content) color + size so the
+                          existing "Value" typography tier controls it. */}
+                      <div
+                        className="font-bold truncate"
+                        style={{
+                          color: 'var(--widget-primary-text, var(--text-primary))',
+                          fontSize: 'calc(12px * var(--content-scale, 1))',
+                        }}
+                      >
+                        {u.name}
+                      </div>
+                      {/* Email reads the Subtitle tier. */}
+                      <div
+                        className="truncate"
+                        style={{
+                          color: 'var(--widget-tertiary-text, var(--text-tertiary))',
+                          fontSize: 'calc(10px * var(--widget-subtitle-scale, 1))',
+                        }}
+                      >
+                        {u.email}
+                      </div>
+                    </div>
+                    <span
+                      className="px-2 py-0.5 rounded-full font-bold border"
+                      style={{
+                        background: tagBg,
+                        color: tagText,
+                        borderColor: tagBorder,
+                        fontSize: 'calc(10px * var(--widget-subtitle-scale, 1))',
+                      }}
+                    >
+                      {u.role}
+                    </span>
+                    <span className={`text-[10px] font-bold ${u.status === 'Active' ? 'text-[var(--success)]' : 'text-[var(--text-tertiary)]'}`}>{u.status}</span>
+                  </div>
+                );
+              })}
             </ConfigurableCard>
 
             <ConfigurableCard cardId="admin-roles" title="Roles & Permissions" defaultIconName="ShieldCheck" headerExtra={<button className="flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer hover:underline"><Plus size={12} weight="bold" /> New Role</button>}>
               {ROLES.map((r) => (
                 <div key={r.id} className="py-2.5 border-b border-[var(--border-subtle)] last:border-0">
-                  <div className="flex items-center justify-between mb-1"><span className="text-[12px] font-bold text-[var(--text-primary)]">{r.name}</span><span className="text-[10px] text-[var(--text-tertiary)]">{r.users} user{r.users!==1?'s':''}</span></div>
-                  <div className="text-[10px] text-[var(--text-secondary)] mb-1">{r.desc}</div>
-                  <div className="flex gap-1 flex-wrap">{r.perms.map(p=><span key={p} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--surface-raised)] text-[var(--text-tertiary)]">{p}</span>)}</div>
+                  <div className="flex items-center justify-between mb-1">
+                    {/* Role name reads the Value color + size */}
+                    <span
+                      className="font-bold"
+                      style={{
+                        color: 'var(--widget-primary-text, var(--text-primary))',
+                        fontSize: 'calc(12px * var(--content-scale, 1))',
+                      }}
+                    >
+                      {r.name}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-tertiary)]">{r.users} user{r.users!==1?'s':''}</span>
+                  </div>
+                  {/* Description reads the Subtitle tier */}
+                  <div
+                    className="mb-1"
+                    style={{
+                      color: 'var(--widget-tertiary-text, var(--text-secondary))',
+                      fontSize: 'calc(10px * var(--widget-subtitle-scale, 1))',
+                    }}
+                  >
+                    {r.desc}
+                  </div>
+                  {/* Permission chips pick up the card's tag vars */}
+                  <div className="flex gap-1 flex-wrap">
+                    {r.perms.map((p) => (
+                      <span
+                        key={p}
+                        className="px-1.5 py-0.5 rounded font-bold border"
+                        style={{
+                          background: 'var(--card-tag-bg, var(--surface-raised))',
+                          color: 'var(--card-tag-text, var(--text-tertiary))',
+                          borderColor: 'var(--card-tag-border, transparent)',
+                          fontSize: 'calc(9px * var(--widget-subtitle-scale, 1))',
+                        }}
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </ConfigurableCard>
@@ -173,9 +250,19 @@ export default function AdminPage() {
   );
 }
 
+/**
+ * Inner tile with ok/warn status coloring.
+ *
+ * When the parent ConfigurableCard sets a custom `innerTileBg`, it's exposed
+ * as the CSS var `--card-inner-tile-bg` and used here — otherwise we fall
+ * back to the status-appropriate success/warning tint.
+ */
 function HealthItem({ label, ok, detail }: { label: string; ok?: boolean; detail: string }) {
   return (
-    <div className="rounded-lg p-3" style={{ background: ok ? 'var(--success-bg)' : 'var(--warning-bg)' }}>
+    <div
+      className="rounded-lg p-3"
+      style={{ background: `var(--card-inner-tile-bg, ${ok ? 'var(--success-bg)' : 'var(--warning-bg)'})` }}
+    >
       <div className="flex items-center gap-1.5 mb-1" style={{ color: ok ? 'var(--success)' : 'var(--warning)' }}>
         {ok ? <CheckCircle size={14} weight="fill" /> : <Warning size={14} weight="fill" />}
         <span className="text-[11px] font-bold">{label}</span>
@@ -185,19 +272,37 @@ function HealthItem({ label, ok, detail }: { label: string; ok?: boolean; detail
   );
 }
 
+/**
+ * Inner KPI tile (Calls Today, This Month, Model, Avg Response on AI Usage).
+ * Reads `--card-inner-tile-bg` so the parent ConfigurableCard's inner-tile-bg
+ * setting cascades in without prop drilling.
+ */
 function MetricBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[var(--surface-raised)] rounded-lg p-3">
+    <div className="rounded-lg p-3" style={{ background: 'var(--card-inner-tile-bg, var(--surface-raised))' }}>
       <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">{label}</div>
       <AnimatedCounter value={value} className="text-[16px] font-extrabold text-[var(--text-primary)] leading-none" />
     </div>
   );
 }
 
+/**
+ * Data Management action button (Export, Import, Purge). Non-danger variants
+ * read `--card-inner-tile-bg` so the parent ConfigurableCard's inner-tile-bg
+ * cascades in. Danger variants keep their danger-tinted background for safety.
+ */
 function ActionBtn({ icon, label, desc, danger }: { icon: React.ReactNode; label: string; desc: string; danger?: boolean }) {
   return (
-    <button className={`flex items-start gap-3 p-3 rounded-lg text-left border cursor-pointer transition-all ${danger ? 'border-[var(--danger)] bg-[var(--danger-bg)]' : 'border-[var(--border)] bg-[var(--surface-card)] hover:border-[var(--brand-primary)]'}`}>
-      <div className={`w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0 ${danger ? 'bg-[var(--danger)] text-white' : 'bg-[var(--surface-raised)] text-[var(--text-secondary)]'}`}>{icon}</div>
+    <button
+      className={`flex items-start gap-3 p-3 rounded-lg text-left border cursor-pointer transition-all ${danger ? 'border-[var(--danger)]' : 'border-[var(--border)] hover:border-[var(--brand-primary)]'}`}
+      style={{ background: danger ? 'var(--danger-bg)' : 'var(--card-inner-tile-bg, var(--surface-card))' }}
+    >
+      <div
+        className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0 text-[var(--text-secondary)]"
+        style={{ background: danger ? 'var(--danger)' : 'var(--card-inner-tile-bg, var(--surface-raised))', color: danger ? 'white' : undefined }}
+      >
+        {icon}
+      </div>
       <div><div className={`text-[12px] font-bold ${danger ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>{label}</div><div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{desc}</div></div>
     </button>
   );

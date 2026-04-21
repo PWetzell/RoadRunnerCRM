@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Sparkle, Buildings, Warning, CheckCircle, XCircle, MagnifyingGlass,
-  Handshake, UserPlus, Funnel, Clock, ArrowRight,
+  Handshake, UserPlus, Funnel, Clock, ArrowRight, PencilSimple, Trash,
 } from '@phosphor-icons/react';
 import { useSalesStore } from '@/stores/sales-store';
 import { useContactStore } from '@/stores/contact-store';
@@ -18,6 +18,8 @@ import FavoriteCell from '@/components/lists/FavoriteCell';
 import { useListStore } from '@/stores/list-store';
 import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
 import { useSearchParams } from 'next/navigation';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { toast } from '@/lib/toast';
 
 const STAGE_META_MAP = RECRUITING_STAGES.reduce((acc, s) => {
   acc[s.id] = s;
@@ -238,10 +240,13 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
 export default function RecruitingList({ search }: { search: string }) {
   const router = useRouter();
   const deals = useSalesStore((s) => s.deals);
+  const deleteDeal = useSalesStore((s) => s.deleteDeal);
+  const addDeal = useSalesStore((s) => s.addDeal);
   const contacts = useContactStore((s) => s.contacts);
   const memberships = useListStore((s) => s.memberships);
   const searchParams = useSearchParams();
   const favOnly = searchParams.get('fav') === '1';
+  const [deleteTarget, setDeleteTarget] = useState<CandidateCard | null>(null);
 
   const isDark = useIsDark();
   const favIds = useMemo(
@@ -285,17 +290,58 @@ export default function RecruitingList({ search }: { search: string }) {
   }, [deals, contacts, search, favOnly, memberships]);
 
   return (
-    <SharedDataGrid<CandidateCard>
-      data={data}
-      columns={columns}
-      gridId="recruiting"
-      onRowClick={(c) => c.dealId && router.push(`/sales/${c.dealId}`)}
-      defaultSorting={[{ id: 'matchScore', desc: true }]}
-      countLabel="candidates"
-      rowClassName={(c) => {
-        const status = computeStatus(c);
-        return status === 'Stalled' ? 'bg-[var(--warning-bg)]/40' : '';
-      }}
-    />
+    <>
+      <SharedDataGrid<CandidateCard>
+        data={data}
+        columns={columns}
+        gridId="recruiting"
+        onRowClick={(c) => c.dealId && router.push(`/sales/${c.dealId}`)}
+        defaultSorting={[{ id: 'matchScore', desc: true }]}
+        countLabel="candidates"
+        rowClassName={(c) => {
+          const status = computeStatus(c);
+          return status === 'Stalled' ? 'bg-[var(--warning-bg)]/40' : '';
+        }}
+        renderActions={(c) => (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); if (c.dealId) router.push(`/sales/${c.dealId}`); }}
+              className="p-1 text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
+              title="Edit candidate"
+            >
+              <PencilSimple size={14} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}
+              className="p-1 text-[var(--text-tertiary)] hover:text-[var(--danger)] bg-transparent border-none cursor-pointer"
+              title="Delete candidate"
+            >
+              <Trash size={14} />
+            </button>
+          </>
+        )}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete candidate?"
+        message={deleteTarget ? <>Remove <strong>{deleteTarget.name}</strong> from recruiting?</> : ''}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => {
+          if (deleteTarget?.dealId) {
+            const id = deleteTarget.dealId;
+            const snapshot = deals.find((d) => d.id === id);
+            deleteDeal(id);
+            toast.success('Candidate deleted', {
+              description: deleteTarget.name,
+              action: snapshot ? { label: 'Undo', onClick: () => addDeal(snapshot) } : undefined,
+            });
+          }
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 }

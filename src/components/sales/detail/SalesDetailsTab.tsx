@@ -180,8 +180,8 @@ export default function SalesDetailsTab({ deal, person, org, completeness }: Pro
             onCancel={() => setEditing(null)}
             onSave={saveEngagement}
             fields={[
-              { key: 'name', label: 'Placement title', value: deal.name, full: true, required: true, rules: [maxLength('Placement title', 120)] },
-              { key: 'amount', label: 'Placement fee', type: 'number', value: deal.amount || '', placeholder: '0', required: true, rules: [isPositiveNumber()] },
+              { key: 'name', label: 'Deal title', value: deal.name, full: true, required: true, rules: [maxLength('Deal title', 120)] },
+              { key: 'amount', label: 'Deal amount', type: 'number', value: deal.amount || '', placeholder: '0', required: true, rules: [isPositiveNumber()] },
               { key: 'expectedCloseDate', label: 'Expected close', type: 'date', value: deal.expectedCloseDate, required: true, rules: [isDate()] },
               { key: 'targetStartDate', label: 'Target start', type: 'date', value: deal.targetStartDate, rules: [isDate()] },
               { key: 'source', label: 'Source', type: 'select', value: deal.source, options: [...DEAL_SOURCES] },
@@ -193,8 +193,8 @@ export default function SalesDetailsTab({ deal, person, org, completeness }: Pro
           />
         ) : (
           <>
-            <FieldRow label="Placement title" value={deal.name} />
-            <FieldRow label="Placement fee" value={deal.amount ? `$${deal.amount.toLocaleString()}` : undefined} />
+            <FieldRow label="Deal title" value={deal.name} />
+            <FieldRow label="Deal amount" value={deal.amount ? `$${deal.amount.toLocaleString()}` : undefined} />
             <FieldRow label="Expected close" value={deal.expectedCloseDate ? fmtDate(deal.expectedCloseDate) : undefined} />
             <FieldRow label="Target start" value={deal.targetStartDate ? fmtDate(deal.targetStartDate) : undefined} />
             <FieldRow label="Source" value={deal.source} />

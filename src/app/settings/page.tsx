@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Sun, Moon, Bell, Warning, Sparkle, X as XIcon, Users, CurrencyDollar, UsersFour, Files, Lock, PencilSimple, House, ChartPieSlice, Rows } from '@phosphor-icons/react';
 import { isEmail } from '@/lib/validation';
 import { DENSITY_LABELS, DENSITY_HINTS, GridDensity } from '@/lib/grid-density';
+import { toast } from '@/lib/toast';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -66,12 +67,14 @@ export default function SettingsPage() {
     if (nameError) return;
     updateUser({ name: nameVal.trim() });
     setEditingName(false);
+    toast.success('Name updated');
   }
 
   function saveEmail() {
     if (emailError) return;
     updateUser({ email: emailVal.trim() });
     setEditingEmail(false);
+    toast.success('Email updated');
   }
 
   function savePassword() {
@@ -82,6 +85,7 @@ export default function SettingsPage() {
     setNewPw('');
     setConfirmPw('');
     setTimeout(() => setPwSaved(false), 3000);
+    toast.success('Password changed');
   }
 
   return (
@@ -116,7 +120,15 @@ export default function SettingsPage() {
               <button
                 role="switch"
                 aria-checked={aiEnabled}
-                onClick={() => setAiEnabled(!aiEnabled)}
+                onClick={() => {
+                  const next = !aiEnabled;
+                  setAiEnabled(next);
+                  toast.info(next ? 'AI features enabled' : 'AI features disabled', {
+                    description: next
+                      ? 'Duplicate detection, enrichment, and insights are now active.'
+                      : 'All AI-branded panels hidden app-wide.',
+                  });
+                }}
                 className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer border-none ${aiEnabled ? 'bg-[var(--ai)]' : 'bg-[var(--border-strong)]'}`}
               >
                 <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${aiEnabled ? 'left-[18px]' : 'left-0.5'}`} />

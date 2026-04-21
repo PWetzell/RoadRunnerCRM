@@ -10,6 +10,8 @@ import { runReport, ReportResult } from '@/lib/custom-report-engine';
 import { CustomReport } from '@/types/custom-report';
 import Widget from '../Widget';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import { useIsDark } from '@/hooks/useIsDark';
+import { paletteColor, ChartPaletteId } from '@/lib/chart-palettes';
 
 /**
  * Renders a user-defined CustomReport. The widget's `config.reportId` points
@@ -21,6 +23,8 @@ export default function CustomReportWidget({ widget }: { widget: WidgetConfig })
   const contacts = useContactStore((s) => s.contacts);
   const documents = useDocumentStore((s) => s.documents);
   const reports = useCustomReportStore((s) => s.reports);
+  const isDark = useIsDark();
+  const palette = (widget.config?.chartPalette as ChartPaletteId) || 'default';
 
   const reportId = widget.config?.reportId as string | undefined;
   const report = useMemo(
@@ -30,8 +34,17 @@ export default function CustomReportWidget({ widget }: { widget: WidgetConfig })
 
   const result = useMemo<ReportResult | null>(() => {
     if (!report) return null;
-    return runReport(report, { deals, contacts, documents });
-  }, [report, deals, contacts, documents]);
+    const base = runReport(report, { deals, contacts, documents });
+    // Override group colors when a non-default palette is selected. Leaves
+    // the native report colors in place when the palette is 'default'.
+    if (palette !== 'default' && base.groups) {
+      return {
+        ...base,
+        groups: base.groups.map((g, i) => ({ ...g, color: paletteColor(palette, i, isDark) })),
+      };
+    }
+    return base;
+  }, [report, deals, contacts, documents, palette, isDark]);
 
   const title = widget.title || report?.name || 'Custom report';
   const defaultIconName = iconForDisplay(report?.display);

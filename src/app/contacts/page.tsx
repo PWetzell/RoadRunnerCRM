@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Topbar from '@/components/layout/Topbar';
 import DataGrid from '@/components/contacts/DataGrid';
 import ContactsCardView from '@/components/contacts/ContactsCardView';
@@ -10,16 +10,31 @@ import AIInsightsBar from '@/components/contacts/AIInsightsBar';
 import ContactSearchBar from '@/components/contacts/ContactSearchBar';
 import SlidePanel from '@/components/ui/SlidePanel';
 import ListFilterChip from '@/components/lists/ListFilterChip';
+import { ContactTypeChooser } from '@/components/contact-flow/ContactTypeChooser';
 import { useContactStore } from '@/stores/contact-store';
 import { useUserStore } from '@/stores/user-store';
-import { Users, Buildings } from '@phosphor-icons/react';
 
 export default function ContactsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const insightsBars = useUserStore((s) => s.insightsBars);
   const aiEnabled = useUserStore((s) => s.aiEnabled);
   const view = useContactStore((s) => s.view);
-  const [newContactType, setNewContactType] = useState<'person' | 'company' | null>(null);
+  // Single-flag state now: the slide panel shows the chooser. Selecting
+  // Person/Company/resume-upload navigates to the dedicated full-page flow.
+  const [chooserOpen, setChooserOpen] = useState(false);
+
+  // Auto-open the chooser panel when the page loads with `?add=1`. Used by
+  // the breadcrumbs inside /contacts/new/person and /contacts/new/company:
+  // clicking "Add Person" / "Add Company" routes back here and opens the
+  // slide panel instead of the deprecated /contacts/new full page.
+  useEffect(() => {
+    if (searchParams.get('add') === '1') {
+      setChooserOpen(true);
+      // Strip the query param so a refresh doesn't re-open the panel.
+      router.replace('/contacts', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   return (
     <>
@@ -29,7 +44,7 @@ export default function ContactsPage() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="px-5 pt-5 pb-2 flex flex-col gap-3 items-start">
           {aiEnabled && insightsBars?.contacts && <AIInsightsBar />}
-          <ContactFilterBar onAddContact={() => setNewContactType('person')} />
+          <ContactFilterBar onAddContact={() => setChooserOpen(true)} />
           <div className="w-full">
             <ListFilterChip />
           </div>
@@ -40,78 +55,13 @@ export default function ContactsPage() {
       </div>
 
       <SlidePanel
-        open={newContactType === 'person'}
-        onClose={() => setNewContactType(null)}
-        title="New Person"
-        width={620}
+        open={chooserOpen}
+        onClose={() => setChooserOpen(false)}
+        title="Add New Contact"
+        width={640}
       >
-        <div className="p-5">
-          {/* Quick type switcher */}
-          <div className="flex gap-2 mb-5">
-            <button
-              onClick={() => setNewContactType('person')}
-              className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-[13px] font-bold border cursor-pointer transition-all ${
-                newContactType === 'person'
-                  ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
-                  : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--brand-primary)]'
-              }`}
-            >
-              <Users size={16} weight="duotone" /> Person
-            </button>
-            <button
-              onClick={() => setNewContactType('company')}
-              className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-[13px] font-bold border cursor-pointer transition-all ${
-                newContactType === 'company'
-                  ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
-                  : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--brand-primary)]'
-              }`}
-            >
-              <Buildings size={16} weight="duotone" /> Company
-            </button>
-          </div>
-          {/* Embed the appropriate new-contact form */}
-          <div className="text-[12px] text-[var(--text-tertiary)] text-center py-8">
-            <a href={`/contacts/new/${newContactType}`} className="text-[var(--brand-primary)] font-bold no-underline hover:underline">
-              Open full {newContactType === 'company' ? 'company' : 'person'} form →
-            </a>
-          </div>
-        </div>
-      </SlidePanel>
-
-      <SlidePanel
-        open={newContactType === 'company'}
-        onClose={() => setNewContactType(null)}
-        title="New Company"
-        width={620}
-      >
-        <div className="p-5">
-          <div className="flex gap-2 mb-5">
-            <button
-              onClick={() => setNewContactType('person')}
-              className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-[13px] font-bold border cursor-pointer transition-all ${
-                newContactType === 'person'
-                  ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
-                  : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--brand-primary)]'
-              }`}
-            >
-              <Users size={16} weight="duotone" /> Person
-            </button>
-            <button
-              onClick={() => setNewContactType('company')}
-              className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-[13px] font-bold border cursor-pointer transition-all ${
-                newContactType === 'company'
-                  ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
-                  : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--brand-primary)]'
-              }`}
-            >
-              <Buildings size={16} weight="duotone" /> Company
-            </button>
-          </div>
-          <div className="text-[12px] text-[var(--text-tertiary)] text-center py-8">
-            <a href={`/contacts/new/${newContactType}`} className="text-[var(--brand-primary)] font-bold no-underline hover:underline">
-              Open full {newContactType === 'company' ? 'company' : 'person'} form →
-            </a>
-          </div>
+        <div className="p-6">
+          <ContactTypeChooser onCancel={() => setChooserOpen(false)} />
         </div>
       </SlidePanel>
     </>
