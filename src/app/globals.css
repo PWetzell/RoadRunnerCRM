@@ -1,0 +1,766 @@
+@import "tailwindcss";
+
+/* ============================================================
+   ACME DESIGN SYSTEM TOKENS — LIGHT MODE (default)
+   Ported from navigator-crm-themed.html lines 15-104
+   ============================================================ */
+:root {
+  --brand-primary:  #1955A6;
+  --brand-dark:     #0B2F5C;
+  --brand-light:    #A8C4E4;
+  --brand-bg:       #E7EFF7;
+
+  --surface-bg:     #FFFFFF;
+  --surface-card:   #FFFFFF;
+  --surface-raised: #F8FAFC;
+  --surface-sunken: #F1F5F9;
+  /* Grid header — the darker of the two "off-white" tints so column titles
+     clearly outrank alternating rows in the visual hierarchy. */
+  --grid-header-bg:     #EDF2F8;
+  --grid-header-border: #CBD5E1;
+  /* Zebra row — the lighter tint so stripes are visible but subordinate to
+     the header. */
+  --zebra-row:      #F1F5F9;
+  --zebra-row-hover:#E6ECF3;
+
+  --border:         #E2E8F0;
+  --border-subtle:  #F1F5F9;
+  --border-strong:  #CBD5E1;
+
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary:  #64748B;
+  --text-on-primary:#FFFFFF;
+
+  --success:     #059669;  --success-bg: #ECFDF5;
+  --warning:     #D97706;  --warning-bg: #FFFBEB;
+  --danger:      #DC2626;  --danger-bg:  #FEF2F2;
+  --info:        #1FA4B6;  --info-bg:    #E0F5F8;
+
+  --ai:          #1FA4B6;  --ai-bg:      #E0F5F8;
+  --ai-border:   #7DD4DF;  --ai-dark:    #137585;
+
+  /* Accent palette — avatars, charts, tags */
+  --accent-yellow:    #F5D44B;  --accent-yellow-dk: #D4A61A;  --accent-yellow-bg: #FFEBB8;
+  --accent-pink:      #D96FA8;  --accent-pink-dk:   #44AE7C;  --accent-pink-bg:   #F7D7D7;
+  --accent-cyan:      #3BAFC4;  --accent-cyan-dk:   #247A8A;  --accent-cyan-bg:   #D2F3F9;
+  --accent-purple:    #A255FF;  --accent-purple-dk: #6A0FB8;  --accent-purple-bg: #EACEFF;
+
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 12px; --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --sidebar-w: 224px;
+  --topbar-h: 56px;
+
+  --sidebar-bg: var(--brand-dark);
+  --sidebar-text: rgba(255,255,255,0.52);
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover: rgba(255,255,255,0.07);
+  --sidebar-active-bg: var(--brand-primary);
+  --sidebar-border: rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   DARK MODE OVERRIDES
+   ============================================================ */
+[data-theme="dark"] {
+  --brand-primary:  #3B82F6;
+  --brand-dark:     #1E40AF;
+  --brand-light:    #60A5FA;
+  --brand-bg:       #0B1440;
+
+  --surface-bg:     #080F1A;
+  --surface-card:   #0B1628;
+  --surface-raised: #0F1E35;
+  --surface-sunken: #0F1E35;
+  /* Grid header — the stronger of the two tints above --surface-card so
+     column titles outrank alternating rows in the visual hierarchy. */
+  --grid-header-bg:     #172A47;
+  --grid-header-border: #2A3E5C;
+  /* Zebra row — the subtler tint so stripes are visible but subordinate to
+     the header. */
+  --zebra-row:      #132540;
+  --zebra-row-hover:#1A2F4E;
+
+  --border:         #1B2F48;
+  --border-subtle:  #0F1E35;
+  --border-strong:  #3D5C78;
+
+  --text-primary:   #DDE8F4;
+  --text-secondary: #93B4CE;
+  --text-tertiary:  #6E96B3;
+
+  --success:     #10B981;  --success-bg: #0A2E1F;
+  --warning:     #F59E0B;  --warning-bg: #2D1F00;
+  --danger:      #F87171;  --danger-bg:  #2D1216;
+  --info:        #1FA4B6;  --info-bg:    #0A3A42;
+
+  --ai:          #1FA4B6;  --ai-bg:      #0A3A42;
+  --ai-border:   #137585;  --ai-dark:    #7DD4DF;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+
+  --sidebar-bg: #0B1628;
+  --sidebar-text: #7A9AB8;
+  --sidebar-text-active: #DDE8F4;
+  --sidebar-hover: #0F1E35;
+  --sidebar-active-bg: #0F1E35;
+  --sidebar-border: #1B2F48;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-mulish), 'Mulish', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-bg);
+  transition: background 0.3s, color 0.3s;
+}
+
+a { color: var(--brand-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+aside a, aside a:hover { text-decoration: none !important; }
+
+/* Tiptap editor styles */
+.tiptap { outline: none; }
+.tiptap p { margin: 0.25em 0; }
+.tiptap ul { padding-left: 1.5em; margin: 0.25em 0; }
+.tiptap li { margin: 0.1em 0; }
+.tiptap a { color: var(--brand-primary); text-decoration: underline; }
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left; color: var(--text-tertiary); pointer-events: none; height: 0;
+}
+
+/* Hide Next.js dev tools overlay */
+[data-nextjs-dev-tools-button] { display: none !important; }
+#next-logo { display: none !important; }
+button[aria-label="Open Next.js Dev Tools"] { display: none !important; }
+
+/* Scrollbar */
+html, body, main, aside, header {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html, body { background: var(--sidebar-bg) !important; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* Skeleton shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--surface-raised) 0%, var(--border-subtle) 50%, var(--surface-raised) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Animations */
+@keyframes fieldSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes aiFlash {
+  0% { background: var(--ai); color: white; }
+  100% { background: var(--ai-bg); color: var(--text-primary); }
+}
+@keyframes aiAppear {
+  from { opacity: 0; transform: scale(0.75); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes saveFlash {
+  0% { border-color: var(--success); box-shadow: 0 0 0 3px var(--success-bg); }
+  100% { border-color: var(--border); box-shadow: none; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Drag and drop card states */
+.dragging-card {
+  opacity: 0.4;
+  transform: scale(0.97);
+  box-shadow: var(--shadow-lg);
+}
+
+.drag-over-top {
+  border-top: 3px solid var(--brand-primary) !important;
+  margin-top: -3px;
+}
+
+.drag-over-left {
+  border-left: 3px solid var(--brand-primary) !important;
+  margin-left: -3px;
+}
+
+.drag-over-right {
+  border-right: 3px solid var(--brand-primary) !important;
+  margin-right: -3px;
+}
+
+.drop-zone-highlight {
+  border: 2px dashed var(--brand-primary) !important;
+  background: var(--brand-bg);
+  border-radius: var(--radius-lg);
+}
+
+@keyframes cardDrop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card-just-dropped {
+  animation: cardDrop 0.3s ease-out;
+}
+
+.section-card {
+  transition: opacity 0.2s, transform 0.2s, border-color 0.3s, box-shadow 0.3s, margin 0.2s;
+  overflow: visible !important;
+}
+
+/* ============================================================
+   MICRO INTERACTIONS — global motion layer
+   ============================================================ */
+
+/* 1. Card lift on hover — subtle rise + shadow on any hoverable card */
+.group\/icard,
+.group\/kcard,
+.group\/ccard,
+.group\/widget,
+[class*="hover:border-[var(--brand-primary)]"][class*="rounded-xl"],
+[class*="hover:border-[var(--brand-primary)]"][class*="rounded-lg"] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+.group\/icard:hover,
+.group\/kcard:hover,
+.group\/ccard:hover,
+[class*="hover:border-[var(--brand-primary)]"][class*="rounded-xl"]:hover,
+[class*="hover:border-[var(--brand-primary)]"][class*="rounded-lg"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* 2. Button press feedback — tactile scale-down on click */
+button:not([disabled]):active,
+[role="button"]:active {
+  transform: scale(0.97);
+  transition: transform 0.08s ease !important;
+}
+
+/* 3. Progress bar fill animation — bars animate width from 0 on mount */
+@keyframes barFill {
+  from { width: 0%; }
+}
+.animate-bar-fill {
+  animation: barFill 0.6s ease-out;
+}
+/* Auto-apply to common progress bar patterns */
+[class*="rounded-full"][class*="h-full"][class*="transition-all"],
+[class*="rounded-full"][class*="h-1.5"],
+[class*="rounded-full"][class*="h-2"],
+[class*="rounded-full"][class*="h-2.5"],
+[class*="rounded-full"][class*="h-3"] {
+  animation: barFill 0.8s ease-out;
+}
+
+/* 4. Row stagger-in — table rows + list items fade in with stagger */
+@keyframes rowSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+tbody tr {
+  animation: rowSlideIn 0.25s ease-out both;
+}
+tbody tr:nth-child(1) { animation-delay: 0ms; }
+tbody tr:nth-child(2) { animation-delay: 30ms; }
+tbody tr:nth-child(3) { animation-delay: 60ms; }
+tbody tr:nth-child(4) { animation-delay: 90ms; }
+tbody tr:nth-child(5) { animation-delay: 120ms; }
+tbody tr:nth-child(6) { animation-delay: 150ms; }
+tbody tr:nth-child(7) { animation-delay: 180ms; }
+tbody tr:nth-child(8) { animation-delay: 210ms; }
+tbody tr:nth-child(9) { animation-delay: 240ms; }
+tbody tr:nth-child(10) { animation-delay: 270ms; }
+tbody tr:nth-child(n+11) { animation-delay: 300ms; }
+
+/* 5. Card stagger-in on load — ALL card surfaces animate in with stagger.
+   Targets: dashboard widgets (.contents children in grid), kanban cards,
+   contact cards, document cards, ConfigurableCard, report sections. */
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dashboard widget grid cards */
+[data-tour="widget-grid"] > .contents,
+[data-tour="dashboard-grid"] > .contents {
+  animation: cardFadeIn 0.35s ease-out both;
+}
+[data-tour="widget-grid"] > .contents:nth-child(1),
+[data-tour="dashboard-grid"] > .contents:nth-child(1) { animation-delay: 0ms; }
+[data-tour="widget-grid"] > .contents:nth-child(2),
+[data-tour="dashboard-grid"] > .contents:nth-child(2) { animation-delay: 50ms; }
+[data-tour="widget-grid"] > .contents:nth-child(3),
+[data-tour="dashboard-grid"] > .contents:nth-child(3) { animation-delay: 100ms; }
+[data-tour="widget-grid"] > .contents:nth-child(4),
+[data-tour="dashboard-grid"] > .contents:nth-child(4) { animation-delay: 150ms; }
+[data-tour="widget-grid"] > .contents:nth-child(5),
+[data-tour="dashboard-grid"] > .contents:nth-child(5) { animation-delay: 200ms; }
+[data-tour="widget-grid"] > .contents:nth-child(6),
+[data-tour="dashboard-grid"] > .contents:nth-child(6) { animation-delay: 250ms; }
+[data-tour="widget-grid"] > .contents:nth-child(7),
+[data-tour="dashboard-grid"] > .contents:nth-child(7) { animation-delay: 300ms; }
+[data-tour="widget-grid"] > .contents:nth-child(8),
+[data-tour="dashboard-grid"] > .contents:nth-child(8) { animation-delay: 350ms; }
+[data-tour="widget-grid"] > .contents:nth-child(n+9),
+[data-tour="dashboard-grid"] > .contents:nth-child(n+9) { animation-delay: 400ms; }
+
+/* Kanban cards (Sales + Recruiting) */
+.group\/icard,
+.group\/kcard {
+  animation: cardFadeIn 0.3s ease-out both;
+}
+
+/* Contact card view + Document card view (grid children) */
+.group\/ccard,
+[class*="grid"][class*="gap-3"] > .group\/icard {
+  animation: cardFadeIn 0.3s ease-out both;
+}
+
+/* ConfigurableCard (report + admin sections) */
+.group\/ccard {
+  animation: cardFadeIn 0.35s ease-out both;
+}
+
+/* KPI stat tiles */
+[class*="grid"][class*="gap-3"] > [class*="rounded-xl"][class*="flex-col"][class*="gap-2"] {
+  animation: cardFadeIn 0.3s ease-out both;
+}
+
+/* Stagger for grid-laid-out cards (kanban columns, card views, KPI rows) */
+[class*="grid"] > *:nth-child(1) { animation-delay: 0ms; }
+[class*="grid"] > *:nth-child(2) { animation-delay: 40ms; }
+[class*="grid"] > *:nth-child(3) { animation-delay: 80ms; }
+[class*="grid"] > *:nth-child(4) { animation-delay: 120ms; }
+[class*="grid"] > *:nth-child(5) { animation-delay: 160ms; }
+[class*="grid"] > *:nth-child(6) { animation-delay: 200ms; }
+[class*="grid"] > *:nth-child(7) { animation-delay: 240ms; }
+[class*="grid"] > *:nth-child(8) { animation-delay: 280ms; }
+[class*="grid"] > *:nth-child(n+9) { animation-delay: 320ms; }
+
+/* List items inside cards (AI suggestions, recent deals, etc.) */
+ul > li {
+  animation: cardFadeIn 0.2s ease-out both;
+}
+ul > li:nth-child(1) { animation-delay: 0ms; }
+ul > li:nth-child(2) { animation-delay: 30ms; }
+ul > li:nth-child(3) { animation-delay: 60ms; }
+ul > li:nth-child(4) { animation-delay: 90ms; }
+ul > li:nth-child(5) { animation-delay: 120ms; }
+ul > li:nth-child(n+6) { animation-delay: 150ms; }
+
+/* 5b. Status pill smooth color transitions */
+[class*="rounded-full"][class*="font-bold"][class*="text-[11px]"],
+[class*="rounded-full"][class*="font-bold"][class*="text-[10px]"] {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 6. Slide-out panel from right */
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideOutToRight {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+.animate-slide-in-right {
+  animation: slideInFromRight 0.3s ease-out;
+}
+.animate-slide-out-right {
+  animation: slideOutToRight 0.25s ease-in forwards;
+}
+
+/* 7. Tab underline slide */
+[class*="border-b-2"][class*="border-[var(--brand-primary)]"] {
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+/* 8. Avatar hover pulse */
+[class*="rounded-full"][class*="font-extrabold"][class*="text-white"]:hover {
+  transform: scale(1.05);
+  transition: transform 0.15s ease;
+  box-shadow: 0 0 0 3px var(--brand-bg);
+}
+
+/* =====================================================================
+   PRINT STYLES — Reporting page dedicated print layout
+   ===================================================================== */
+
+/* Hide the print-only component on screen. Shown only during print. */
+.reporting-print-view { display: none; }
+.custom-report-print-view { display: none; }
+
+@media print {
+  /* Page geometry — 8.5" x 11" portrait with 0.5" margins */
+  @page {
+    size: letter portrait;
+    margin: 0.5in;
+  }
+
+  /* Force exact colors — most browsers strip backgrounds otherwise */
+  * { color-adjust: exact; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Hide the entire app UI */
+  html, body { background: white !important; color: black !important; }
+
+  /* Hide sidebar (nav), topbar, keyboard shortcuts, and anything else
+     at the body level that isn't the main content. */
+  aside { display: none !important; }
+  main > header { display: none !important; }                /* topbar */
+  [data-tour] { /* interactive controls with data-tour anchors — hide them in print */ }
+
+  /* Hide the on-screen reporting content (widgets, toolbar).
+     Only one of the dedicated print hosts is visible at a time. */
+  main > div > div:not(.reporting-print-host):not(.custom-report-print-host) { display: none !important; }
+  .reporting-print-host { display: block !important; }
+  .custom-report-print-host { display: block !important; }
+
+  /* If a single-report print is active (body has data-print-mode="custom"),
+     suppress the dashboard print view and vice versa so we never double-print. */
+  body[data-print-mode="custom"] .reporting-print-host { display: none !important; }
+  body[data-print-mode="dashboard"] .custom-report-print-host { display: none !important; }
+  body:not([data-print-mode="custom"]) .custom-report-print-view { display: none !important; }
+
+  /* Show the print view, reset layout constraints */
+  .reporting-print-view,
+  .custom-report-print-view {
+    display: block !important;
+    font-family: 'Mulish', sans-serif;
+    color: #0F172A;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  /* Page break between reports in a multi-report print packet */
+  .custom-report-print-page + .custom-report-print-page {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Remove fixed heights / overflow from any ancestor so print can flow */
+  html, body, main, body > div, body > div > div, main > div {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+  }
+}
+
+/* =====================================================================
+   PRINT LAYOUT COMPONENTS
+   Styled as classes (not @media print scoped) so they render cleanly
+   in both print preview and print. Visibility is controlled by the
+   .reporting-print-view display rule above.
+   ===================================================================== */
+
+.print-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12pt;
+  border-bottom: 2pt solid #1955A6;
+  margin-bottom: 14pt;
+}
+.print-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12pt;
+}
+.print-header-logo img {
+  display: block;
+}
+.print-header-title {
+  font-size: 20pt;
+  font-weight: 900;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.5pt;
+}
+.print-header-meta {
+  font-size: 9pt;
+  color: #475569;
+  margin-top: 2pt;
+}
+
+.print-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8pt;
+  padding: 8pt 10pt;
+  background: #E0F5F8;
+  border: 1pt solid #7DD4DF;
+  border-radius: 4pt;
+  margin-bottom: 14pt;
+  font-size: 10pt;
+  color: #0F172A;
+}
+.print-summary-icon {
+  width: 16pt;
+  height: 16pt;
+  background: #1FA4B6;
+  color: white;
+  border-radius: 3pt;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.print-section {
+  margin-bottom: 14pt;
+  page-break-inside: avoid;
+}
+.print-section-title {
+  font-size: 11pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+  color: #475569;
+  margin: 0 0 6pt 0;
+  padding-bottom: 3pt;
+  border-bottom: 0.5pt solid #CBD5E1;
+}
+
+/* KPI grid — 3 columns × 2 rows on letter portrait */
+.print-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8pt;
+}
+.print-kpi-tile {
+  border: 0.75pt solid #E2E8F0;
+  border-top: 3pt solid #1955A6;
+  border-radius: 3pt;
+  padding: 8pt 10pt;
+  background: white;
+}
+.print-kpi-label {
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748B;
+  letter-spacing: 0.3pt;
+  margin-bottom: 3pt;
+}
+.print-kpi-value {
+  font-size: 20pt;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.5pt;
+}
+.print-kpi-sub {
+  font-size: 8pt;
+  color: #64748B;
+  margin-top: 2pt;
+}
+
+/* Pipeline stage table */
+.print-stage-table {
+  display: flex;
+  flex-direction: column;
+  gap: 5pt;
+}
+.print-stage-row {
+  display: grid;
+  grid-template-columns: 90pt 1fr 90pt;
+  gap: 10pt;
+  align-items: center;
+  font-size: 9.5pt;
+}
+.print-stage-label {
+  display: flex;
+  align-items: center;
+  gap: 5pt;
+}
+.print-stage-dot {
+  width: 7pt;
+  height: 7pt;
+  border-radius: 999pt;
+  flex-shrink: 0;
+}
+.print-stage-name {
+  font-weight: 700;
+  color: #1E293B;
+}
+.print-stage-bar-wrap {
+  background: #F1F5F9;
+  border-radius: 3pt;
+  overflow: hidden;
+  height: 10pt;
+}
+.print-stage-bar {
+  height: 100%;
+  border-radius: 3pt;
+}
+.print-stage-value {
+  display: flex;
+  gap: 6pt;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+.print-stage-count {
+  font-weight: 800;
+  color: #1E293B;
+  font-size: 10pt;
+}
+.print-stage-amount {
+  color: #64748B;
+  font-size: 9pt;
+}
+
+/* Recent deals table */
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+.print-table thead tr {
+  background: #F1F5F9;
+  border-bottom: 1pt solid #CBD5E1;
+}
+.print-table th {
+  text-align: left;
+  padding: 5pt 6pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3pt;
+  color: #475569;
+  font-size: 7.5pt;
+}
+.print-table td {
+  padding: 5pt 6pt;
+  border-bottom: 0.5pt solid #E2E8F0;
+  color: #1E293B;
+}
+.print-table tbody tr:nth-child(even) {
+  background: #FAFBFC;
+}
+.print-deal-name {
+  font-weight: 700;
+  max-width: 160pt;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.print-amount {
+  font-weight: 700;
+  text-align: right;
+}
+.print-prob {
+  text-align: right;
+  color: #64748B;
+}
+.print-stage-pill {
+  display: inline-block;
+  padding: 1pt 5pt;
+  border-radius: 999pt;
+  border: 0.5pt solid;
+  font-size: 7pt;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.print-footer {
+  margin-top: 14pt;
+  padding-top: 6pt;
+  border-top: 0.5pt solid #CBD5E1;
+  text-align: center;
+  font-size: 7.5pt;
+  color: #94A3B8;
+}
+
+/* Pie/donut chart layout in print */
+.print-pie-wrap {
+  display: flex;
+  gap: 14pt;
+  align-items: center;
+}
+.print-pie-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4pt;
+}
+.print-pie-legend-row {
+  display: grid;
+  grid-template-columns: 10pt 1fr 30pt 30pt;
+  gap: 6pt;
+  align-items: center;
+  font-size: 9pt;
+}
+
+/* Todo list in print */
+.print-todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3pt;
+}
+.print-todo-list li {
+  display: flex;
+  gap: 6pt;
+  align-items: baseline;
+  font-size: 9.5pt;
+  color: #1E293B;
+}
+.print-todo-list li.done {
+  text-decoration: line-through;
+  color: #64748B;
+}
+.print-todo-box {
+  font-size: 11pt;
+  color: #475569;
+  width: 12pt;
+  flex-shrink: 0;
+}
+
+/* AI suggestions box in print */
+.print-ai-box {
+  border: 1pt solid;
+  border-radius: 4pt;
+  padding: 8pt 10pt;
+}
+.print-ai-title {
+  font-weight: 800;
+  font-size: 10pt;
+  margin-bottom: 3pt;
+}
+.print-ai-body {
+  font-size: 9pt;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.print-empty {
+  font-size: 9pt;
+  color: #94A3B8;
+  font-style: italic;
+  padding: 6pt 0;
+}
