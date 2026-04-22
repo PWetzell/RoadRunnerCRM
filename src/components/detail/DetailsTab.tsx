@@ -548,22 +548,55 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
         )}
 
         {/* Identification */}
-        <SectionCard icon={<ShieldCheck size={16} />} title="Identification" cardId="card-identification" isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}
+        <SectionCard icon={<ShieldCheck size={16} />} title="Identification" cardId="card-identification"
+          isEditing={isEditing('identifiers')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
           incomplete={c.entries.identifiers.length === 0}
           isPinned={isPinned('identifiers')} onTogglePin={() => togglePin('identifiers')}>
-          <div className="flex gap-4 py-1 border-b border-[var(--border-subtle)] text-[10px] font-bold text-[var(--text-tertiary)] uppercase">
-            <span className="flex-1">Type</span>
-            <span className="flex-1">Authority</span>
-            <span className="w-6" />
-          </div>
-          {c.entries.identifiers.map((id) => (
-            <div key={id.id} className="flex items-center gap-4 py-2 border-b border-[var(--border-subtle)] last:border-0">
-              <span className="flex-1 text-[13px] font-semibold text-[var(--text-primary)]">{id.type}</span>
-              <span className="flex-1 text-[13px] text-[var(--text-secondary)]">{id.authority}</span>
-              <button className="text-[var(--brand-primary)]"><PencilSimple size={14} /></button>
-            </div>
-          ))}
-          <AddButton label="Add Identifier" onClick={() => {}} />
+          {isEditing('identifiers') ? (
+            <EntryEditForm
+              section="identifiers" entryId={editing!.entryId} contact={c}
+              fields={[
+                { key: 'type', label: 'ID Type', type: 'select',
+                  options: (isOrg ? ORG_IDENTIFIER_TYPES : PERSON_IDENTIFIER_TYPES).map((t) => t.type),
+                  required: true },
+                { key: 'value', label: 'ID Number', required: true, maxLength: 40, placeholder: 'Enter identifier' },
+                { key: 'authority', label: 'Authorizing Authority', maxLength: 80, placeholder: 'e.g. Internal Revenue Service (IRS)' },
+              ]}
+              deriveFields={(changedKey, vals) => {
+                if (changedKey !== 'type') return {};
+                const auto = authorityForType(isOrg, vals.type);
+                const currentAuth = vals.authority || '';
+                const allAuthorities = [...ORG_IDENTIFIER_TYPES, ...PERSON_IDENTIFIER_TYPES]
+                  .map((t) => t.authority).filter(Boolean);
+                const shouldOverwrite = !currentAuth || allAuthorities.includes(currentAuth);
+                return auto && shouldOverwrite ? { authority: auto } : {};
+              }}
+              onSave={(data) => saveEntry('identifiers', editing!.entryId, data)}
+              onCancel={cancelEdit}
+              onDelete={editing!.entryId && editing!.entryId !== 'new' ? () => setConfirmDelete({ section: 'identifiers', entryId: editing!.entryId! }) : undefined}
+            />
+          ) : (
+            <>
+              <div className="flex gap-4 py-1 border-b border-[var(--border-subtle)] text-[10px] font-bold text-[var(--text-tertiary)] uppercase">
+                <span className="flex-1">Type</span>
+                <span className="flex-1">Authority</span>
+                <span className="w-6" />
+              </div>
+              {c.entries.identifiers.map((id) => (
+                <div key={id.id} className="flex items-center gap-4 py-2 border-b border-[var(--border-subtle)] last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{id.type}</div>
+                    {id.value && <div className="text-[11px] text-[var(--text-tertiary)] truncate">{id.value}</div>}
+                  </div>
+                  <span className="flex-1 text-[13px] text-[var(--text-secondary)] truncate">{id.authority}</span>
+                  <button onClick={() => startEdit('identifiers', id.id)} className="text-[var(--brand-primary)] bg-transparent border-none cursor-pointer p-1">
+                    <PencilSimple size={14} />
+                  </button>
+                </div>
+              ))}
+              <AddButton label="Add Identifier" onClick={() => startEdit('identifiers', 'new')} />
+            </>
+          )}
         </SectionCard>
 
         {/* System IDs */}
@@ -775,6 +808,50 @@ function VisibilityCard({ contact: c }: { contact: ContactWithEntries }) {
 // EDIT FORMS
 // ═══════════════════════════════════════════
 
+// ── Identifier type catalogs ───────────────────────────────────────
+// Maps each identifier type to its default authority. User can still
+// override the authority text after it auto-populates from the type pick.
+const ORG_IDENTIFIER_TYPES: { type: string; authority: string }[] = [
+  { type: 'State Business ID', authority: '' },
+  { type: 'Dun & Bradstreet Number (D&B)', authority: 'Dun & Bradstreet' },
+  { type: 'Federal Tax ID (EIN)', authority: 'Internal Revenue Service (IRS)' },
+  { type: 'Federal Security', authority: 'Bureau of Diplomatic Security (DSS)' },
+  { type: 'Federal Vendor ID (DUNS)', authority: 'System for Award Management (SAM)' },
+  { type: 'Legacy', authority: '' },
+  { type: 'Membership ID', authority: '' },
+  { type: 'Organization ID', authority: '' },
+  { type: 'Social Security Number (SSN)', authority: 'Social Security Administration (SSA)' },
+  { type: 'State Organization ID', authority: '' },
+  { type: 'State Vendor ID', authority: '' },
+  { type: 'Taxpayer Identification Number (TIN)', authority: 'Internal Revenue Service (IRS)' },
+];
+
+const PERSON_IDENTIFIER_TYPES: { type: string; authority: string }[] = [
+  { type: 'Birth Certificate', authority: '' },
+  { type: "Driver's License", authority: '' },
+  { type: 'Federal Security', authority: 'Bureau of Diplomatic Security (DSS)' },
+  { type: 'Legacy', authority: '' },
+  { type: 'Membership', authority: '' },
+  { type: 'Organization', authority: '' },
+  { type: 'Residence', authority: '' },
+  { type: 'Security Access', authority: '' },
+  { type: 'Birthday', authority: '' },
+  { type: 'Passport', authority: 'US Department of State - Bureau of Consular Affairs' },
+  { type: 'Military', authority: 'Department of Defense' },
+  { type: 'Public Assistance', authority: 'Supplemental Nutrition Assistance Program (SNAP)' },
+  { type: 'Social Security Number', authority: 'Social Security Administration (SSA)' },
+  { type: 'Social Security Number (Last 4 Digits)', authority: 'Social Security Administration (SSA)' },
+  { type: 'State ID Only', authority: '' },
+  { type: 'Student — High School', authority: '' },
+  { type: 'Student — College', authority: '' },
+  { type: 'Union', authority: '' },
+];
+
+function authorityForType(isOrg: boolean, type: string): string {
+  const catalog = isOrg ? ORG_IDENTIFIER_TYPES : PERSON_IDENTIFIER_TYPES;
+  return catalog.find((t) => t.type === type)?.authority || '';
+}
+
 interface FieldConfig {
   key: string;
   label: string;
@@ -925,9 +1002,10 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
   );
 }
 
-function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, onDelete }: {
+function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, onDelete, deriveFields }: {
   section: string; entryId: string | null; contact: ContactWithEntries; fields: FieldConfig[];
   onSave: (data: Record<string, string>) => void; onCancel: () => void; onDelete?: () => void;
+  deriveFields?: (changedKey: string, values: Record<string, string>) => Record<string, string>;
 }) {
   // Find existing entry data to pre-populate
   const entries = contact.entries;
@@ -953,7 +1031,9 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
   };
 
   const handleChange = (k: string, val: string) => {
-    setValues({ ...values, [k]: val });
+    const nextBase = { ...values, [k]: val };
+    const next = deriveFields ? { ...nextBase, ...deriveFields(k, nextBase) } : nextBase;
+    setValues(next);
     if (touched.has(k)) {
       setErrors((e) => ({ ...e, [k]: validateKey(k, val) ?? undefined }));
     }
