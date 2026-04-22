@@ -7,6 +7,7 @@ import { PencilSimple, X, CheckCircle, Warning, MapPin, EnvelopeSimple, Phone as
 import { fmtDate, uid, initials, getAvatarColor, ACME_COLORS } from '@/lib/utils';
 import SectionCard, { FieldRow } from '@/components/detail/SectionCard';
 import { ValidationRule, validate, isValid, isEmail, isPhone, isUrl, maxLength } from '@/lib/validation';
+import { validateIdentifier, placeholderForType, isStateScoped, US_STATES } from '@/lib/validation/identifiers';
 import { useUserStore } from '@/stores/user-store';
 
 interface DetailsTabProps {
@@ -559,18 +560,31 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                 { key: 'type', label: 'ID Type', type: 'select',
                   options: (isOrg ? ORG_IDENTIFIER_TYPES : PERSON_IDENTIFIER_TYPES).map((t) => t.type),
                   required: true },
-                { key: 'value', label: 'ID Number', required: true, maxLength: 40, placeholder: 'Enter identifier' },
+                { key: 'state', label: 'State', type: 'select',
+                  options: US_STATES.map((s) => s.code),
+                  required: true,
+                  showWhen: (vals) => isStateScoped(vals.type) },
+                { key: 'value', label: 'ID Number', required: true, maxLength: 40,
+                  placeholder: (vals) => placeholderForType(vals.type, vals.state) },
                 { key: 'authority', label: 'Authorizing Authority', maxLength: 80, placeholder: 'e.g. Internal Revenue Service (IRS)' },
               ]}
               deriveFields={(changedKey, vals) => {
                 if (changedKey !== 'type') return {};
+                const updates: Record<string, string> = {};
+                // Auto-fill authority from type catalog
                 const auto = authorityForType(isOrg, vals.type);
                 const currentAuth = vals.authority || '';
                 const allAuthorities = [...ORG_IDENTIFIER_TYPES, ...PERSON_IDENTIFIER_TYPES]
                   .map((t) => t.authority).filter(Boolean);
                 const shouldOverwrite = !currentAuth || allAuthorities.includes(currentAuth);
-                return auto && shouldOverwrite ? { authority: auto } : {};
+                if (auto && shouldOverwrite) updates.authority = auto;
+                // Clear stale state when the new type isn't state-scoped
+                if (!isStateScoped(vals.type) && vals.state) updates.state = '';
+                return updates;
               }}
+              crossFieldValidate={(vals) => ({
+                value: validateIdentifier(vals.type, vals.value, vals.state) || undefined,
+              })}
               onSave={(data) => saveEntry('identifiers', editing!.entryId, data)}
               onCancel={cancelEdit}
               onDelete={editing!.entryId && editing!.entryId !== 'new' ? () => setConfirmDelete({ section: 'identifiers', entryId: editing!.entryId! }) : undefined}
@@ -862,9 +876,10 @@ interface FieldConfig {
   maxLength?: number;
   validate?: 'email' | 'phone' | 'url' | 'zip' | 'name';
   rules?: ValidationRule[];
-  placeholder?: string;
+  placeholder?: string | ((values: Record<string, string>) => string);
   inputMode?: 'text' | 'email' | 'tel' | 'url' | 'numeric' | 'decimal';
   autoComplete?: string;
+  showWhen?: (values: Record<string, string>) => boolean;
 }
 
 function buildRulesMap(fields: FieldConfig[]): Record<string, ValidationRule[]> {
@@ -968,7 +983,7 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
             </select>
           ) : f.type === 'textarea' ? (
             <textarea value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)} rows={3}
-              placeholder={f.placeholder}
+              placeholder={typeof f.placeholder === 'function' ? f.placeholder(values) : f.placeholder}
               className={`w-full px-2.5 py-2 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none resize-y`} />
           ) : (
             <input
@@ -978,7 +993,7 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
               value={values[f.key]}
               onChange={(e) => handleChange(f.key, e.target.value)}
               onBlur={() => handleBlur(f.key)}
-              placeholder={f.placeholder}
+              placeholder={typeof f.placeholder === 'function' ? f.placeholder(values) : f.placeholder}
               className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}
             />
           )}
@@ -1002,10 +1017,11 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
   );
 }
 
-function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, onDelete, deriveFields }: {
+function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, onDelete, deriveFields, crossFieldValidate }: {
   section: string; entryId: string | null; contact: ContactWithEntries; fields: FieldConfig[];
   onSave: (data: Record<string, string>) => void; onCancel: () => void; onDelete?: () => void;
   deriveFields?: (changedKey: string, values: Record<string, string>) => Record<string, string>;
+  crossFieldValidate?: (values: Record<string, string>) => Record<string, string | undefined>;
 }) {
   // Find existing entry data to pre-populate
   const entries = contact.entries;
@@ -1023,11 +1039,32 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
   });
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
-  const rulesMap = buildRulesMap(fields);
+  // Only validate fields the user can actually see — hidden `showWhen` fields
+  // must not block Save with required-rule errors the user can't address.
+  const visibleFields = fields.filter((f) => !f.showWhen || f.showWhen(values));
+  const rulesMap = buildRulesMap(visibleFields);
 
   const validateKey = (k: string, val: string): string | null => {
     if (!rulesMap[k]) return null;
     return validate({ [k]: rulesMap[k] }, { [k]: val })[k] ?? null;
+  };
+
+  /**
+   * Merge cross-field errors (e.g. "this DL doesn't match the selected state")
+   * into the per-field error map. Only overrides a key when the per-field rule
+   * passed — standard required/format errors still win.
+   */
+  const mergeCrossFieldErrors = (
+    base: Record<string, string | undefined>,
+    vals: Record<string, string>
+  ): Record<string, string | undefined> => {
+    if (!crossFieldValidate) return base;
+    const cross = crossFieldValidate(vals);
+    const merged = { ...base };
+    Object.entries(cross).forEach(([k, msg]) => {
+      if (!merged[k] && msg) merged[k] = msg;
+    });
+    return merged;
   };
 
   const handleChange = (k: string, val: string) => {
@@ -1035,21 +1072,36 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
     const next = deriveFields ? { ...nextBase, ...deriveFields(k, nextBase) } : nextBase;
     setValues(next);
     if (touched.has(k)) {
-      setErrors((e) => ({ ...e, [k]: validateKey(k, val) ?? undefined }));
+      setErrors((e) => {
+        const updated = { ...e, [k]: validateKey(k, val) ?? undefined };
+        return mergeCrossFieldErrors(updated, next);
+      });
     }
   };
 
   const handleBlur = (k: string) => {
     setTouched((t) => new Set(t).add(k));
-    setErrors((e) => ({ ...e, [k]: validateKey(k, values[k] || '') ?? undefined }));
+    setErrors((e) => {
+      const updated = { ...e, [k]: validateKey(k, values[k] || '') ?? undefined };
+      return mergeCrossFieldErrors(updated, values);
+    });
   };
 
   const handleSave = () => {
     const allErrors = validate(rulesMap, values);
-    setErrors(allErrors);
-    setTouched(new Set(fields.map((f) => f.key)));
-    if (!isValid(allErrors)) return;
+    const merged = mergeCrossFieldErrors(allErrors, values);
+    setErrors(merged);
+    setTouched(new Set(visibleFields.map((f) => f.key)));
+    // Only consider errors for visible fields — a hidden `showWhen` field
+    // (e.g. the State picker when type isn't state-scoped) must not block Save.
+    const visibleHasError = visibleFields.some((f) => !!merged[f.key]);
+    if (visibleHasError) return;
     onSave(values);
+  };
+
+  const resolvePlaceholder = (f: FieldConfig): string | undefined => {
+    if (typeof f.placeholder === 'function') return f.placeholder(values);
+    return f.placeholder;
   };
 
   const inputBorder = (k: string) =>
@@ -1057,7 +1109,7 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
       ? 'border-[var(--danger)] shadow-[0_0_0_3px_var(--danger-bg)]'
       : 'border-[var(--brand-primary)] shadow-[0_0_0_3px_var(--brand-bg)]';
 
-  const hasAnyError = Object.values(errors).some(Boolean);
+  const hasAnyError = visibleFields.some((f) => !!errors[f.key]);
 
   const titleMap: Record<string, string> = { addresses: 'Edit Address', emails: 'Edit Email', phones: 'Edit Phone', websites: 'Edit Website', names: 'Edit Name', identifiers: 'Edit Identifier', industries: 'Edit Industry' };
 
@@ -1065,7 +1117,7 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
     <div className="animate-[fieldSlideIn_0.25s_ease-out]">
       <p className="text-sm font-bold text-[var(--text-primary)] mb-3">{entryId === 'new' ? titleMap[section]?.replace('Edit', 'New') : titleMap[section]}</p>
       <div className="flex flex-col gap-2.5">
-        {fields.map((f) => (
+        {visibleFields.map((f) => (
           <div key={f.key}>
             <label className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block mb-1">
               {f.label}{f.required && <span className="text-[var(--danger)] ml-0.5">*</span>}
@@ -1084,7 +1136,7 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
                 value={values[f.key]}
                 onChange={(e) => handleChange(f.key, e.target.value)}
                 onBlur={() => handleBlur(f.key)}
-                placeholder={f.placeholder}
+                placeholder={resolvePlaceholder(f)}
                 className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}
               />
             )}
