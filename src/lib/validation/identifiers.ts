@@ -250,7 +250,52 @@ export function validateIdentifier(type: string, value: string, state?: string):
   return fn(value, state);
 }
 
-/** Placeholder hint used in the ID Number input for the selected type. */
+/**
+ * Label for the number/value input, chosen per identifier type.
+ * Using "ID Number" for everything is misleading — a birth certificate
+ * has a *certificate number*, a driver's license has a *license number*,
+ * and a birthday isn't a number at all (it's a date of birth).
+ */
+export function numberFieldLabel(type: string): string {
+  switch (type) {
+    case 'Birthday': return 'Date of Birth';
+    case "Driver's License": return 'License Number';
+    case 'State ID Only': return 'State ID Number';
+    case 'Passport': return 'Passport Number';
+    case 'Birth Certificate': return 'Certificate Number';
+    case 'Military': return 'DoD ID Number';
+    case 'Federal Security': return 'Clearance Number';
+    case 'Security Access': return 'Badge Number';
+    case 'Public Assistance': return 'Case Number';
+    case 'Residence': return 'Residence Card Number';
+    case 'Membership':
+    case 'Membership ID': return 'Member Number';
+    case 'Union': return 'Union Member Number';
+    case 'Student — High School':
+    case 'Student — College': return 'Student ID';
+    case 'Organization':
+    case 'Organization ID': return 'Organization Number';
+    case 'Legacy': return 'Reference';
+    case 'Social Security Number':
+    case 'Social Security Number (SSN)': return 'SSN';
+    case 'Social Security Number (Last 4 Digits)': return 'Last 4 Digits';
+    case 'Federal Tax ID (EIN)': return 'EIN';
+    case 'Taxpayer Identification Number (TIN)': return 'TIN';
+    case 'Federal Vendor ID (DUNS)': return 'DUNS Number';
+    case 'Dun & Bradstreet Number (D&B)': return 'DUNS Number';
+    case 'State Business ID':
+    case 'State Organization ID': return 'Registration Number';
+    case 'State Vendor ID': return 'Vendor Number';
+    default: return 'ID Number';
+  }
+}
+
+/** Types that take a calendar date, not a number. */
+export function isDateType(type: string): boolean {
+  return type === 'Birthday';
+}
+
+/** Placeholder hint used in the value input for the selected type. */
 export function placeholderForType(type: string, state?: string): string {
   switch (type) {
     case 'Social Security Number (SSN)':

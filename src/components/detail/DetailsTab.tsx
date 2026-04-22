@@ -7,7 +7,7 @@ import { PencilSimple, X, CheckCircle, Warning, MapPin, EnvelopeSimple, Phone as
 import { fmtDate, uid, initials, getAvatarColor, ACME_COLORS } from '@/lib/utils';
 import SectionCard, { FieldRow } from '@/components/detail/SectionCard';
 import { ValidationRule, validate, isValid, isEmail, isPhone, isUrl, maxLength } from '@/lib/validation';
-import { validateIdentifier, placeholderForType, isStateScoped, US_STATES } from '@/lib/validation/identifiers';
+import { validateIdentifier, placeholderForType, isStateScoped, isDateType, numberFieldLabel, US_STATES } from '@/lib/validation/identifiers';
 import { useUserStore } from '@/stores/user-store';
 
 interface DetailsTabProps {
@@ -564,7 +564,11 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                   options: US_STATES.map((s) => s.code),
                   required: true,
                   showWhen: (vals) => isStateScoped(vals.type) },
-                { key: 'value', label: 'ID Number', required: true, maxLength: 40,
+                { key: 'value',
+                  label: (vals) => numberFieldLabel(vals.type),
+                  type: (vals) => (isDateType(vals.type) ? 'date' : 'text'),
+                  required: true,
+                  maxLength: 40,
                   placeholder: (vals) => placeholderForType(vals.type, vals.state) },
                 { key: 'authority', label: 'Authorizing Authority', maxLength: 80, placeholder: 'e.g. Internal Revenue Service (IRS)' },
               ]}
@@ -868,9 +872,9 @@ function authorityForType(isOrg: boolean, type: string): string {
 
 interface FieldConfig {
   key: string;
-  label: string;
+  label: string | ((values: Record<string, string>) => string);
   value?: string;
-  type?: 'text' | 'select' | 'textarea';
+  type?: 'text' | 'select' | 'textarea' | 'date' | ((values: Record<string, string>) => 'text' | 'select' | 'textarea' | 'date');
   options?: string[];
   required?: boolean;
   maxLength?: number;
@@ -882,11 +886,19 @@ interface FieldConfig {
   showWhen?: (values: Record<string, string>) => boolean;
 }
 
-function buildRulesMap(fields: FieldConfig[]): Record<string, ValidationRule[]> {
+function resolveLabel(f: FieldConfig, values: Record<string, string>): string {
+  return typeof f.label === 'function' ? f.label(values) : f.label;
+}
+
+function resolveFieldType(f: FieldConfig, values: Record<string, string>): 'text' | 'select' | 'textarea' | 'date' | undefined {
+  return typeof f.type === 'function' ? f.type(values) : f.type;
+}
+
+function buildRulesMap(fields: FieldConfig[], values: Record<string, string>): Record<string, ValidationRule[]> {
   const map: Record<string, ValidationRule[]> = {};
   fields.forEach((f) => {
     const r: ValidationRule[] = [];
-    const cleanLabel = f.label.replace(/\s*\(.*?\)/, '');
+    const cleanLabel = resolveLabel(f, values).replace(/\s*\(.*?\)/, '');
     if (f.required) r.push((v) => (!v.trim() ? `${cleanLabel} is required` : null));
     if (f.maxLength) r.push(maxLength(cleanLabel, f.maxLength));
     if (f.validate === 'email') r.push(isEmail());
@@ -904,7 +916,8 @@ function buildRulesMap(fields: FieldConfig[]): Record<string, ValidationRule[]> 
   return map;
 }
 
-function inputTypeFor(f: FieldConfig): string {
+function inputTypeFor(f: FieldConfig, values: Record<string, string>): string {
+  if (resolveFieldType(f, values) === 'date') return 'date';
   if (f.validate === 'email') return 'email';
   if (f.validate === 'phone') return 'tel';
   if (f.validate === 'url') return 'url';
@@ -934,7 +947,7 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
   });
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
-  const rulesMap = buildRulesMap(fields);
+  const rulesMap = buildRulesMap(fields, values);
 
   const validateKey = (key: string, val: string): string | null => {
     if (!rulesMap[key]) return null;
@@ -970,40 +983,44 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
 
   return (
     <div className="flex flex-col gap-2.5 animate-[fieldSlideIn_0.25s_ease-out]">
-      {fields.map((f) => (
-        <div key={f.key}>
-          <label className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block mb-1">
-            {f.label}{f.required && <span className="text-[var(--danger)] ml-0.5">*</span>}
-          </label>
-          {f.type === 'select' ? (
-            <select value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)}
-              className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}>
-              <option value="">Select</option>
-              {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          ) : f.type === 'textarea' ? (
-            <textarea value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)} rows={3}
-              placeholder={typeof f.placeholder === 'function' ? f.placeholder(values) : f.placeholder}
-              className={`w-full px-2.5 py-2 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none resize-y`} />
-          ) : (
-            <input
-              type={inputTypeFor(f)}
-              inputMode={inputModeFor(f)}
-              autoComplete={autoCompleteFor(f)}
-              value={values[f.key]}
-              onChange={(e) => handleChange(f.key, e.target.value)}
-              onBlur={() => handleBlur(f.key)}
-              placeholder={typeof f.placeholder === 'function' ? f.placeholder(values) : f.placeholder}
-              className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}
-            />
-          )}
-          {errors[f.key] && (
-            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-[var(--danger)]">
-              <Warning size={12} weight="fill" className="flex-shrink-0" /> {errors[f.key]}
-            </div>
-          )}
-        </div>
-      ))}
+      {fields.map((f) => {
+        const resolvedType = resolveFieldType(f, values);
+        const resolvedLabel = resolveLabel(f, values);
+        return (
+          <div key={f.key}>
+            <label className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block mb-1">
+              {resolvedLabel}{f.required && <span className="text-[var(--danger)] ml-0.5">*</span>}
+            </label>
+            {resolvedType === 'select' ? (
+              <select value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)}
+                className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}>
+                <option value="">Select</option>
+                {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            ) : resolvedType === 'textarea' ? (
+              <textarea value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)} rows={3}
+                placeholder={typeof f.placeholder === 'function' ? f.placeholder(values) : f.placeholder}
+                className={`w-full px-2.5 py-2 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none resize-y`} />
+            ) : (
+              <input
+                type={inputTypeFor(f, values)}
+                inputMode={inputModeFor(f)}
+                autoComplete={autoCompleteFor(f)}
+                value={values[f.key]}
+                onChange={(e) => handleChange(f.key, e.target.value)}
+                onBlur={() => handleBlur(f.key)}
+                placeholder={typeof f.placeholder === 'function' ? f.placeholder(values) : f.placeholder}
+                className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}
+              />
+            )}
+            {errors[f.key] && (
+              <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-[var(--danger)]">
+                <Warning size={12} weight="fill" className="flex-shrink-0" /> {errors[f.key]}
+              </div>
+            )}
+          </div>
+        );
+      })}
       <div className="flex justify-end gap-2 pt-1">
         <button onClick={onCancel} className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] border border-[var(--border)] rounded-[var(--radius-sm)] bg-transparent cursor-pointer">
           <X size={14} /> Cancel
@@ -1042,7 +1059,7 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
   // Only validate fields the user can actually see — hidden `showWhen` fields
   // must not block Save with required-rule errors the user can't address.
   const visibleFields = fields.filter((f) => !f.showWhen || f.showWhen(values));
-  const rulesMap = buildRulesMap(visibleFields);
+  const rulesMap = buildRulesMap(visibleFields, values);
 
   const validateKey = (k: string, val: string): string | null => {
     if (!rulesMap[k]) return null;
@@ -1117,36 +1134,40 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
     <div className="animate-[fieldSlideIn_0.25s_ease-out]">
       <p className="text-sm font-bold text-[var(--text-primary)] mb-3">{entryId === 'new' ? titleMap[section]?.replace('Edit', 'New') : titleMap[section]}</p>
       <div className="flex flex-col gap-2.5">
-        {visibleFields.map((f) => (
-          <div key={f.key}>
-            <label className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block mb-1">
-              {f.label}{f.required && <span className="text-[var(--danger)] ml-0.5">*</span>}
-            </label>
-            {f.type === 'select' ? (
-              <select value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)}
-                className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}>
-                <option value="">Select</option>
-                {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-            ) : (
-              <input
-                type={inputTypeFor(f)}
-                inputMode={inputModeFor(f)}
-                autoComplete={autoCompleteFor(f)}
-                value={values[f.key]}
-                onChange={(e) => handleChange(f.key, e.target.value)}
-                onBlur={() => handleBlur(f.key)}
-                placeholder={resolvePlaceholder(f)}
-                className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}
-              />
-            )}
-            {errors[f.key] && (
-              <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-[var(--danger)]">
-                <Warning size={12} weight="fill" className="flex-shrink-0" /> {errors[f.key]}
-              </div>
-            )}
-          </div>
-        ))}
+        {visibleFields.map((f) => {
+          const resolvedType = resolveFieldType(f, values);
+          const resolvedLabel = resolveLabel(f, values);
+          return (
+            <div key={f.key}>
+              <label className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block mb-1">
+                {resolvedLabel}{f.required && <span className="text-[var(--danger)] ml-0.5">*</span>}
+              </label>
+              {resolvedType === 'select' ? (
+                <select value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)}
+                  className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}>
+                  <option value="">Select</option>
+                  {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input
+                  type={inputTypeFor(f, values)}
+                  inputMode={inputModeFor(f)}
+                  autoComplete={autoCompleteFor(f)}
+                  value={values[f.key]}
+                  onChange={(e) => handleChange(f.key, e.target.value)}
+                  onBlur={() => handleBlur(f.key)}
+                  placeholder={resolvePlaceholder(f)}
+                  className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}
+                />
+              )}
+              {errors[f.key] && (
+                <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-[var(--danger)]">
+                  <Warning size={12} weight="fill" className="flex-shrink-0" /> {errors[f.key]}
+                </div>
+              )}
+            </div>
+          );
+        })}
         <div className="flex justify-between items-center pt-1">
           {onDelete ? (
             <button onClick={onDelete} className="flex items-center gap-1 text-xs font-bold text-[var(--danger)] bg-transparent border-none cursor-pointer">
