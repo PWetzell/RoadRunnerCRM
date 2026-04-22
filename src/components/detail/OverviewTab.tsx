@@ -52,10 +52,11 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
   const org = !isOrg && 'orgId' in c && c.orgId ? contacts.find((o) => o.id === c.orgId) : null;
 
   const primaryAddr = c.entries.addresses.find((a) => a.primary) || c.entries.addresses[0] || null;
-  const fullAddress = primaryAddr
-    ? [primaryAddr.value, primaryAddr.city, primaryAddr.state, primaryAddr.zip].filter(Boolean).join(', ')
-    : null;
-  const coords = useGeocode(fullAddress);
+  const coords = useGeocode(
+    primaryAddr
+      ? { street: primaryAddr.value, city: primaryAddr.city, state: primaryAddr.state, zip: primaryAddr.zip }
+      : null
+  );
   const primaryIndustry = isOrg && 'entries' in c
     ? c.entries.industries.find((i) => i.primary) || c.entries.industries[0] || null
     : null;
