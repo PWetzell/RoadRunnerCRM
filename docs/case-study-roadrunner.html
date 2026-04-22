@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roadrunner CRM — the design-to-code loop that finally closed · Paul Wentzell UX</title>
+<style>
+  :root {
+    --bg: #F1EFEA;
+    --surface: #FFFFFF;
+    --ink: #1C1C1C;
+    --ink-soft: #3A3A3A;
+    --ink-mute: #6F6F6F;
+    --hair: #DEDAD1;
+    --accent: #E6552A;
+    --accent-soft: #F6D8CB;
+    --old-bg: #F4E6DD;
+    --old-label: #8A4A2E;
+    --new-bg: #DFEBF0;
+    --new-label: #2F5E74;
+    --green-bg: #EFF6EB;
+    --green-label: #3E7333;
+    --yellow-bg: #FBF4D8;
+    --yellow-label: #8B6B00;
+    --purple-bg: #ECE6F3;
+    --purple-label: #4F4170;
+    --blue-bg: #E0ECF4;
+    --blue-label: #2A5576;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding: 0 22px 96px;
+  }
+  .shell { max-width: 820px; margin: 0 auto; }
+
+  /* Top bar */
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0 30px;
+  }
+  header.topbar .brand { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: -0.005em; }
+  header.topbar nav { font-size: 13px; }
+  header.topbar nav a {
+    color: var(--ink-soft); text-decoration: none; margin-left: 22px;
+  }
+  header.topbar nav a:hover { color: var(--accent); }
+  header.topbar .pill-linkedin {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 999px; border: 1px solid var(--hair);
+    color: var(--ink-soft); font-size: 10px; margin-left: 16px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 6px 0 22px;
+    display: grid; grid-template-columns: 1fr 240px; gap: 30px;
+  }
+  .hero-left h1 {
+    font-size: 32px; font-weight: 800; line-height: 1.15; letter-spacing: -0.012em;
+    margin: 0 0 18px;
+  }
+  .hero-left h1 .orange { color: var(--accent); }
+  .sec-label {
+    font-size: 10px; letter-spacing: 0.14em; font-weight: 800; text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+    display: block;
+  }
+  .hero-left p.lede {
+    font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1.5; margin: 0 0 12px;
+  }
+  .hero-left p.lede-body {
+    font-size: 14.5px; color: var(--ink-soft); line-height: 1.62; margin: 0 0 8px;
+  }
+
+  .hero-right {
+    align-self: start;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .ask-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 8px;
+    padding: 14px 14px 14px; font-size: 12px; color: var(--ink-soft);
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .ask-card .avatar {
+    width: 34px; height: 34px; border-radius: 999px; background: #D9D4C8; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px;
+  }
+  .ask-card .ask-text { line-height: 1.45; }
+  .ask-card .ask-cta {
+    display: inline-block; margin-top: 8px; padding: 6px 10px;
+    background: var(--accent); color: #fff; border-radius: 4px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-decoration: none;
+  }
+  .live-link {
+    padding: 14px; background: var(--ink); color: #fff; border-radius: 8px;
+    text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: -0.005em;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .live-link:hover { background: var(--accent); }
+  .live-link .dot {
+    width: 8px; height: 8px; border-radius: 999px; background: #4ADE80;
+    display: inline-block; margin-right: 6px; box-shadow: 0 0 0 3px rgba(74,222,128,0.2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(74,222,128,0.2); }
+    50% { box-shadow: 0 0 0 6px rgba(74,222,128,0.05); }
+  }
+
+  /* Meta strip */
+  .meta {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px 34px;
+    font-size: 12px; color: var(--ink-soft);
+    padding: 4px 0 18px;
+  }
+  .meta div strong {
+    display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--ink-mute); font-weight: 700; margin-bottom: 2px;
+  }
+
+  /* Hero image */
+  .hero-figure {
+    margin: 22px 0 0;
+    background: #1C1C1C; border-radius: 6px; overflow: hidden;
+    aspect-ratio: 16 / 8.6;
+    display: flex; align-items: center; justify-content: center;
+    color: #777; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    text-align: center; padding: 10px;
+  }
+  .hero-figure img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-stats {
+    background: #1C1C1C; color: #fff;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    padding: 20px 0; border-radius: 0 0 6px 6px;
+    margin-top: -6px; margin-bottom: 40px;
+  }
+  .hero-stats .stat { text-align: center; border-right: 1px solid #2E2E2E; padding: 0 10px; }
+  .hero-stats .stat:last-child { border-right: 0; }
+  .hero-stats .n { font-size: 26px; font-weight: 800; color: var(--accent); line-height: 1; letter-spacing: -0.01em; }
+  .hero-stats .l { font-size: 9.5px; color: #C9C4BB; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; line-height: 1.3; }
+
+  /* Loop diagram — the wow graphic */
+  .loop-graphic {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 8px;
+    padding: 28px 22px 18px; margin: 22px 0 8px;
+  }
+  .loop-graphic-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-bottom: 18px;
+  }
+  .loop-graphic svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .loop-graphic-caption {
+    text-align: center; font-size: 12.5px; color: var(--ink-mute); margin-top: 14px;
+    font-style: italic;
+  }
+
+  /* Token proof — the loop made visible */
+  .token-proof {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 30px 28px 26px; margin: 22px 0 8px;
+  }
+  .tp-title {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.008em;
+    color: var(--ink); text-align: center; margin-bottom: 22px; line-height: 1.3;
+  }
+  .tp-grid {
+    display: grid; grid-template-columns: 1fr 60px 1fr; gap: 10px;
+    align-items: stretch;
+  }
+  .tp-card {
+    padding: 20px 22px; border-radius: 8px; border: 1px solid var(--hair);
+    background: #FAF8F3;
+  }
+  .tp-surface-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-mute); display: flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tp-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+  .tp-button {
+    display: inline-block; padding: 10px 18px; border-radius: 6px;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 700; letter-spacing: -0.005em;
+    margin-bottom: 16px;
+  }
+  .tp-meta { border-top: 1px solid var(--hair); padding-top: 10px; }
+  .tp-meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--ink-mute); margin: 5px 0;
+  }
+  .tp-meta-row span {
+    font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 9.5px;
+  }
+  .tp-meta-row code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 11px; color: var(--ink); background: var(--bg); padding: 2px 6px; border-radius: 3px;
+  }
+  .tp-bridge {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .tp-bridge svg { width: 60px; height: 200px; }
+  .tp-bridge-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-top: 6px; line-height: 1.3;
+  }
+  .tp-caption {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 18px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  @media (max-width: 620px) {
+    .tp-grid { grid-template-columns: 1fr; }
+    .tp-bridge svg { width: 200px; height: 60px; transform: rotate(90deg); }
+  }
+
+  /* Option selector callout */
+  .option-tag-row {
+    display: flex; align-items: center; gap: 10px; margin: 38px 0 10px;
+    padding-top: 26px; border-top: 2px dashed var(--hair);
+  }
+  .option-tag-row:first-child { border-top: 0; padding-top: 0; margin-top: 14px; }
+  .option-chip {
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    background: var(--accent); color: #fff;
+  }
+  .option-desc { font-size: 13px; color: var(--ink-mute); font-style: italic; }
+
+  /* Option B — animated loop diagram */
+  .loop-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 36px 28px 28px; margin: 10px 0 8px;
+  }
+  .loop-wrap .inner-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-bottom: 14px;
+  }
+  .loop-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .loop-wrap .cap {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  /* Option C — video placeholder */
+  .video-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 28px; margin: 10px 0 8px;
+  }
+  .video-placeholder {
+    aspect-ratio: 16 / 9;
+    background: #1C1C1C; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; text-align: center; padding: 30px;
+    position: relative; overflow: hidden;
+  }
+  .video-placeholder::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(230,85,42,0.12) 50%, rgba(230,85,42,0.12) 100%);
+  }
+  .vp-play {
+    width: 72px; height: 72px; border-radius: 999px; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px; position: relative; z-index: 1;
+    box-shadow: 0 0 0 10px rgba(230,85,42,0.16);
+  }
+  .vp-play svg { fill: #fff; }
+  .vp-cap {
+    font-size: 14px; font-weight: 700; letter-spacing: -0.005em;
+    position: relative; z-index: 1; max-width: 440px; line-height: 1.4;
+  }
+  .vp-cap small {
+    display: block; font-size: 11px; color: #A8A39A; font-weight: 400; margin-top: 8px; font-style: italic;
+  }
+  .video-storyboard {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px;
+  }
+  .vs-frame {
+    aspect-ratio: 16 / 10;
+    background: var(--old-bg); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; text-align: center; padding: 10px; color: var(--ink-soft); line-height: 1.35;
+    border: 1px solid var(--hair);
+  }
+  .vs-frame:nth-child(2) { background: #F0E4DA; }
+  .vs-frame:nth-child(3) { background: var(--new-bg); }
+  .vs-frame:nth-child(4) { background: var(--green-bg); }
+  .video-wrap .cap {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+  @media (max-width: 620px) {
+    .video-storyboard { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ─── ANIMATION WRAPPERS ─── */
+  .anim-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 28px 28px 22px; margin: 18px 0 8px;
+  }
+  .anim-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-bottom: 14px;
+  }
+  .anim-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .anim-cap {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  /* Animated hero stat numbers */
+  .hero-stats .n.animated-count {
+    display: inline-block;
+  }
+  @keyframes countPulse {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .hero-stats .n { animation: countPulse 0.9s ease-out forwards; }
+  .hero-stats .stat:nth-child(1) .n { animation-delay: 0.1s; opacity: 0; }
+  .hero-stats .stat:nth-child(2) .n { animation-delay: 0.3s; opacity: 0; }
+  .hero-stats .stat:nth-child(3) .n { animation-delay: 0.5s; opacity: 0; }
+  .hero-stats .stat:nth-child(4) .n { animation-delay: 0.7s; opacity: 0; }
+
+  /* Body */
+  h2.sec-head {
+    font-size: 22px; font-weight: 800; line-height: 1.28; letter-spacing: -0.008em;
+    margin: 0 0 14px; color: var(--ink);
+  }
+  p.body-p { font-size: 14.5px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 12px; }
+  .body-p strong { color: var(--ink); }
+
+  section.block { padding: 32px 0 14px; }
+
+  /* Role grid */
+  .role-grid { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .role-tag {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+  }
+
+  /* Tech stack logo row */
+  .stack-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px;
+  }
+  .stack-chip {
+    font-size: 11px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--hair); color: var(--ink-soft);
+    padding: 6px 10px; border-radius: 999px;
+  }
+  .stack-chip.accent { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* Key finding callout */
+  .keyfinding-box {
+    background: var(--green-bg); padding: 22px 24px;
+    border-radius: 4px; margin: 18px 0 14px;
+    font-size: 14px; color: var(--ink);
+  }
+  .keyfinding-box .sub {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--green-label); margin-bottom: 8px;
+  }
+  .keyfinding-box p { margin: 0 0 10px; }
+  .keyfinding-box p:last-child { margin-bottom: 0; }
+
+  .pullquote {
+    margin: 22px 0 18px; padding: 4px 0 4px 16px;
+    border-left: 3px solid var(--accent);
+    font-style: italic; font-weight: 600; font-size: 19px; line-height: 1.35; color: var(--ink);
+  }
+
+  /* Two-column old-way / new-way */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0 18px; }
+  .col-card {
+    padding: 20px 22px; border-radius: 4px; font-size: 13.5px; line-height: 1.55;
+  }
+  .col-card.old { background: var(--old-bg); }
+  .col-card.new { background: var(--new-bg); }
+  .col-card .h {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .col-card.old .h { color: var(--old-label); }
+  .col-card.new .h { color: var(--new-label); }
+  .col-card h3 { font-size: 16px; margin: 0 0 10px; font-weight: 800; }
+  .col-card ul { margin: 0; padding-left: 18px; }
+  .col-card li { margin-bottom: 5px; }
+
+  /* Tension table */
+  table.tension {
+    width: 100%; border-collapse: collapse; margin: 14px 0 10px;
+    font-size: 13px;
+  }
+  table.tension th {
+    text-align: left; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); font-weight: 800; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--hair);
+    background: transparent;
+  }
+  table.tension td {
+    padding: 12px 12px 12px 0; vertical-align: top; border-bottom: 1px solid var(--hair); color: var(--ink-soft);
+  }
+
+  /* Decision */
+  .decision { margin: 30px 0 8px; }
+  .decision .num {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .decision h3 {
+    font-size: 18px; font-weight: 800; line-height: 1.38; margin: 0 0 14px; color: var(--ink);
+  }
+  .pill-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+  .pill {
+    padding: 14px 16px; border-radius: 6px; font-size: 13.5px; line-height: 1.55;
+  }
+  .pill-label {
+    display: inline-block; margin-bottom: 6px;
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase;
+  }
+  .pill.finding { background: var(--blue-bg); }
+  .pill.finding .pill-label { background: #3A78A8; color: #fff; }
+  .pill.insight { background: var(--green-bg); }
+  .pill.insight .pill-label { background: #5E9B4E; color: #fff; }
+  .pill.design { background: var(--purple-bg); }
+  .pill.design .pill-label { background: #7A6BAA; color: #fff; }
+
+  /* Provider badge row */
+  .provider-row {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px; margin: 16px 0 6px;
+  }
+  .provider {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 6px;
+    padding: 10px 12px; font-size: 12px; color: var(--ink);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .provider .pb-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); flex-shrink: 0; }
+  .provider.free .pb-dot { background: #5E9B4E; }
+  .provider strong { font-weight: 700; }
+  .provider small { color: var(--ink-mute); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* Deliverables to Engineering — the before/after split */
+  .eng-intro {
+    margin: 10px 0 18px; font-size: 14.5px; color: var(--ink-soft); line-height: 1.65;
+  }
+  .eng-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 10px 0 18px;
+  }
+  .eng-col {
+    padding: 22px 22px 18px; border-radius: 6px; font-size: 13.5px; line-height: 1.6;
+  }
+  .eng-col.without { background: var(--old-bg); }
+  .eng-col.with { background: var(--green-bg); }
+  .eng-col .h {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .eng-col.without .h { color: var(--old-label); }
+  .eng-col.with .h { color: var(--green-label); }
+  .eng-col h4 { font-size: 15px; margin: 0 0 10px; font-weight: 800; }
+  .eng-col ul { margin: 0; padding-left: 18px; }
+  .eng-col li { margin-bottom: 6px; }
+  .eng-deliverables {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 14px;
+  }
+  .eng-item {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .eng-item .num {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .eng-item .t {
+    font-size: 13.5px; font-weight: 800; color: var(--ink); margin-bottom: 4px; line-height: 1.3;
+  }
+  .eng-item .b {
+    font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;
+  }
+
+  /* Outcomes stat cards */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin: 18px 0 18px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--hair); padding: 22px 10px;
+    border-radius: 6px; text-align: center;
+  }
+  .stat-card .n {
+    font-size: 32px; font-weight: 800; color: var(--accent); line-height: 1;
+  }
+  .stat-card .l {
+    margin-top: 8px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-mute); line-height: 1.35;
+  }
+  .outcome-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 14px; }
+  .outcome-card {
+    padding: 18px 18px 20px; border-radius: 4px; font-size: 13px; line-height: 1.55;
+  }
+  .outcome-card.y { background: var(--yellow-bg); }
+  .outcome-card.g { background: var(--green-bg); }
+  .outcome-card.p { background: var(--purple-bg); }
+  .outcome-card.b { background: var(--blue-bg); }
+  .outcome-card h4 { font-size: 13.5px; margin: 0 0 6px; font-weight: 800; }
+
+  /* Deliverables link style (Acme) */
+  .deliverables-list { margin: 10px 0 10px; }
+  .deliverables-list p { margin: 14px 0 6px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+  .deliverables-list .link-row { font-size: 13px; font-weight: 700; }
+  .deliverables-list .link-row a {
+    color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor;
+  }
+
+  /* Gallery */
+  .gallery {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin: 16px 0 14px;
+  }
+  .gallery .thumb {
+    background: #1C1C1C; border-radius: 4px; overflow: hidden;
+    aspect-ratio: 16 / 11;
+    color: #888; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px;
+  }
+  .gallery .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* Reflection */
+  .reflect-box {
+    margin-top: 10px; padding: 24px 26px 22px;
+    background: #E9E5DA; border-radius: 4px;
+    font-size: 14px; color: var(--ink); line-height: 1.65;
+    position: relative;
+  }
+  .reflect-box h3 {
+    font-size: 14px; font-weight: 800; margin: 0 0 10px; color: var(--ink);
+  }
+  .reflect-box .sig {
+    margin-top: 14px; font-family: "Brush Script MT", "Segoe Script", cursive;
+    font-size: 24px; color: var(--accent); line-height: 1;
+  }
+
+  /* Footer */
+  footer.site {
+    margin-top: 60px; padding: 22px 0 0;
+    border-top: 1px solid var(--hair); color: var(--ink-mute); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  footer.site a { color: var(--ink-mute); text-decoration: none; }
+  footer.site a:hover { color: var(--accent); }
+
+  .tofill {
+    display: inline-block; padding: 1px 8px; border-radius: 3px;
+    background: #FFEFB8; color: #6a5400;
+    font-size: 12.5px; font-style: italic;
+  }
+
+  /* ─── DEMO SECTION ─── */
+  .demo-hero {
+    background: var(--ink); color: #fff;
+    border-radius: 10px; padding: 32px 30px 30px;
+    margin: 16px 0 18px;
+    position: relative; overflow: hidden;
+  }
+  .demo-hero::before {
+    content: ""; position: absolute; top: -40px; right: -40px;
+    width: 180px; height: 180px; border-radius: 999px;
+    background: var(--accent); opacity: 0.18;
+  }
+  .demo-hero .pre {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .demo-hero .pre .live-dot {
+    width: 9px; height: 9px; border-radius: 999px; background: #4ADE80;
+    box-shadow: 0 0 0 4px rgba(74,222,128,0.2);
+    animation: pulse 2s infinite;
+  }
+  .demo-hero h2 {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.008em; line-height: 1.25;
+    margin: 0 0 10px; color: #fff;
+  }
+  .demo-hero h2 .orange { color: var(--accent); }
+  .demo-hero p {
+    font-size: 14.5px; line-height: 1.6; color: #D4D0C7; margin: 0 0 14px; max-width: 620px;
+  }
+  .demo-cta-row {
+    display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px;
+    position: relative; z-index: 1;
+  }
+  .demo-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 12px 18px; border-radius: 6px;
+    font-size: 13px; font-weight: 700; letter-spacing: -0.005em;
+    text-decoration: none; transition: transform 0.12s, background 0.12s;
+  }
+  .demo-btn:hover { transform: translateY(-1px); }
+  .demo-btn.primary { background: var(--accent); color: #fff; }
+  .demo-btn.primary:hover { filter: brightness(1.08); }
+  .demo-btn.ghost { background: transparent; color: #fff; border: 1px solid #3A3A3A; }
+  .demo-btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .demo-url {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 12.5px; color: #A8A39A; margin-top: 12px; letter-spacing: -0.005em;
+    word-break: break-all;
+  }
+
+  .try-list {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 22px 24px 18px;
+    margin: 14px 0 18px;
+  }
+  .try-list .title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px;
+  }
+  .try-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px;
+  }
+  .try-item { font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+  .try-item .idx {
+    display: inline-block; width: 22px; height: 22px; border-radius: 999px;
+    background: var(--accent); color: #fff; font-weight: 800; font-size: 11px;
+    text-align: center; line-height: 22px; margin-right: 8px; vertical-align: middle;
+  }
+  .try-item strong { color: var(--ink); }
+
+  .demo-note {
+    font-size: 12.5px; color: var(--ink-mute); font-style: italic;
+    padding: 12px 14px; background: var(--yellow-bg); border-radius: 4px;
+    margin: 10px 0 10px;
+  }
+  .demo-note strong { font-style: normal; color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { order: -1; flex-direction: row; flex-wrap: wrap; }
+    .role-grid, .two-col, .outcome-cards, .eng-split, .eng-deliverables { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .gallery { grid-template-columns: 1fr 1fr; }
+    .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 14px 0; }
+    .hero-stats .stat { border-right: 0; border-bottom: 1px solid #2E2E2E; padding-bottom: 14px; }
+    .hero-stats .stat:nth-child(3), .hero-stats .stat:nth-child(4) { border-bottom: 0; padding-top: 14px; }
+    .hero-left h1 { font-size: 26px; }
+    .meta { grid-template-columns: 1fr; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="topbar">
+  <span class="brand">Paul Wentzell UX</span>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/work">Work</a>
+    <span class="pill-linkedin" title="LinkedIn">in</span>
+  </nav>
+</header>
+
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <h1>Roadrunner CRM — the <span class="orange">design-to-code loop</span> that finally closed.</h1>
+    <span class="sec-label">The Problem</span>
+    <p class="lede">Two problems I'd spent twelve years watching from the design side. One build to finally solve both.</p>
+    <p class="lede-body">Problem one — design and code were always two languages pretending to speak to each other. Figma handed off, engineering rebuilt visually-close-enough, tokens drifted, four sprints in the two files stopped resembling each other.</p>
+    <p class="lede-body">Problem two — the one every CRM I shipped fought chronically at Madison Resources recruiting and PayFactors compensation — was dirty data. Duplicate records. Stale contacts. Sources nobody could trace.</p>
+    <p class="lede-body">On this build I closed the design-to-code loop with Acme and Figma MCP, and I wired real AI suggestions that prevent dirty data on entry — duplicate detection, auto-populate from live corporate registries, attribution per field. The company-intake surface is where this product earns its keep: a real company name fires SEC EDGAR, GLEIF, Companies House, OpenCorporates, and Wikidata in parallel and the matching record populates before the user finishes typing. Record creation went from minutes to seconds. This is not a Figma prototype with simulated AI states — it is a live working product, AI firing against real APIs, open for any hiring manager to click through and try to break.</p>
+  </div>
+  <aside class="hero-right">
+    <a class="live-link" href="https://roadrunner-crm.paulwentzellux.com" target="_blank" rel="noopener">
+      <span><span class="dot"></span>View live app</span>
+      <span>→</span>
+    </a>
+    <div class="ask-card">
+      <div class="avatar">PW</div>
+      <div class="ask-text">
+        <strong>Questions about this build?</strong><br>
+        Ask me anything — I'll point you to the exact code, Figma frame, or decision that answers it.
+        <br><br>
+        <a class="ask-cta" href="mailto:paul@paulwentzellux.com">Ask a question</a>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<div class="meta">
+  <div><strong>Client</strong>Self-initiated · Acme Design System portfolio proof</div>
+  <div><strong>Role</strong>Product design · front-end build · deploy</div>
+  <div><strong>Scope</strong>Working CRM · 8 modules · live</div>
+  <div><strong>Data + AI</strong>11 free public providers · free-tier AI · zero paid APIs</div>
+  <div><strong>Timeline</strong>3 days Acme · 5 days Roadrunner v1 · 1 day polish</div>
+  <div><strong>Stack</strong>Figma · Claude Code · Next.js 16 · TypeScript · Tailwind</div>
+</div>
+
+
+<!-- HERO VISUAL + COUNTER BAR -->
+<figure class="hero-figure">
+  <span>Hero screenshot — Roadrunner CRM Dashboard at 1440×765. Drop your dashboard PNG here.</span>
+</figure>
+<div class="hero-stats">
+  <div class="stat"><div class="n">5 days</div><div class="l">Empty repo to<br>live working CRM</div></div>
+  <div class="stat"><div class="n">8 modules</div><div class="l">Shipped on<br>one domain</div></div>
+  <div class="stat"><div class="n">11 sources</div><div class="l">Free public data<br>providers, live</div></div>
+  <div class="stat"><div class="n">$0</div><div class="l">Infra cost<br>hosting · SSL · domain</div></div>
+</div>
+<div style="text-align:center; margin:-22px 0 40px;">
+  <a href="/acme" style="display:inline-block; padding:8px 16px; background:var(--surface); border:1px solid var(--hair); border-radius:999px; text-decoration:none; font-size:12px; font-weight:700; color:var(--ink-soft); letter-spacing:-0.005em;">
+    Built on the Acme design system — <span style="color:var(--accent);">see the Acme case study →</span>
+  </a>
+</div>
+
+
+<!-- THE LOOP DIAGRAM — the wow graphic -->
+<div class="loop-graphic">
+  <div class="loop-graphic-title">The Loop That Finally Closed</div>
+  <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Design-to-code closed loop diagram">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#E6552A"/>
+      </marker>
+    </defs>
+
+    <!-- Figma node -->
+    <g>
+      <rect x="30" y="80" width="170" height="80" rx="10" fill="#FFFFFF" stroke="#1C1C1C" stroke-width="1.5"/>
+      <text x="115" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#1C1C1C" text-anchor="middle">FIGMA</text>
+      <text x="115" y="132" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">Variables · components</text>
+      <text x="115" y="148" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">via Figma MCP</text>
+    </g>
+
+    <!-- Token core -->
+    <g>
+      <circle cx="360" cy="120" r="60" fill="#E6552A"/>
+      <text x="360" y="116" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">ACME TOKENS</text>
+      <text x="360" y="134" font-family="Inter, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" opacity="0.9">single source</text>
+      <text x="360" y="148" font-family="Inter, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" opacity="0.9">of truth</text>
+    </g>
+
+    <!-- Code node -->
+    <g>
+      <rect x="520" y="80" width="170" height="80" rx="10" fill="#FFFFFF" stroke="#1C1C1C" stroke-width="1.5"/>
+      <text x="605" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#1C1C1C" text-anchor="middle">CODE</text>
+      <text x="605" y="132" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">Tailwind CSS vars</text>
+      <text x="605" y="148" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">via Claude Code</text>
+    </g>
+
+    <!-- Arrows -->
+    <path d="M 200 110 Q 280 70 300 100" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M 300 140 Q 280 170 200 140" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M 420 100 Q 440 70 520 110" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M 520 140 Q 440 170 420 140" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Labels -->
+    <text x="250" y="200" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#6F6F6F" text-anchor="middle" letter-spacing="1">read · write</text>
+    <text x="470" y="200" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#6F6F6F" text-anchor="middle" letter-spacing="1">read · write</text>
+  </svg>
+  <div class="loop-graphic-caption">One token. Rendered in Figma. Rendered in code. No translation, no drift, no handoff artifact.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- LOOP GRAPHIC — THREE OPTIONS TO CHOOSE FROM                 -->
+<!-- Pick one for the final portfolio. Comment out the others.   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+
+<!-- ─── OPTION A ─── STATIC SIDE-BY-SIDE COMPARISON ─── -->
+<div class="option-tag-row">
+  <span class="option-chip">Option A</span>
+  <span class="option-desc">Static side-by-side — reads in 2 seconds, no interaction required</span>
+</div>
+<div class="token-proof">
+  <div class="tp-title">Same token. Two surfaces. Zero translation.</div>
+  <div class="tp-grid">
+    <div class="tp-card figma">
+      <div class="tp-surface-label"><span class="tp-dot" style="background:#0ACF83"></span>Figma</div>
+      <div class="tp-button">Save placement</div>
+      <div class="tp-meta">
+        <div class="tp-meta-row"><span>Variable</span><code>brand/primary</code></div>
+        <div class="tp-meta-row"><span>Resolves to</span><code>#E6552A</code></div>
+      </div>
+    </div>
+
+    <div class="tp-bridge">
+      <svg viewBox="0 0 60 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="30" cy="100" r="18" fill="#E6552A"/>
+        <text x="30" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#ffffff">TOKEN</text>
+        <path d="M 12 100 L 0 100" stroke="#E6552A" stroke-width="2"/>
+        <path d="M 48 100 L 60 100" stroke="#E6552A" stroke-width="2"/>
+      </svg>
+      <div class="tp-bridge-label">one source<br>of truth</div>
+    </div>
+
+    <div class="tp-card code">
+      <div class="tp-surface-label"><span class="tp-dot" style="background:#2E75B6"></span>Code</div>
+      <div class="tp-button">Save placement</div>
+      <div class="tp-meta">
+        <div class="tp-meta-row"><span>CSS variable</span><code>--brand-primary</code></div>
+        <div class="tp-meta-row"><span>Resolves to</span><code>#E6552A</code></div>
+      </div>
+    </div>
+  </div>
+  <div class="tp-caption">The button on the left renders in Figma. The button on the right renders in React. Both reference the same Acme token. Change the token once — both surfaces update. No handoff, no drift, no translation.</div>
+</div>
+
+
+<!-- ─── OPTION B ─── ANIMATED LOOP (SVG only, no JS) ─── -->
+<div class="option-tag-row">
+  <span class="option-chip">Option B</span>
+  <span class="option-desc">Animated loop diagram — motion catches the eye on scroll</span>
+</div>
+<div class="loop-wrap">
+  <div class="inner-title">The loop that finally closed</div>
+  <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" aria-label="Design-to-code closed loop animation" role="img">
+    <defs>
+      <marker id="arrB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#E6552A"/>
+      </marker>
+    </defs>
+
+    <g>
+      <rect x="30" y="80" width="170" height="80" rx="10" fill="#FAF8F3" stroke="#1C1C1C" stroke-width="1.5"/>
+      <text x="115" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#1C1C1C" text-anchor="middle">FIGMA</text>
+      <text x="115" y="132" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">Variables · components</text>
+      <text x="115" y="148" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">via Figma MCP</text>
+    </g>
+
+    <g>
+      <circle cx="360" cy="120" r="55" fill="#E6552A"/>
+      <text x="360" y="114" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">ACME</text>
+      <text x="360" y="130" font-family="Inter, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" opacity="0.9">TOKENS</text>
+      <text x="360" y="146" font-family="Inter, sans-serif" font-size="9" fill="#FFFFFF" text-anchor="middle" opacity="0.85">one source</text>
+    </g>
+
+    <g>
+      <rect x="520" y="80" width="170" height="80" rx="10" fill="#FAF8F3" stroke="#1C1C1C" stroke-width="1.5"/>
+      <text x="605" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#1C1C1C" text-anchor="middle">CODE</text>
+      <text x="605" y="132" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">Tailwind CSS vars</text>
+      <text x="605" y="148" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">via Claude Code</text>
+    </g>
+
+    <path d="M 200 105 Q 280 70 305 100" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrB)"/>
+    <path d="M 305 140 Q 280 170 200 135" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrB)"/>
+    <path d="M 415 100 Q 440 70 520 105" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrB)"/>
+    <path d="M 520 135 Q 440 170 415 140" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arrB)"/>
+
+    <circle r="9" fill="#E6552A" opacity="0.95">
+      <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
+        <mpath href="#loopPathB"/>
+      </animateMotion>
+    </circle>
+    <circle r="9" fill="#E6552A" opacity="0.4">
+      <animateMotion dur="5s" repeatCount="indefinite" begin="-1s" rotate="auto">
+        <mpath href="#loopPathB"/>
+      </animateMotion>
+    </circle>
+
+    <path id="loopPathB" d="M 200 105 Q 280 70 305 100 L 305 140 Q 280 170 200 135 M 415 100 Q 440 70 520 105 L 520 135 Q 440 170 415 140" fill="none" stroke="none"/>
+
+    <text x="250" y="200" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#6F6F6F" text-anchor="middle" letter-spacing="1.5">READ · WRITE</text>
+    <text x="470" y="200" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#6F6F6F" text-anchor="middle" letter-spacing="1.5">READ · WRITE</text>
+  </svg>
+  <div class="cap">One token. Rendered in Figma. Rendered in code. The token moves between both surfaces in real time — no handoff, no drift, no translation.</div>
+</div>
+
+
+<!-- ─── OPTION C ─── SCREEN RECORDING (placeholder + storyboard) ─── -->
+<div class="option-tag-row">
+  <span class="option-chip">Option C</span>
+  <span class="option-desc">Screen recording — drop a 4-second MP4 or GIF to show the real thing</span>
+</div>
+<div class="video-wrap">
+  <div class="video-placeholder">
+    <div class="vp-play">
+      <svg width="28" height="28" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </div>
+    <div class="vp-cap">
+      4-second loop · Figma variable update → live app retint
+      <small>Replace this placeholder with a recorded MP4 or animated GIF of the loop in action.</small>
+    </div>
+  </div>
+  <div class="video-storyboard">
+    <div class="vs-frame"><strong>Frame 1</strong><br>Figma open · click brand.primary variable</div>
+    <div class="vs-frame"><strong>Frame 2</strong><br>Paste new hex · press enter</div>
+    <div class="vs-frame"><strong>Frame 3</strong><br>Wipe to app · Roadrunner dashboard</div>
+    <div class="vs-frame"><strong>Frame 4</strong><br>Every orange accent retinted · loop</div>
+  </div>
+  <div class="cap">What a hiring manager sees: the design-to-code loop, happening on screen. No explanation needed.</div>
+</div>
+
+
+<!-- MY ROLE -->
+<section class="block">
+  <span class="sec-label">My Role</span>
+  <h2 class="sec-head">One designer. Built the system. Built the app. Shipped the loop.</h2>
+  <div class="role-grid">
+    <div>
+      <div class="role-tag">What I Owned</div>
+      <p class="body-p">Acme design system — tokens, components, seven handoff docs. Every Figma frame. Every line of TypeScript in the Next.js 16 build. Eleven public data integrations. Vercel deploy, custom DNS on paulwentzellux.com. This case study. One designer — full stack of decisions and artifacts.</p>
+    </div>
+    <div>
+      <div class="role-tag">How I Worked</div>
+      <p class="body-p">Figma MCP read the design file. Claude Code generated code against the same tokens Figma used. I held the judgment seat. Every grid pattern came from twelve years at Madison Resources CRM, PayFactors, and financial services platforms. Claude handled the generation — experience handled the decisions Claude couldn't make.</p>
+    </div>
+  </div>
+  <div class="stack-row">
+    <span class="stack-chip accent">Figma</span>
+    <span class="stack-chip accent">Claude Code</span>
+    <span class="stack-chip accent">Figma MCP</span>
+    <span class="stack-chip">Next.js 16</span>
+    <span class="stack-chip">TypeScript</span>
+    <span class="stack-chip">Tailwind</span>
+    <span class="stack-chip">Zustand</span>
+    <span class="stack-chip">TanStack Table</span>
+    <span class="stack-chip">@dnd-kit</span>
+    <span class="stack-chip">pdf-parse</span>
+    <span class="stack-chip">Phosphor Icons</span>
+    <span class="stack-chip">Vercel</span>
+  </div>
+</section>
+
+
+<!-- RESEARCH / CAREER INQUIRY -->
+<section class="block">
+  <span class="sec-label">Research · Career Inquiry</span>
+  <h2 class="sec-head">Dirty data was the problem at Madison Resources. Dirty data was the problem at PayFactors. Every HR team lives inside it.</h2>
+  <p class="body-p">Recruiters at Madison Resources spent hours every week reconciling duplicate candidate records, stale contact info, and fragmented source attribution. Comp analysts at PayFactors fought the same fight against outdated company data and records that said different things in different systems. Different industries, same chronic failure mode.</p>
+  <p class="body-p">Dirty data is the problem HR and comp professionals have asked for help with for as long as I've designed for them — and it is the exact problem Roadrunner's AI features are wired to solve.</p>
+  <p class="body-p">So when my first pass shipped a fake duplicate detector querying a hardcoded name pool and labeling the fake results "Clearbit verified" — I was replicating the problem I'd spent twelve years trying to fix. The rebuild wired real AI suggestions on every intake surface: type a name, get a duplicate check before you save; type a company, get auto-populate from live public records with provider attribution per field; drop a resume, get parsed fields prefilled and the original attached. Clean record creation went from minutes to seconds.</p>
+
+  <div class="two-col">
+    <div class="col-card old">
+      <div class="h">What users ask for on every project — grid edition</div>
+      <ul>
+        <li>Saved views — "I want my layout back"</li>
+        <li>Column pinning — "keep Name visible when I scroll"</li>
+        <li>Density control — "let me fit more rows on screen"</li>
+        <li>Sticky row actions — "don't make me scroll to delete"</li>
+        <li>Per-column filters — "filter amount without leaving the grid"</li>
+      </ul>
+    </div>
+    <div class="col-card new">
+      <div class="h">What users ask for on every project — app edition</div>
+      <ul>
+        <li>Light and dark mode — every industry, every time</li>
+        <li>Help that's there when I need it, not just on install</li>
+        <li>Saved state that survives a refresh</li>
+        <li>Undo on anything destructive</li>
+        <li>Keyboard shortcuts for power users</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="body-p">Every grid in Roadrunner ships with all five grid patterns. Every one of the app-level patterns ships too — because I've watched users at Madison Resources, PayFactors, and financial services platforms fight for them when they weren't there. Ten shipped patterns is not cleverness; it's pattern literacy earned in production.</p>
+</section>
+
+
+<!-- KEY FINDING -->
+<section class="block">
+  <span class="sec-label">Key Finding</span>
+  <h2 class="sec-head">The gap was never about tools. It was that design and code were two translations of each other.</h2>
+  <p class="body-p">On a normal project, a designer updates a color token in Figma. An engineer reads the hex. Types it into a stylesheet. Maybe misreads it. Maybe uses the old value because the variable was already defined. Every token is a handoff with a chance of loss. Multiply by every component, every state, every sprint. That is where the gap lives. I brought this framing to the Acme build before I drew a single Figma frame.</p>
+  <div class="keyfinding-box">
+    <div class="sub">The close</div>
+    <p>Acme tokens are defined once. Figma variables and Tailwind CSS custom properties reference the same values. Figma MCP reads the Figma file. Claude Code generates React using Tailwind classes that resolve to those same tokens. A change in one surface shows up in the other without translation.</p>
+  </div>
+  <p class="pullquote">"Design linked to code. Code linked to design. First time in twelve years that loop closed on anything I built."</p>
+</section>
+
+
+<!-- CORE TENSION -->
+<section class="block">
+  <span class="sec-label">Core Tension</span>
+  <h2 class="sec-head">System built by one designer vs. a system that survives a real build.</h2>
+  <p class="body-p">A three-day design system sounds like a shortcut. On every enterprise project I've shipped, design systems built too fast broke the first time a real product demanded them. Acme had to prove it could power a working CRM — not a portfolio screen.</p>
+
+  <table class="tension">
+    <thead>
+      <tr>
+        <th>Speed wanted</th>
+        <th>Depth wanted</th>
+        <th>Loop resolved</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Acme in 3 days</td>
+        <td>Tokens that survive a full build</td>
+        <td>Same variables in Figma and Tailwind — zero drift</td>
+      </tr>
+      <tr>
+        <td>CRM in 5 days</td>
+        <td>Real data on every AI path</td>
+        <td>11 public providers, attribution per field</td>
+      </tr>
+      <tr>
+        <td>Generic B2B framing</td>
+        <td>Focused vertical that matches real HR workflows</td>
+        <td>HR staffing, configurable for comp and finance next</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- REAL AI PROOF — free providers row -->
+<section class="block">
+  <span class="sec-label">The AI Layer</span>
+  <h2 class="sec-head">Real APIs. Free tier. Honest about the scope.</h2>
+  <p class="body-p">Every company lookup runs against a live corporate registry — SEC EDGAR for public filings, GLEIF for legal entity identifiers, Companies House for UK filings, OpenCorporates for the global aggregate, Wikidata for the knowledge graph, Clearbit for enrichment. The suggestions that populate the form carry a source badge back to the record they came from. That's the durable, trustworthy core of this build.</p>
+  <p class="body-p">For individuals, the public layer is intentionally thin: Wikidata and ORCID cover public figures and researchers, GitHub covers developers who opt in. I will not wire a paid people-data aggregator into a portfolio demo — the value of "trusted, traceable data" evaporates the moment the source is a black-box scraper. A resume parser, a LinkedIn URL field, and the CRM's own records carry the person side; public registries carry the company side.</p>
+  <div class="provider-row">
+    <div class="provider free"><span class="pb-dot"></span><strong>SEC EDGAR</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>GLEIF</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>OpenCorporates</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>Companies House</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>SAM.gov</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>Wikidata</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>Clearbit</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>GitHub</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>ORCID</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>Gravatar</strong></div>
+    <div class="provider free"><span class="pb-dot"></span><strong>Hunter.io</strong></div>
+  </div>
+  <p class="body-p" style="margin-top:14px; font-size:13px; color:var(--ink-mute);">Eleven providers, fan-out via Promise.allSettled — any provider can fail and the others still return. Graceful degradation is not a future state; it's the default. Scope honesty is the design decision, not a limitation to hide.</p>
+</section>
+
+
+<!-- SEE THE DEMO -->
+<section class="block">
+  <span class="sec-label">See It Live</span>
+  <h2 class="sec-head">A working product, not a prototype. Open it and feel the difference.</h2>
+  <p class="body-p">The experience I want a hiring manager to have on this page is the one I could never get across in a static portfolio: typing a real candidate name and watching the suggestions fire against real public records; dropping in a resume and watching the form prefill itself; pinning a column, refreshing, and seeing the layout stick. Every moment of interaction is the design-to-code loop proving itself.</p>
+
+  <div class="demo-hero">
+    <div class="pre"><span class="live-dot"></span>Live now · real data · real AI</div>
+    <h2>Roadrunner CRM — <span class="orange">interactive portfolio demo.</span></h2>
+    <p>Eight modules. Eleven free public data providers wired live. Sample HR staffing data seeded so the first click already has something to do. Every visitor gets a private browser-local sandbox, so you can explore freely without affecting anyone else.</p>
+    <div class="demo-cta-row">
+      <a class="demo-btn primary" href="https://roadrunner-crm.paulwentzellux.com" target="_blank" rel="noopener">
+        Open the live app <span>→</span>
+      </a>
+      <a class="demo-btn ghost" href="https://github.com/PWetzell/RoadRunnerCRM" target="_blank" rel="noopener">
+        View source on GitHub
+      </a>
+    </div>
+    <div class="demo-url">roadrunner-crm.paulwentzellux.com</div>
+  </div>
+
+  <div class="try-list">
+    <div class="title">Six ways to experience the build</div>
+    <div class="try-grid">
+      <div class="try-item"><span class="idx">1</span><strong>Create a new company.</strong> Type a real company name — SEC EDGAR, GLEIF, Companies House, OpenCorporates, and Wikidata all fan out in parallel and the matching records populate the form with a source badge before you save.</div>
+      <div class="try-item"><span class="idx">2</span><strong>Drop in a PDF or DOCX resume.</strong> The candidate intake parses it, prefills the form, and attaches the original to the contact's Documents tab.</div>
+      <div class="try-item"><span class="idx">3</span><strong>Customize a grid.</strong> Open the Columns dropdown, pin a column, change density, save a view. Refresh — everything stays exactly as you left it.</div>
+      <div class="try-item"><span class="idx">4</span><strong>Delete something and undo it.</strong> Every destructive action fires a toast with an Undo button. Click it and the record returns with every nested entry restored.</div>
+      <div class="try-item"><span class="idx">5</span><strong>Take a guided tour.</strong> Help → Tours → pick any section. Contextual walkthroughs teach the shared patterns every module uses.</div>
+      <div class="try-item"><span class="idx">6</span><strong>Flip to dark mode.</strong> Settings → Appearance. Every Acme token re-resolves instantly. Zero component rewrites — the loop handles it.</div>
+    </div>
+  </div>
+
+  <div class="demo-note"><strong>About the session:</strong> the demo stores state in your browser so your session is yours alone. Nothing you create is sent anywhere, and a refresh keeps your work intact until you choose to reset.</div>
+</section>
+
+
+<!-- DESIGN DECISIONS -->
+<section class="block">
+  <span class="sec-label">Design Decisions</span>
+  <h2 class="sec-head">Eight decisions. Each one a direct response to something AI generated that experience had to correct — or something users have asked for in every product I've shipped.</h2>
+
+  <div class="decision">
+    <div class="num">Decision 01</div>
+    <h3>Kill the fake data pool. Rebuild every AI path against eleven real public sources.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        The first build queried a 2,847-entry hardcoded name pool and labeled the result "Clearbit verified." The attribution was a string constant, not an API call.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        This wasn't a data bug — it was a trust bug. Every AI feature makes an implicit claim when it fires. The claim has to be inspectable or the demo dies on the first real name.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Server-side fan-out across eleven public providers. Provider badges render on every suggested field. Any claim can be traced in one click.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 02</div>
+    <h3>Sticky Actions column on every grid. Inline icons over a three-dot menu.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        Claude's first pass on the Placements grid hid edit and delete behind a three-dot overflow menu — two clicks and a right-edge scroll on narrow viewports to reach either.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Overflow menus earn their place at five or more actions. With two, they're extra clicks with no payoff. Recruiters at Madison Resources asked me to remove this exact pattern years ago.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Edit and delete as inline icons, right-edge-pinned across every grid. Hover-reveal keeps rows quiet. Matches Salesforce, Linear, and HubSpot defaults.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 03</div>
+    <h3>Private filter: brand blue, not danger red.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        First pass shipped the Private filter pill in red because "private" felt weighty. Every other filter in the bar was brand blue.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Red is reserved for destructive. Using it for a category filter teaches users to flinch at a safe control and breaks the semantic color contract elsewhere in the app.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Brand-blue fill, matching Favorites and the type filter. The filter bar reads as one control group instead of a safe-controls-and-one-warning cluster.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 04</div>
+    <h3>Column pinning — persisted, always visible.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        First pass hid pin icons behind column-row hover. Users who wanted pinning couldn't find it.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Hover-reveal is right for rare controls. Pinning is a power feature users look for by name — Excel freeze-pane muscle memory is thirty years old. Hiding it buries the benefit they came for.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Pin buttons always visible in the Columns dropdown. State persists across refresh via Zustand persist middleware. Left and right edges both supported.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 05</div>
+    <h3>Tabbed help panel. Drop the count badge.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        The first help panel was eleven tour cards stacked in a 600-pixel side panel. Most tours sat below the fold and got skipped.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        A scrollfest in a fixed-height surface is a discoverability failure, not a cosmetic one. A count badge without units is decoration, not information.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Pill-segmented Tips / Tours / Resources tabs — matching the List/Card and All/Organizations/People pills elsewhere. Current-page tour pinned at top as "Recommended for this page." No count.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 06</div>
+    <h3>Tours live in the help panel — always available, not a one-time install cutscene.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        Most products ship guided tours that fire once on first login and then disappear forever. Users who needed help later — a month in, returning after a break, training a new hire — had no way to find the walkthrough again.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Help is most useful when the user is already frustrated, not when they're fresh. Burning tours on install wastes them on the moment users need them least. This came from watching support-ticket patterns at PayFactors and Madison Resources — tickets spiked in week three, not week one.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Nine contextual tours live permanently in the help panel, reachable from any page, filtered to the current surface first. Every tour can be re-run any time. No cutscenes, no dismiss-forever, no buried "restart tutorial" setting. The help icon is the entry point; the tour is always behind it.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 07</div>
+    <h3>Light and dark mode, defined at the token layer so every surface retints for free.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        Light and dark mode is the single most-requested feature across every CRM I've shipped — financial services, HR staffing, compensation analytics. Users ask for it in week one. It ships in year three because teams retrofit it component by component.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Dark mode isn't a styling pass. It's a token problem. If colors are defined per-component, you retrofit forever. If colors are defined as semantic tokens (surface, text-primary, border) in an Acme-style system, dark mode is one theme swap away.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Every Acme color is a semantic token mapped to a light and a dark value. The theme switch in Settings flips a root-level data attribute; every surface in every module retints instantly. No per-component work, no missed states. Shipped on day one, not year three.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 08</div>
+    <h3>Toast confirmations with Undo on every destructive action.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        Initial delete handlers fired silent success. Users re-clicked delete because they were unsure the first click had registered.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Silent success is disorienting. Gmail, Slack, and Figma anchor destructive actions on toast-with-Undo because reversibility reduces the fear tax on irreversible controls.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Four-severity toast system. Snapshot-and-restore Undo on every contact, deal, and candidate delete. Caught the missed contact-delete case when I asked, "If I delete a contact will I see a toast?"
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- WHAT I DELIVER TO ENGINEERING -->
+<section class="block">
+  <span class="sec-label">What I Deliver to Engineering</span>
+  <h2 class="sec-head">Because the loop closes, I hand off deliverables engineering can consume — not specs to translate.</h2>
+  <p class="eng-intro">A senior designer who has closed the design-to-code loop doesn't move stories from "in design" to "in dev." They move them from "in design" to "merged" — because the artifacts engineering receives are already the artifacts engineering would build. That's the difference between one sprint and three.</p>
+
+  <div class="eng-split">
+    <div class="eng-col without">
+      <div class="h">Without the loop</div>
+      <h4>What engineering gets today on most projects</h4>
+      <ul>
+        <li>Figma file with redlines to measure</li>
+        <li>PNG exports of states</li>
+        <li>Hex codes copy-pasted into CSS</li>
+        <li>Slack threads clarifying what a component means</li>
+        <li>Design drift discovered three sprints later</li>
+        <li>QA tickets retrofitting accessibility</li>
+        <li>Coordination meetings to align tokens</li>
+      </ul>
+    </div>
+    <div class="eng-col with">
+      <div class="h">With the loop</div>
+      <h4>What engineering gets from me</h4>
+      <ul>
+        <li>Running token library — install and import</li>
+        <li>Live React components next to Figma frames</li>
+        <li>Figma-to-code prop mapping, one page per component</li>
+        <li>Validation rules authored on the design side</li>
+        <li>Accessibility baked into the system</li>
+        <li>AI-generated first drafts with judgment applied</li>
+        <li>One master doc, not thirty Slack threads</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="eng-deliverables">
+    <div class="eng-item">
+      <div class="num">Deliverable 01</div>
+      <div class="t">A running design system, not a style guide</div>
+      <div class="b">Acme is a working token library. Figma variables and Tailwind CSS custom properties wired to the same source of truth. Engineering installs, imports, and ships.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 02</div>
+      <div class="t">Live component references, not static specs</div>
+      <div class="b">Every component lives in both Figma and a running React surface. Engineers click from the handoff to the rendered component with exact props and states.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 03</div>
+      <div class="t">Grid pattern library from 12 years of CRMs</div>
+      <div class="b">The grid toolbar — saved views, pinning, density, zebra, sticky actions, per-column filters — shipped as one reusable SharedDataGrid. One component to maintain, eight grids to use it.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 04</div>
+      <div class="t">Tokens that survive refactors</div>
+      <div class="b">Because tokens are defined once and referenced in both surfaces, engineering can rename, restructure, or reorganize without a coordination meeting. Figma updates when tokens do.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 05</div>
+      <div class="t">Working prototypes instead of redlines</div>
+      <div class="b">When I propose a pattern, I can ship a working prop-typed React component alongside the Figma frame. Engineering reviews behavior and props, not pixel measurements.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 06</div>
+      <div class="t">Figma-to-code mapping documents</div>
+      <div class="b">One page per component mapping Figma props to React props and CSS variables. No guessing, no "what does size=lg mean in the real file." Engineering reads, writes glue, ships.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 07</div>
+      <div class="t">AI-assisted first drafts — with judgment applied</div>
+      <div class="b">For rare patterns, I generate a first-draft React component with Claude Code and hand it to engineering with naming cleaned up, states verified, accessibility checked, tokens wired.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 08</div>
+      <div class="t">Validation rules as design, not copy</div>
+      <div class="b">Intake forms ship with required fields, format checks, error messages, and disabled states defined as props. Engineering implements the glue; rules live where the form lives.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 09</div>
+      <div class="t">Accessibility at the system level</div>
+      <div class="b">Color contrast, focus states, keyboard navigation, and screen-reader labels are baked into Acme components. Use the button, get the a11y. No retroactive QA tickets.</div>
+    </div>
+    <div class="eng-item">
+      <div class="num">Deliverable 10</div>
+      <div class="t">One artifact, not thirty Slack threads</div>
+      <div class="b">The Acme master document — foundations, components, tokens, patterns, Figma-to-code mapping, grid library, validation, accessibility — in one navigable reference. Engineering bookmarks one URL.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- OUTCOMES -->
+<section class="block">
+  <span class="sec-label">Outcomes</span>
+  <h2 class="sec-head">A live product, not a portfolio screenshot.</h2>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="n">3</div><div class="l">Days to Acme<br>vs. weeks prior</div></div>
+    <div class="stat-card"><div class="n">5</div><div class="l">Days to v1<br>empty repo → live</div></div>
+    <div class="stat-card"><div class="n">8</div><div class="l">Modules live<br>one domain</div></div>
+    <div class="stat-card"><div class="n">11</div><div class="l">Public providers<br>replacing fake data</div></div>
+    <div class="stat-card"><div class="n">13</div><div class="l">Polish decisions<br>each with precedent</div></div>
+    <div class="stat-card"><div class="n">$0</div><div class="l">Infra cost<br>hosting, SSL, domain</div></div>
+  </div>
+
+  <div class="outcome-cards">
+    <div class="outcome-card y"><h4>The loop held.</h4>Figma tokens and Tailwind variables resolved to the same values. Zero handoff artifacts were written during the build.</div>
+    <div class="outcome-card g"><h4>Every AI claim is inspectable.</h4>Provider badges render next to every suggested field. Any claim can be traced to a real public source in one click.</div>
+    <div class="outcome-card p"><h4>Polish was disciplined.</h4>13 UX decisions shipped in one day. Average rationale: two sentences per decision. No feature creep.</div>
+    <div class="outcome-card b"><h4>Real AI, not a Figma prototype.</h4>The AI fires against real APIs. Custom subdomain, open-source repo. Anyone can click through and try to break it.</div>
+  </div>
+</section>
+
+
+<!-- DELIVERABLES LIST -->
+<section class="block">
+  <span class="sec-label">Acme Documents</span>
+  <h2 class="sec-head">One file per system dimension.</h2>
+  <div class="deliverables-list">
+    <p>Master reference — foundations, components, tokens, patterns in one navigable document with Design / Dev mode toggle.</p>
+    <div class="link-row">[<a href="#">↗ Acme Design System Master.html</a>]</div>
+
+    <p>Component usage guide — when to use each component, variants, and states.</p>
+    <div class="link-row">[<a href="#">↗ Component Usage Guide.html</a>]</div>
+
+    <p>Design token reference — color, spacing, radius, shadow, border, typography with CSS variable, raw value, and usage context.</p>
+    <div class="link-row">[<a href="#">↗ Design Token Reference.html</a>]</div>
+
+    <p>Figma-to-code mapping — explicit bindings between Figma component properties and React / CSS equivalents. This is where the loop closed.</p>
+    <div class="link-row">[<a href="#">↗ Figma to Code Mapping.html</a>]</div>
+
+    <p>Grid pattern library — twelve years of shipped grid patterns from Madison Resources, PayFactors, and financial services, catalogued once so future products don't rebuild them.</p>
+    <div class="link-row">[<a href="#">↗ Grid Pattern Library.html</a>]</div>
+  </div>
+</section>
+
+
+<!-- GALLERY -->
+<section class="block">
+  <span class="sec-label">Project Gallery</span>
+  <h2 class="sec-head">Eight modules. Every screen is live.</h2>
+  <div class="gallery">
+    <div class="thumb">Dashboard · KPI widgets</div>
+    <div class="thumb">Contacts · list view</div>
+    <div class="thumb">Contacts · detail tabs</div>
+    <div class="thumb">Sales · kanban</div>
+    <div class="thumb">Recruiting · pipeline</div>
+    <div class="thumb">Documents · grid + card</div>
+    <div class="thumb">Admin · configurable cards</div>
+    <div class="thumb">Help tour · tabbed panel</div>
+    <div class="thumb">Settings · AI master switch</div>
+  </div>
+</section>
+
+
+<!-- REFLECTION -->
+<section class="block">
+  <span class="sec-label">What I'd Do Differently</span>
+  <div class="reflect-box">
+    <h3>Honest, one paragraph.</h3>
+    <p>I'd wire the real providers from day one instead of letting the fake pool ship first — the rebuild was instructive but expensive. I'd put validation on every intake surface before writing a single AI feature, not after. The pattern that held best was pairing every Claude-generated decision with a cited precedent from my career; the pattern I'd drop was trusting first-pass toast wiring to be complete. I missed the contact-delete case until I asked the question out loud.</p>
+    <div class="sig">— Paul</div>
+  </div>
+</section>
+
+
+<footer class="site">
+  <span>Paul Wentzell UX · April 2026</span>
+  <span>
+    <a href="https://roadrunner-crm.paulwentzellux.com" target="_blank" rel="noopener">Live app</a> ·
+    <a href="https://github.com/PWetzell/RoadRunnerCRM" target="_blank" rel="noopener">Source</a>
+  </span>
+</footer>
+
+</div>
+
+<script>
+  (function(){
+    var row = document.getElementById('swatchRow');
+    if (!row) return;
+    row.addEventListener('click', function(e){
+      var btn = e.target.closest('.swatch');
+      if (!btn) return;
+      var color = btn.getAttribute('data-color');
+      document.documentElement.style.setProperty('--accent', color);
+      row.querySelectorAll('.swatch').forEach(function(s){ s.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  })();
+</script>
+
+</body>
+</html>

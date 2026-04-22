@@ -41,7 +41,7 @@ export default function NewPersonPage() {
   // Fields from a parsed resume that we persist on the new Person beyond the
   // basic form fields (skills, URLs, etc.). Set during the prefill effect below.
   const [resumeSkills, setResumeSkills] = useState<string[]>([]);
-  const [resumeLinkedIn, setResumeLinkedIn] = useState<string>('');
+  const [linkedinUrl, setLinkedinUrl] = useState<string>('');
   const [resumeGithub, setResumeGithub] = useState<string>('');
   const [resumeWebsite, setResumeWebsite] = useState<string>('');
 
@@ -95,7 +95,7 @@ export default function NewPersonPage() {
       // Structured fields not in the visible form — persist on save.
       const skills = Array.isArray(p.skills) ? p.skills.slice(0, 40) : [];
       if (skills.length) { setResumeSkills(skills); filled++; }
-      if (p.linkedinUrl) { setResumeLinkedIn(p.linkedinUrl); filled++; }
+      if (p.linkedinUrl) { setLinkedinUrl(p.linkedinUrl); filled++; }
       if (p.githubUrl) { setResumeGithub(p.githubUrl); filled++; }
       if (p.websiteUrl) { setResumeWebsite(p.websiteUrl); filled++; }
       setResumeBanner({
@@ -169,7 +169,7 @@ export default function NewPersonPage() {
     // Build a websites[] from any resume-extracted URLs so they render as
     // proper website entries on the contact detail page.
     const resumeWebsites: { id: string; type: string; value: string; primary: boolean }[] = [];
-    if (resumeLinkedIn) resumeWebsites.push({ id: uid('w'), type: 'LinkedIn', value: resumeLinkedIn, primary: !resumeWebsites.length });
+    if (linkedinUrl) resumeWebsites.push({ id: uid('w'), type: 'LinkedIn', value: linkedinUrl, primary: !resumeWebsites.length });
     if (resumeGithub) resumeWebsites.push({ id: uid('w'), type: 'Social', value: resumeGithub, primary: !resumeWebsites.length });
     if (resumeWebsite) resumeWebsites.push({ id: uid('w'), type: 'Primary', value: resumeWebsite, primary: !resumeWebsites.length });
 
@@ -191,7 +191,7 @@ export default function NewPersonPage() {
       createdBy: 'Paul Wentzell',
       // Resume-extracted structured fields
       skills: resumeSkills.length ? resumeSkills : undefined,
-      linkedinUrl: resumeLinkedIn || undefined,
+      linkedinUrl: linkedinUrl || undefined,
       githubUrl: resumeGithub || undefined,
       websiteUrl: resumeWebsite || undefined,
       entries: {
@@ -333,6 +333,7 @@ export default function NewPersonPage() {
                   phoneExt={phoneExt} setPhoneExt={setPhoneExt}
                   phoneType={phoneType} setPhoneType={setPhoneType}
                   jobTitle={jobTitle} setJobTitle={setJobTitle}
+                  linkedinUrl={linkedinUrl} setLinkedinUrl={setLinkedinUrl}
                   errors={basicErrors}
                 />
               )}
@@ -542,6 +543,8 @@ function BasicInfoStep(props: any) {
       </div>
 
       <FormField label="Job Title (Optional)" value={props.jobTitle} onChange={props.setJobTitle} placeholder="e.g. VP of Engineering" error={props.errors?.jobTitle} />
+
+      <FormField label="LinkedIn URL (Optional)" value={props.linkedinUrl} onChange={props.setLinkedinUrl} placeholder="https://linkedin.com/in/..." />
     </div>
   );
 }
