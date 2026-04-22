@@ -8,6 +8,7 @@ import { fmtDate, uid, initials, getAvatarColor, ACME_COLORS } from '@/lib/utils
 import SectionCard, { FieldRow } from '@/components/detail/SectionCard';
 import { ValidationRule, validate, isValid, isEmail, isPhone, isUrl, maxLength } from '@/lib/validation';
 import { validateIdentifier, placeholderForType, isStateScoped, isDateType, numberFieldLabel, US_STATES } from '@/lib/validation/identifiers';
+import { getSectors, getChildren, getNodeByCode, getAncestors, formatCodeLabel } from '@/lib/data/naics';
 import { useUserStore } from '@/stores/user-store';
 
 interface DetailsTabProps {
@@ -534,17 +535,83 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
 
         {/* Industries (org) */}
         {isOrg && (
-          <SectionCard icon={<Factory size={16} />} title="Industries" cardId="card-industries" isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}
+          <SectionCard icon={<Factory size={16} />} title="Industries" cardId="card-industries"
+            isEditing={isEditing('industries')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
             incomplete={c.entries.industries.length === 0}
             isPinned={isPinned('industries')} onTogglePin={() => togglePin('industries')}>
-            {c.entries.industries.map((ind) => (
-              <div key={ind.id} className="flex items-center gap-4 py-2 border-b border-[var(--border-subtle)] last:border-0">
-                <span className="text-[13px] font-bold text-[var(--text-primary)] min-w-[50px]">{ind.code}</span>
-                <span className="text-[13px] text-[var(--text-primary)]">{ind.name}</span>
-                <button className="ml-auto text-[var(--brand-primary)]"><PencilSimple size={14} /></button>
-              </div>
-            ))}
-            <AddButton label="Add Industry" onClick={() => {}} />
+            {isEditing('industries') ? (
+              <EntryEditForm
+                section="industries" entryId={editing!.entryId} contact={c}
+                initialValues={(() => {
+                  // Derive the full 4-level chain from the stored leaf code so
+                  // editing pre-fills every dropdown, not just the leaf.
+                  if (!editing!.entryId || editing!.entryId === 'new') return undefined;
+                  const row = c.entries.industries.find((i) => i.id === editing!.entryId);
+                  if (!row) return undefined;
+                  const chain = getAncestors(row.code);
+                  return {
+                    sector: chain[0]?.code || '',
+                    subsector: chain[1]?.code || '',
+                    industryGroup: chain[2]?.code || '',
+                    industry: chain[3]?.code || row.code,
+                  };
+                })()}
+                fields={[
+                  { key: 'sector', label: 'Sector', type: 'select', required: true,
+                    options: getSectors().map((n) => ({ value: n.code, label: formatCodeLabel(n) })) },
+                  { key: 'subsector', label: 'Subsector', type: 'select', required: true,
+                    options: (v) => getChildren(v.sector).map((n) => ({ value: n.code, label: formatCodeLabel(n) })) },
+                  { key: 'industryGroup', label: 'Industry Group', type: 'select', required: true,
+                    options: (v) => getChildren(v.subsector).map((n) => ({ value: n.code, label: formatCodeLabel(n) })) },
+                  { key: 'industry', label: 'Industry', type: 'select', required: true,
+                    options: (v) => getChildren(v.industryGroup).map((n) => ({ value: n.code, label: formatCodeLabel(n) })) },
+                ]}
+                deriveFields={(changedKey, vals) => {
+                  // When a parent changes, clear any child that's no longer reachable.
+                  const updates: Record<string, string> = {};
+                  if (changedKey === 'sector') {
+                    updates.subsector = '';
+                    updates.industryGroup = '';
+                    updates.industry = '';
+                  } else if (changedKey === 'subsector') {
+                    updates.industryGroup = '';
+                    updates.industry = '';
+                  } else if (changedKey === 'industryGroup') {
+                    updates.industry = '';
+                  }
+                  return updates;
+                }}
+                onSave={(data) => {
+                  // Persist only the leaf {code, name} — everything else derives
+                  // from the taxonomy on next edit.
+                  const leaf = getNodeByCode(data.industry);
+                  if (!leaf) return;
+                  saveEntry('industries', editing!.entryId, { code: leaf.code, name: leaf.name });
+                }}
+                onCancel={cancelEdit}
+                onDelete={editing!.entryId && editing!.entryId !== 'new' ? () => setConfirmDelete({ section: 'industries', entryId: editing!.entryId! }) : undefined}
+              />
+            ) : (
+              <>
+                <div className="flex gap-4 py-1 border-b border-[var(--border-subtle)] text-[10px] font-bold text-[var(--text-tertiary)] uppercase">
+                  <span className="w-[18px]">Primary</span>
+                  <span className="min-w-[50px]">Sector</span>
+                  <span className="flex-1">Industry Group</span>
+                  <span className="w-6" />
+                </div>
+                {c.entries.industries.map((ind) => (
+                  <div key={ind.id} className="flex items-center gap-4 py-2 border-b border-[var(--border-subtle)] last:border-0">
+                    {ind.primary ? <CheckCircle size={18} weight="fill" className="text-[var(--success)] flex-shrink-0" /> : <div className="w-[18px] flex-shrink-0" />}
+                    <span className="text-[13px] font-bold text-[var(--text-primary)] min-w-[50px]">{ind.code}</span>
+                    <span className="flex-1 text-[13px] text-[var(--text-primary)] truncate">{ind.name}</span>
+                    <button onClick={() => startEdit('industries', ind.id)} className="text-[var(--brand-primary)] bg-transparent border-none cursor-pointer p-1">
+                      <PencilSimple size={14} />
+                    </button>
+                  </div>
+                ))}
+                <AddButton label="Add Industry" onClick={() => startEdit('industries', 'new')} />
+              </>
+            )}
           </SectionCard>
         )}
 
@@ -870,12 +937,14 @@ function authorityForType(isOrg: boolean, type: string): string {
   return catalog.find((t) => t.type === type)?.authority || '';
 }
 
+interface FieldOption { value: string; label: string }
+
 interface FieldConfig {
   key: string;
   label: string | ((values: Record<string, string>) => string);
   value?: string;
   type?: 'text' | 'select' | 'textarea' | 'date' | ((values: Record<string, string>) => 'text' | 'select' | 'textarea' | 'date');
-  options?: string[];
+  options?: Array<string | FieldOption> | ((values: Record<string, string>) => Array<string | FieldOption>);
   required?: boolean;
   maxLength?: number;
   validate?: 'email' | 'phone' | 'url' | 'zip' | 'name';
@@ -884,6 +953,11 @@ interface FieldConfig {
   inputMode?: 'text' | 'email' | 'tel' | 'url' | 'numeric' | 'decimal';
   autoComplete?: string;
   showWhen?: (values: Record<string, string>) => boolean;
+}
+
+function resolveOptions(f: FieldConfig, values: Record<string, string>): FieldOption[] {
+  const raw = typeof f.options === 'function' ? f.options(values) : (f.options || []);
+  return raw.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
 }
 
 function resolveLabel(f: FieldConfig, values: Record<string, string>): string {
@@ -995,7 +1069,7 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
               <select value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)}
                 className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}>
                 <option value="">Select</option>
-                {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                {resolveOptions(f, values).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             ) : resolvedType === 'textarea' ? (
               <textarea value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)} rows={3}
@@ -1034,11 +1108,12 @@ function EditForm({ fields, onSave, onCancel }: { fields: FieldConfig[]; onSave:
   );
 }
 
-function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, onDelete, deriveFields, crossFieldValidate }: {
+function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, onDelete, deriveFields, crossFieldValidate, initialValues }: {
   section: string; entryId: string | null; contact: ContactWithEntries; fields: FieldConfig[];
   onSave: (data: Record<string, string>) => void; onCancel: () => void; onDelete?: () => void;
   deriveFields?: (changedKey: string, values: Record<string, string>) => Record<string, string>;
   crossFieldValidate?: (values: Record<string, string>) => Record<string, string | undefined>;
+  initialValues?: Record<string, string>;
 }) {
   // Find existing entry data to pre-populate
   const entries = contact.entries;
@@ -1050,7 +1125,11 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     fields.forEach((f) => {
-      init[f.key] = existing ? String(existing[f.key] || '') : (f.value || '');
+      if (initialValues && initialValues[f.key] !== undefined) {
+        init[f.key] = initialValues[f.key];
+      } else {
+        init[f.key] = existing ? String(existing[f.key] || '') : (f.value || '');
+      }
     });
     return init;
   });
@@ -1146,7 +1225,7 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
                 <select value={values[f.key]} onChange={(e) => handleChange(f.key, e.target.value)} onBlur={() => handleBlur(f.key)}
                   className={`w-full h-[34px] px-2.5 ${inputBorder(f.key)} rounded-[var(--radius-sm)] text-[13px] text-[var(--text-primary)] bg-[var(--surface-card)] outline-none`}>
                   <option value="">Select</option>
-                  {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                  {resolveOptions(f, values).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               ) : (
                 <input
