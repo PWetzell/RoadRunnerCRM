@@ -14,6 +14,7 @@ import { RELATIONSHIP_META, RelationshipKind, bidirectionalKindsFor } from '@/ty
 import { ArrowSquareOut, LinkSimple } from '@phosphor-icons/react';
 import { ActivityLogCategory } from '@/types/activity-log';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useGeocode } from '@/lib/geocoding/useGeocode';
 
 const LOG_CATEGORIES: { id: ActivityLogCategory; label: string }[] = [
   { id: 'field', label: 'Field Changes' },
@@ -49,6 +50,15 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
   const isOrg = c.type === 'org';
   const people = isOrg ? contacts.filter((p) => p.type === 'person' && 'orgId' in p && p.orgId === c.id) : [];
   const org = !isOrg && 'orgId' in c && c.orgId ? contacts.find((o) => o.id === c.orgId) : null;
+
+  const primaryAddr = c.entries.addresses.find((a) => a.primary) || c.entries.addresses[0] || null;
+  const fullAddress = primaryAddr
+    ? [primaryAddr.value, primaryAddr.city, primaryAddr.state, primaryAddr.zip].filter(Boolean).join(', ')
+    : null;
+  const coords = useGeocode(fullAddress);
+  const primaryIndustry = isOrg && 'entries' in c
+    ? c.entries.industries.find((i) => i.primary) || c.entries.industries[0] || null
+    : null;
 
   // Relationships involving this contact (resolved with the other contact + inverse flag)
   const resolvedRels = useMemo(() => {
@@ -396,33 +406,67 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
 
         {/* Address */}
         <Card icon={<MapPin size={16} />} title="Address">
-          <p className="text-[11px] text-[var(--text-tertiary)] mb-1">Mailing</p>
-          <p className="text-[13px] text-[var(--text-primary)] leading-relaxed">
-            {c.entries.addresses[0]?.value || '875 Greenland Rd.'}<br />
-            Ste. 230, G<br />
-            {c.entries.addresses[0]?.city || 'Portsmouth'}, {c.entries.addresses[0]?.state || 'NH'} {c.entries.addresses[0]?.zip || '03811'}
-          </p>
+          {primaryAddr ? (
+            <>
+              <p className="text-[11px] text-[var(--text-tertiary)] mb-1">{primaryAddr.type || 'Mailing'}</p>
+              <p className="text-[13px] text-[var(--text-primary)] leading-relaxed">
+                {primaryAddr.value}<br />
+                {primaryAddr.city}, {primaryAddr.state} {primaryAddr.zip}
+              </p>
+            </>
+          ) : (
+            <p className="text-[12px] text-[var(--text-tertiary)] italic">No address on file</p>
+          )}
         </Card>
 
         {/* Map */}
         <Card icon={<MapTrifold size={16} />} title="Map">
-          <div className="h-[180px] rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)]">
-            <iframe width="100%" height="100%" frameBorder="0" scrolling="no"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=-71.06%2C43.07%2C-71.05%2C43.08&layer=mapnik&marker=43.075%2C-71.055"
-              className="block" />
+          <div className="h-[180px] rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] bg-[var(--surface-raised)] flex items-center justify-center">
+            {!primaryAddr && (
+              <span className="text-[11px] text-[var(--text-tertiary)]">Add an address to show a map</span>
+            )}
+            {primaryAddr && coords === undefined && (
+              <span className="text-[11px] text-[var(--text-tertiary)]">Locating…</span>
+            )}
+            {primaryAddr && coords === null && (
+              <span className="text-[11px] text-[var(--text-tertiary)]">Map unavailable for this address</span>
+            )}
+            {primaryAddr && coords && (
+              <iframe
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                scrolling="no"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${(coords.lng - 0.01).toFixed(6)}%2C${(coords.lat - 0.005).toFixed(6)}%2C${(coords.lng + 0.01).toFixed(6)}%2C${(coords.lat + 0.005).toFixed(6)}&layer=mapnik&marker=${coords.lat.toFixed(6)}%2C${coords.lng.toFixed(6)}`}
+                className="block"
+              />
+            )}
           </div>
-          <div className="flex justify-between items-center mt-2.5">
-            <div>
-              <p className="text-[11px] text-[var(--text-tertiary)]">GPS Coordinates</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Lat: <strong>43.075064</strong> · Lng: <strong>-71.055963</strong></p>
+          {primaryAddr && coords && (
+            <div className="flex justify-between items-center mt-2.5">
+              <div>
+                <p className="text-[11px] text-[var(--text-tertiary)]">GPS Coordinates</p>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">Lat: <strong>{coords.lat.toFixed(6)}</strong> · Lng: <strong>{coords.lng.toFixed(6)}</strong></p>
+              </div>
+              <button
+                onClick={() => navigator.clipboard?.writeText(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)]"
+              >
+                Copy
+              </button>
             </div>
-            <button className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)]">Copy</button>
-          </div>
+          )}
         </Card>
 
         {isOrg && (
           <Card icon={<Factory size={16} />} title="Industries">
-            <p className="text-[13px] text-[var(--text-secondary)]">Sector: 52111 · {'industry' in c ? c.industry || 'Financial Services' : 'Financial Services'}</p>
+            {primaryIndustry ? (
+              <p className="text-[13px] text-[var(--text-secondary)]">
+                <strong className="text-[var(--text-primary)]">{primaryIndustry.code}</strong> · {primaryIndustry.name}
+              </p>
+            ) : (
+              <p className="text-[12px] text-[var(--text-tertiary)] italic">No industry set</p>
+            )}
           </Card>
         )}
       </div>

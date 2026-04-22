@@ -131,7 +131,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
               </>
             )}
             <span>Updated</span>
-            <span className="font-bold text-[var(--text-secondary)]">{fmtDate(c.lastUpdated)}</span>
+            <span suppressHydrationWarning className="font-bold text-[var(--text-secondary)]">{fmtDate(c.lastUpdated)}</span>
             {primaryPhone && (
               <>
                 <span className="mx-1">·</span>
