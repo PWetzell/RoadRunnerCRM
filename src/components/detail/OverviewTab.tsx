@@ -405,7 +405,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
         )}
 
         {/* Address */}
-        <Card icon={<MapPin size={16} />} title="Address">
+        <Card icon={<MapPin size={16} />} title="Address" incomplete={!primaryAddr}>
           {primaryAddr ? (
             <>
               <p className="text-[11px] text-[var(--text-tertiary)] mb-1">{primaryAddr.type || 'Mailing'}</p>
@@ -420,7 +420,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
         </Card>
 
         {/* Map */}
-        <Card icon={<MapTrifold size={16} />} title="Map">
+        <Card icon={<MapTrifold size={16} />} title="Map" incomplete={!primaryAddr}>
           <div className="h-[180px] rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] bg-[var(--surface-raised)] flex items-center justify-center">
             {!primaryAddr && (
               <span className="text-[11px] text-[var(--text-tertiary)]">Add an address to show a map</span>
@@ -459,7 +459,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
         </Card>
 
         {isOrg && (
-          <Card icon={<Factory size={16} />} title="Industries">
+          <Card icon={<Factory size={16} />} title="Industries" incomplete={!primaryIndustry}>
             {primaryIndustry ? (
               <p className="text-[13px] text-[var(--text-secondary)]">
                 <strong className="text-[var(--text-primary)]">{primaryIndustry.code}</strong> · {primaryIndustry.name}
@@ -850,11 +850,18 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
 
 // ── Helper Components ──
 
-function Card({ icon, title, action, children }: { icon: React.ReactNode; title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Card({ icon, title, action, incomplete, children }: { icon: React.ReactNode; title: string; action?: React.ReactNode; incomplete?: boolean; children: React.ReactNode }) {
   return (
     <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl">
       <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)]">
-        <span className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">{icon} {title}</span>
+        <span className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+          {icon} {title}
+          {incomplete && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
+              <Warning size={11} /> Incomplete
+            </span>
+          )}
+        </span>
         {action}
       </div>
       <div className="px-4 py-3">{children}</div>
