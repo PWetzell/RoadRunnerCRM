@@ -8,8 +8,6 @@ import { FormField } from '@/components/ui/FormField';
 import { AIDuplicateDetection } from '@/components/contact-flow/ai/AIDuplicateDetection';
 import { AIOrgHierarchy } from '@/components/contact-flow/ai/AIOrgHierarchy';
 import { AIPrivacyAdvisory } from '@/components/contact-flow/ai/AIPrivacyAdvisory';
-import { DuplicateFoundDialog } from '@/components/contact-flow/DuplicateFoundDialog';
-import { DuplicateCandidate } from '@/lib/data/mock-ai/duplicate-contacts';
 import { useContactStore } from '@/stores/contact-store';
 import { useUserStore } from '@/stores/user-store';
 import { useDocumentStore } from '@/stores/document-store';
@@ -75,8 +73,6 @@ export default function NewPersonPage() {
   const [interactionNotes, setInteractionNotes] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
 
-  // Duplicate dialog state
-  const [duplicateDialog, setDuplicateDialog] = useState<{ open: boolean; candidate: DuplicateCandidate | null }>({ open: false, candidate: null });
 
   const aiSuggestionsOn = useUserStore((s) => s.aiEnabled && s.notifications.aiSuggestions);
 
@@ -410,7 +406,35 @@ export default function NewPersonPage() {
                   email={email}
                   phone={phone}
                   company={companyName}
-                  onReviewCandidate={(c) => setDuplicateDialog({ open: true, candidate: c })}
+                  onPickCandidate={(p) => {
+                    // Name: use firstName/lastName if provided, otherwise split the full name
+                    if (p.firstName || p.lastName) {
+                      setFirstName(p.firstName ?? '');
+                      setLastName(p.lastName ?? '');
+                      setMiddleName('');
+                    } else if (p.name) {
+                      const parts = p.name.trim().split(/\s+/);
+                      if (parts.length === 1) {
+                        setFirstName(parts[0]);
+                        setLastName('');
+                        setMiddleName('');
+                      } else if (parts.length === 2) {
+                        setFirstName(parts[0]);
+                        setLastName(parts[1]);
+                        setMiddleName('');
+                      } else {
+                        setFirstName(parts[0]);
+                        setMiddleName(parts.slice(1, -1).join(' '));
+                        setLastName(parts[parts.length - 1]);
+                      }
+                    }
+                    // Remaining fields: only overwrite when the suggestion has the data.
+                    // If the source doesn't provide the field, leave the form value alone.
+                    if (p.email) setEmail(p.email);
+                    if (p.phone) setPhone(p.phone);
+                    if (p.title) setJobTitle(p.title);
+                    if (p.company) setCompanyName(p.company);
+                  }}
                 />
               )}
 
@@ -435,51 +459,6 @@ export default function NewPersonPage() {
         </div>
       </div>
 
-      <DuplicateFoundDialog
-        open={duplicateDialog.open}
-        candidate={duplicateDialog.candidate}
-        newContact={{
-          name: `${firstName} ${lastName}`.trim(),
-          email,
-          phone,
-          title: jobTitle,
-          company: companyName,
-        }}
-        onKeepExisting={() => {
-          if (duplicateDialog.candidate) router.push(`/contacts/${duplicateDialog.candidate.id}`);
-          setDuplicateDialog({ open: false, candidate: null });
-        }}
-        onSmartMerge={() => {
-          // Smart Merge: overwrite the user's draft with the canonical record's data.
-          // The user has acknowledged this IS the same person, so the existing
-          // record (which is more complete/clean) wins. They can edit afterwards.
-          const c = duplicateDialog.candidate;
-          if (c) {
-            // Parse name into first/middle/last
-            const nameParts = c.name.trim().split(/\s+/);
-            if (nameParts.length === 1) {
-              setFirstName(nameParts[0]);
-              setLastName('');
-              setMiddleName('');
-            } else if (nameParts.length === 2) {
-              setFirstName(nameParts[0]);
-              setLastName(nameParts[1]);
-              setMiddleName('');
-            } else {
-              setFirstName(nameParts[0]);
-              setMiddleName(nameParts.slice(1, -1).join(' '));
-              setLastName(nameParts[nameParts.length - 1]);
-            }
-            if (c.email) setEmail(c.email);
-            if (c.phone) setPhone(c.phone);
-            if (c.title && c.title !== '—') setJobTitle(c.title);
-            if (c.company) setCompanyName(c.company);
-          }
-          setDuplicateDialog({ open: false, candidate: null });
-        }}
-        onCreateNew={() => setDuplicateDialog({ open: false, candidate: null })}
-        onClose={() => setDuplicateDialog({ open: false, candidate: null })}
-      />
     </>
   );
 }

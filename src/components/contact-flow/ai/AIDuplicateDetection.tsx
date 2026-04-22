@@ -10,13 +10,28 @@ import { usePublicPeopleSearch } from '@/lib/hooks/usePublicSourceSearch';
 import type { ExternalPerson } from '@/lib/data/public-sources/types';
 import { SourceBadge } from './SourceBadge';
 
+/**
+ * Shape passed to the parent when the user picks a suggestion card.
+ * Both internal CRM cards and external public-source cards map into
+ * this common shape so the parent has one populate path.
+ */
+export interface PickedCandidate {
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  title?: string;
+  company?: string;
+}
+
 interface Props {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   company?: string;
-  onReviewCandidate: (candidate: DuplicateCandidate) => void;
+  onPickCandidate: (picked: PickedCandidate) => void;
 }
 
 /**
@@ -26,7 +41,7 @@ interface Props {
  *
  * Each result shows its source so the user can trust or verify the provenance.
  */
-export function AIDuplicateDetection({ firstName, lastName, email, phone, company, onReviewCandidate }: Props) {
+export function AIDuplicateDetection({ firstName, lastName, email, phone, company, onPickCandidate }: Props) {
   const [progress, setProgress] = useState(0);
   const [scanning, setScanning] = useState(false);
   const [internalCandidates, setInternalCandidates] = useState<DuplicateCandidate[]>([]);
@@ -128,7 +143,13 @@ export function AIDuplicateDetection({ firstName, lastName, email, phone, compan
               {internalCandidates.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => onReviewCandidate(c)}
+                  onClick={() => onPickCandidate({
+                    name: c.name,
+                    email: c.email,
+                    phone: c.phone,
+                    title: c.title && c.title !== '—' ? c.title : undefined,
+                    company: c.company,
+                  })}
                   className="text-left bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 cursor-pointer hover:border-[var(--ai)] transition-all animate-[fadeUp_0.3s_ease-out]"
                 >
                   <div className="flex items-center gap-2.5 mb-2">
@@ -181,7 +202,18 @@ export function AIDuplicateDetection({ firstName, lastName, email, phone, compan
                 From public sources
               </div>
               {externalCandidates.slice(0, 6).map((p) => (
-                <ExternalPersonCard key={p.id} person={p} />
+                <ExternalPersonCard
+                  key={p.id}
+                  person={p}
+                  onPick={() => onPickCandidate({
+                    name: p.name,
+                    firstName: p.firstName,
+                    lastName: p.lastName,
+                    email: p.email,
+                    title: p.title,
+                    company: p.company,
+                  })}
+                />
               ))}
             </div>
           )}
@@ -198,7 +230,7 @@ export function AIDuplicateDetection({ firstName, lastName, email, phone, compan
 
           {(internalCandidates.length > 0 || externalCandidates.length > 0) && (
             <p className="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-              Tap any suggestion to review and merge — or keep typing to create a new contact.
+              Click any suggestion to fill the form — or keep typing to create a new contact.
             </p>
           )}
         </>
@@ -207,24 +239,18 @@ export function AIDuplicateDetection({ firstName, lastName, email, phone, compan
   );
 }
 
-function ExternalPersonCard({ person }: { person: import('@/lib/data/public-sources/types').ExternalPerson }) {
+function ExternalPersonCard({ person, onPick }: { person: import('@/lib/data/public-sources/types').ExternalPerson; onPick: () => void }) {
   const display = person.name;
   return (
-    <a
-      href={person.sourceUrl}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 no-underline hover:border-[var(--ai)] transition-all animate-[fadeUp_0.3s_ease-out] block"
+    <button
+      type="button"
+      onClick={onPick}
+      className="text-left w-full bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 cursor-pointer hover:border-[var(--ai)] transition-all animate-[fadeUp_0.3s_ease-out] block"
     >
       <div className="flex items-center gap-2.5 mb-2">
-        {person.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={person.avatarUrl} alt={display} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0">
-            {initials(display)}
-          </div>
-        )}
+        <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0">
+          {initials(display)}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">{display}</div>
           {(person.title || person.company) && (
@@ -258,7 +284,7 @@ function ExternalPersonCard({ person }: { person: import('@/lib/data/public-sour
           </div>
         )}
       </div>
-    </a>
+    </button>
   );
 }
 

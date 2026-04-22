@@ -8,13 +8,11 @@ import { FormField } from '@/components/ui/FormField';
 import { AIOrgDuplicateDetection } from '@/components/contact-flow/ai/AIOrgDuplicateDetection';
 import { AIEnrichmentPreview } from '@/components/contact-flow/ai/AIEnrichmentPreview';
 import { AIEnrichmentReview } from '@/components/contact-flow/ai/AIEnrichmentReview';
-import { OrgDuplicateFoundDialog } from '@/components/contact-flow/OrgDuplicateFoundDialog';
 import { useContactStore } from '@/stores/contact-store';
 import { useUserStore } from '@/stores/user-store';
 import { ContactWithEntries } from '@/types/contact';
 import { initials, getAvatarColor, uid } from '@/lib/utils';
 import { enrichCompany, EnrichmentField, EnrichmentResult } from '@/lib/data/mock-ai/company-enrichment';
-import { OrgDuplicateCandidate } from '@/lib/data/mock-ai/duplicate-orgs';
 import { Relationship, RelationshipKind, RELATIONSHIP_META, validKindsFor } from '@/types/relationship';
 import { isUrl, isPhone } from '@/lib/validation';
 import { toast } from '@/lib/toast';
@@ -63,8 +61,6 @@ export default function NewCompanyPage() {
   interface PendingRel { tempId: string; toContactId: string; kind: RelationshipKind; }
   const [pendingRels, setPendingRels] = useState<PendingRel[]>([]);
 
-  // Duplicate dialog
-  const [duplicateDialog, setDuplicateDialog] = useState<{ open: boolean; candidate: OrgDuplicateCandidate | null }>({ open: false, candidate: null });
 
   // Field-level validation state for the details step
   const detailsErrors = useMemo(() => {
@@ -321,7 +317,14 @@ export default function NewCompanyPage() {
                       companyName={companyName}
                       website={website}
                       hq={hq}
-                      onReviewCandidate={(c) => setDuplicateDialog({ open: true, candidate: c })}
+                      onPickCandidate={(p) => {
+                        setCompanyName(p.name);
+                        if (p.website) setWebsite(p.website);
+                        if (p.hq) setHq(p.hq);
+                        if (p.industry && p.industry !== '—') setIndustry(p.industry);
+                        if (p.description) setDescription(p.description);
+                        if (p.employees && p.employees !== '—') setEmployees(p.employees);
+                      }}
                     />
                     <AIEnrichmentPreview companyName={companyName} website={website} />
                   </>
@@ -354,36 +357,6 @@ export default function NewCompanyPage() {
         </div>
       </div>
 
-      <OrgDuplicateFoundDialog
-        open={duplicateDialog.open}
-        candidate={duplicateDialog.candidate}
-        newCompany={{
-          name: companyName,
-          industry,
-          website,
-          hq,
-          employees,
-        }}
-        onKeepExisting={() => {
-          if (duplicateDialog.candidate) router.push(`/contacts/${duplicateDialog.candidate.id}`);
-          setDuplicateDialog({ open: false, candidate: null });
-        }}
-        onSmartMerge={() => {
-          // Smart Merge: overwrite the user's draft with the canonical record's data.
-          // User can still edit afterwards.
-          const c = duplicateDialog.candidate;
-          if (c) {
-            setCompanyName(c.name);
-            if (c.industry && c.industry !== '—') setIndustry(c.industry);
-            if (c.website) setWebsite(c.website);
-            if (c.hq) setHq(c.hq);
-            if (c.employees && c.employees !== '—') setEmployees(c.employees);
-          }
-          setDuplicateDialog({ open: false, candidate: null });
-        }}
-        onCreateNew={() => setDuplicateDialog({ open: false, candidate: null })}
-        onClose={() => setDuplicateDialog({ open: false, candidate: null })}
-      />
     </>
   );
 }

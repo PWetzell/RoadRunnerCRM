@@ -10,11 +10,25 @@ import { usePublicCompanySearch } from '@/lib/hooks/usePublicSourceSearch';
 import type { ExternalCompany, ProviderId } from '@/lib/data/public-sources/types';
 import { SourceBadge } from './SourceBadge';
 
+/**
+ * Shape passed to the parent when the user picks a suggestion card.
+ * Both internal CRM cards and external public-source cards map into
+ * this common shape so the parent has one populate path.
+ */
+export interface PickedOrg {
+  name: string;
+  website?: string;
+  hq?: string;
+  industry?: string;
+  description?: string;
+  employees?: string;
+}
+
 interface Props {
   companyName: string;
   website?: string;
   hq?: string;
-  onReviewCandidate: (candidate: OrgDuplicateCandidate) => void;
+  onPickCandidate: (picked: PickedOrg) => void;
 }
 
 /**
@@ -25,7 +39,7 @@ interface Props {
  *
  * Every suggestion is tagged with its data source.
  */
-export function AIOrgDuplicateDetection({ companyName, website, hq, onReviewCandidate }: Props) {
+export function AIOrgDuplicateDetection({ companyName, website, hq, onPickCandidate }: Props) {
   const [progress, setProgress] = useState(0);
   const [scanning, setScanning] = useState(false);
   const [internalCandidates, setInternalCandidates] = useState<OrgDuplicateCandidate[]>([]);
@@ -115,7 +129,13 @@ export function AIOrgDuplicateDetection({ companyName, website, hq, onReviewCand
               {internalCandidates.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => onReviewCandidate(c)}
+                  onClick={() => onPickCandidate({
+                    name: c.name,
+                    website: c.website,
+                    hq: c.hq,
+                    industry: c.industry,
+                    employees: c.employees,
+                  })}
                   className="text-left bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 cursor-pointer hover:border-[var(--ai)] transition-all animate-[fadeUp_0.3s_ease-out]"
                 >
                   <div className="flex items-center gap-2.5 mb-2">
@@ -166,7 +186,18 @@ export function AIOrgDuplicateDetection({ companyName, website, hq, onReviewCand
                 From public registries
               </div>
               {externalCandidates.slice(0, 8).map((c) => (
-                <ExternalCompanyCard key={c.id} company={c} />
+                <ExternalCompanyCard
+                  key={c.id}
+                  company={c}
+                  onPick={() => onPickCandidate({
+                    name: c.name,
+                    website: c.website,
+                    hq: c.hq,
+                    industry: c.industry,
+                    description: c.description,
+                    employees: c.employees,
+                  })}
+                />
               ))}
             </div>
           )}
@@ -183,7 +214,7 @@ export function AIOrgDuplicateDetection({ companyName, website, hq, onReviewCand
 
           {anyResults && (
             <p className="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-              Tap any match to review, merge, or keep creating as new.
+              Click any suggestion to fill the form — or keep typing to create a new company.
             </p>
           )}
         </>
@@ -192,25 +223,19 @@ export function AIOrgDuplicateDetection({ companyName, website, hq, onReviewCand
   );
 }
 
-function ExternalCompanyCard({ company }: { company: ExternalCompany }) {
+function ExternalCompanyCard({ company, onPick }: { company: ExternalCompany; onPick: () => void }) {
   const extraSources: ProviderId[] = Object.keys(company.identifiers || {})
     .filter((k) => k !== company.source) as ProviderId[];
   return (
-    <a
-      href={company.sourceUrl}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 no-underline hover:border-[var(--ai)] transition-all animate-[fadeUp_0.3s_ease-out] block"
+    <button
+      type="button"
+      onClick={onPick}
+      className="text-left w-full bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 cursor-pointer hover:border-[var(--ai)] transition-all animate-[fadeUp_0.3s_ease-out] block"
     >
       <div className="flex items-center gap-2.5 mb-2">
-        {company.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={company.logoUrl} alt={company.name} className="w-8 h-8 rounded-[6px] object-cover bg-[var(--surface-card)] flex-shrink-0" />
-        ) : (
-          <div className="w-8 h-8 rounded-[6px] bg-[var(--brand-primary)] flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0">
-            {initials(company.name)}
-          </div>
-        )}
+        <div className="w-8 h-8 rounded-[6px] bg-[var(--brand-primary)] flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0">
+          {initials(company.name)}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">{company.name}</div>
           {(company.industry || company.description) && (
@@ -245,7 +270,7 @@ function ExternalCompanyCard({ company }: { company: ExternalCompany }) {
           </div>
         )}
       </div>
-    </a>
+    </button>
   );
 }
 
