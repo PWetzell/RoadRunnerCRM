@@ -116,14 +116,36 @@ export default function NewCompanyPage() {
 
   const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errs: Record<string, string> = {};
     if (!companyName.trim()) errs.companyName = 'Company name is required';
     else if (companyName.trim().length < 2) errs.companyName = 'Company name must be at least 2 characters';
     setSaveErrors(errs);
     if (Object.values(errs).some(Boolean)) return;
 
-    const id = uid('org');
+    // Persist to the DB FIRST so we use the server-allocated UUID as the
+    // contact id — see the matching note in /contacts/new/person/page.tsx.
+    let id: string;
+    try {
+      const r = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: companyName.trim(),
+          type: 'org',
+          phone: phone || null,
+        }),
+      });
+      const body = await r.json().catch(() => ({} as { error?: string; contact?: { id: string } }));
+      if (!r.ok || !body.contact?.id) {
+        throw new Error(body.error || `save failed (${r.status})`);
+      }
+      id = body.contact.id;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Save failed';
+      toast.error('Couldn\u2019t save company', { description: msg });
+      return;
+    }
     const today = new Date().toISOString().split('T')[0];
 
     const acceptedFields = reviewedFields.filter((f) => f.accepted);
@@ -183,7 +205,7 @@ export default function NewCompanyPage() {
     <>
       <Topbar title="Contacts" />
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 pt-4 text-[13px]">
+        <div className="px-6 pt-4 text-[13px]" data-tour="company-breadcrumb">
           <button
             onClick={() => router.push('/contacts')}
             className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold"
@@ -203,7 +225,7 @@ export default function NewCompanyPage() {
 
         <div className="px-6 py-6">
           {currentStep === 'enrichment' && enrichmentResult ? (
-            <>
+            <div data-tour="company-step-enrichment">
               <AIEnrichmentReview result={enrichmentResult} onChange={setReviewedFields} />
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--border)]">
                 <button onClick={goBack} className="text-[13px] font-semibold text-[var(--text-secondary)] bg-transparent border-none cursor-pointer hover:text-[var(--brand-primary)]">
@@ -216,10 +238,10 @@ export default function NewCompanyPage() {
                   Next Step →
                 </button>
               </div>
-            </>
+            </div>
           ) : (
             <div className="grid grid-cols-[1fr_380px] gap-4 items-start">
-              <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6 relative">
+              <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6 relative" data-tour={`company-step-${currentStep}`}>
                 {/* Prominent close button — mirrors the X pattern users know
                     from the right-pane SlidePanel. Also responds to the ESC key. */}
                 <button
@@ -310,7 +332,7 @@ export default function NewCompanyPage() {
               </div>
 
               {/* Right sidebar */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3" data-tour="company-ai-sidebar">
                 {currentStep === 'details' && aiSuggestionsOn && (
                   <>
                     <AIOrgDuplicateDetection

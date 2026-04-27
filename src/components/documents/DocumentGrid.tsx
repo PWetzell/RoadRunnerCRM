@@ -4,10 +4,7 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   File, FilePdf, FileDoc, FileText, FileZip, FileVideo, FileAudio, Image,
-  Eye, Trash, Tag, Star, Flag, Bookmark, CalendarBlank, User, Briefcase,
-  CheckCircle, Clock, CurrencyDollar, Buildings, Sparkle, ShieldCheck,
-  PaperPlaneTilt, Handshake, MagnifyingGlass, Target,
-  ReadCvLogo, Article, ClipboardText, Notepad,
+  Eye, Trash, Star,
 } from '@phosphor-icons/react';
 import { useDocumentStore } from '@/stores/document-store';
 import { useListStore } from '@/stores/list-store';
@@ -19,55 +16,8 @@ import { CrmDocument, formatFileSize, getFileExtension, FileFamily, getExtColor,
 import { fmtDate } from '@/lib/utils';
 import SharedDataGrid, { ColumnDef } from '@/components/ui/SharedDataGrid';
 import { useIsDark } from '@/hooks/useIsDark';
-import { PILL_COLORS, dc } from '@/lib/pill-colors';
-
-const TAG_PALETTE_KEYS = ['blue', 'green', 'red', 'violet', 'orange', 'cyan', 'pink', 'amber'] as const;
-const TAG_PALETTE_DATA = TAG_PALETTE_KEYS.map((k) => PILL_COLORS[k]);
-
-const TAG_ICON_MAP: Record<string, typeof Tag> = {
-  monthly: CalendarBlank, weekly: CalendarBlank, quarterly: CalendarBlank, Q2: CalendarBlank, Q1: CalendarBlank, Q3: CalendarBlank, Q4: CalendarBlank,
-  report: Article, forecast: Notepad, template: ClipboardText,
-  resume: ReadCvLogo, candidate: User,
-  signed: CheckCircle, active: CheckCircle, verified: ShieldCheck,
-  paid: CurrencyDollar, closed: CurrencyDollar, fees: CurrencyDollar,
-  sent: PaperPlaneTilt, slate: Briefcase,
-  NDA: ShieldCheck, legal: ShieldCheck,
-  JD: ClipboardText, hire: Briefcase,
-  client: Buildings, partner: Handshake,
-  search: MagnifyingGlass,
-  prospect: Target, lead: Target,
-};
-const TAG_ICON_FALLBACKS = [Tag, Star, Flag, Bookmark, Sparkle];
-
-const TAG_COLOR_OVERRIDES: Record<string, number> = {
-  resume: 0,      // blue
-  candidate: 3,   // purple
-  signed: 1,      // green
-  active: 1,      // green
-  paid: 4,        // orange
-  closed: 2,      // red
-  monthly: 5,     // cyan
-  report: 7,      // amber
-  slate: 6,       // pink
-  sent: 5,        // cyan
-};
-
-function getTagPillData(tag: string) {
-  const lower = tag.toLowerCase();
-  if (TAG_COLOR_OVERRIDES[lower] !== undefined) return TAG_PALETTE_DATA[TAG_COLOR_OVERRIDES[lower]];
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-  return TAG_PALETTE_DATA[Math.abs(hash) % TAG_PALETTE_DATA.length];
-}
-
-function getTagIcon(tag: string) {
-  const lower = tag.toLowerCase();
-  if (TAG_ICON_MAP[tag]) return TAG_ICON_MAP[tag];
-  if (TAG_ICON_MAP[lower]) return TAG_ICON_MAP[lower];
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-  return TAG_ICON_FALLBACKS[Math.abs(hash) % TAG_ICON_FALLBACKS.length];
-}
+import { dc } from '@/lib/pill-colors';
+import { getTagPillData, getTagIcon } from '@/lib/document-tag-style';
 
 const FAMILY_ICON: Record<FileFamily, typeof File> = {
   pdf: FilePdf, office: FileDoc, text: FileText, archive: FileZip,

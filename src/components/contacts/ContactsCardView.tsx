@@ -1,15 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowsDownUp } from '@phosphor-icons/react';
 import { useContactStore } from '@/stores/contact-store';
 import { useListStore } from '@/stores/list-store';
+import { useUserStore } from '@/stores/user-store';
 import { getAvatarColor, initials } from '@/lib/utils';
-import { CheckCircle, Warning, EyeSlash, Tag, Funnel } from '@phosphor-icons/react';
+import { CheckCircle, Warning, EyeSlash, Tag, Funnel, Rows, EnvelopeSimple } from '@phosphor-icons/react';
 import { ContactWithEntries } from '@/types/contact';
+import { useUnreadCountForContact } from '@/hooks/use-unread-emails';
 import InlineCardSettings, { useCardStyleVars, useCardHeaderColor } from '@/components/ui/InlineCardSettings';
 import SavedCardViewBar from '@/components/ui/SavedCardViewBar';
+import { cardDensityStyle, DENSITY_LABELS, DENSITY_HINTS, GridDensity } from '@/lib/grid-density';
 
 const TAG_PALETTE = [
   'bg-[var(--brand-bg)] text-[var(--brand-primary)]',
@@ -36,6 +38,8 @@ export default function ContactsCardView() {
   const filter = useContactStore((s) => s.filter);
   const search = useContactStore((s) => s.search);
   const memberships = useListStore((s) => s.memberships);
+  const gridDensity = useUserStore((s) => s.gridDensity);
+  const setGridDensity = useUserStore((s) => s.setGridDensity);
   const [sortBy, setSortBy] = useState<CardSort>('lastUpdated');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -43,6 +47,19 @@ export default function ContactsCardView() {
   const [createdByFilter, setCreatedByFilter] = useState('');
   const [privateOnly, setPrivateOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showDensityMenu, setShowDensityMenu] = useState(false);
+  const densityMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!showDensityMenu) return;
+    const onClick = (e: MouseEvent) => {
+      if (densityMenuRef.current && !densityMenuRef.current.contains(e.target as Node)) {
+        setShowDensityMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [showDensityMenu]);
 
   // Get unique createdBy values
   const createdByOptions = useMemo(() => {
@@ -131,6 +148,40 @@ export default function ContactsCardView() {
           Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
         </button>
 
+        {/* Density picker — same 3 presets as the grid view, shared via useUserStore */}
+        <div className="relative" ref={densityMenuRef} data-tour="card-density-menu">
+          <button
+            onClick={() => setShowDensityMenu(!showDensityMenu)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+            title="Card density"
+          >
+            <Rows size={14} weight="bold" /> Density
+          </button>
+          {showDensityMenu && (
+            <div className="absolute left-0 top-9 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg z-[70] w-[240px] py-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1 px-3">Card density</div>
+              {(['compact', 'comfortable', 'spacious'] as GridDensity[]).map((d) => {
+                const active = gridDensity === d;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => { setGridDensity(d); setShowDensityMenu(false); }}
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-left bg-transparent border-none cursor-pointer ${
+                      active ? 'bg-[var(--brand-bg)]' : 'hover:bg-[var(--surface-raised)]'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${active ? 'bg-[var(--brand-primary)]' : 'bg-transparent border border-[var(--border-strong)]'}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-[12px] font-bold ${active ? 'text-[var(--brand-primary)]' : 'text-[var(--text-primary)]'}`}>{DENSITY_LABELS[d]}</div>
+                      <div className="text-[10px] text-[var(--text-tertiary)]">{DENSITY_HINTS[d]}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <span className="ml-auto text-[11px] font-semibold text-[var(--text-tertiary)]">
           {list.length} {list.length === 1 ? 'contact' : 'contacts'}
         </span>
@@ -142,7 +193,7 @@ export default function ContactsCardView() {
           {/* Sort */}
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value as CardSort)}
             className="h-[28px] px-2 text-[11px] font-bold bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none cursor-pointer">
-            <option value="lastUpdated">Sort: Date Updated</option>
+            <option value="lastUpdated">Sort: Last Activity</option>
             <option value="name">Sort: Name</option>
             <option value="status">Sort: Status</option>
             <option value="type">Sort: Type</option>
@@ -193,8 +244,14 @@ export default function ContactsCardView() {
           )}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto pb-3">
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+      <div className="flex-1 overflow-y-auto pb-3" style={cardDensityStyle(gridDensity)} data-density={gridDensity}>
+        <div
+          className="grid"
+          style={{
+            gap: 'var(--card-gap)',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(var(--card-col-width), 1fr))',
+          }}
+        >
           {list.map((c) => (
             <ContactCard key={c.id} c={c} onOpen={() => router.push(`/contacts/${c.id}`)} />
           ))}
@@ -210,24 +267,38 @@ function ContactCard({ c, onOpen }: { c: ContactWithEntries; onOpen: () => void 
     ? ('industry' in c ? c.industry : '')
     : ('title' in c && c.title ? c.title : '') + ('orgName' in c && c.orgName ? ` · ${c.orgName}` : '');
   const tags = (c.tags || []).slice(0, 2);
+  // Surface unread email pressure on the card header — keeps parity with
+  // ContactTable's list-view chip. Only renders when unread > 0 so the
+  // card layout for cold contacts is unchanged. Reactive via the store's
+  // read-override set so reading an email clears the chip immediately.
+  const unread = useUnreadCountForContact(c.id);
 
   const cardKey = `contact-card-${c.id}`;
   const cssVars = useCardStyleVars(cardKey);
   const accent = useCardHeaderColor(cardKey);
 
+  const mergedVars = { ...cssVars, padding: 'var(--card-p)', gap: 'calc(var(--card-p) * 0.55)' } as React.CSSProperties;
+  const avatarFont = 'calc(var(--card-avatar) * 0.29)';
+
   return (
     <div
       onClick={onOpen}
-      style={cssVars}
-      className="group/icard relative bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-3 text-left hover:border-[var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer flex flex-col gap-2"
+      style={mergedVars}
+      className="group/icard relative bg-[var(--surface-card)] border border-[var(--border)] rounded-xl text-left hover:border-[var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer flex flex-col"
     >
       {accent && <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style={{ background: accent }} />}
       <InlineCardSettings cardId={cardKey} title={c.name} defaultIconName={isOrg ? 'Buildings' : 'User'} />
       {/* Header: avatar only */}
       <div className="flex items-start gap-2">
         <div
-          className="w-12 h-12 flex items-center justify-center text-[14px] font-extrabold text-white flex-shrink-0"
-          style={{ background: getAvatarColor(c.id, c.avatarColor), borderRadius: isOrg ? '8px' : '50%' }}
+          className="flex items-center justify-center font-extrabold text-white flex-shrink-0"
+          style={{
+            background: getAvatarColor(c.id, c.avatarColor),
+            borderRadius: isOrg ? '8px' : '50%',
+            width: 'var(--card-avatar)',
+            height: 'var(--card-avatar)',
+            fontSize: avatarFont,
+          }}
         >
           {initials(c.name)}
         </div>
@@ -236,43 +307,53 @@ function ContactCard({ c, onOpen }: { c: ContactWithEntries; onOpen: () => void 
       {/* Name + subtitle */}
       <div className="min-w-0 pr-8">
         <div className="flex items-center gap-1.5">
-          <span className="text-[14px] font-extrabold text-[var(--text-primary)] truncate">{c.name}</span>
+          <span className="font-extrabold text-[var(--text-primary)] truncate" style={{ fontSize: 'var(--card-name-font)' }}>{c.name}</span>
           {c.isPrivate && <EyeSlash size={12} className="text-[var(--danger)] flex-shrink-0" />}
+          {unread > 0 && (
+            <span
+              aria-label={`${unread} unread email${unread === 1 ? '' : 's'}`}
+              title={`${unread} unread email${unread === 1 ? '' : 's'}`}
+              className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold leading-none flex-shrink-0"
+            >
+              <EnvelopeSimple size={10} weight="fill" />
+              {unread}
+            </span>
+          )}
         </div>
-        <div className="text-[11px] text-[var(--text-secondary)] truncate">{subtitle || '—'}</div>
+        <div className="text-[var(--text-secondary)] truncate" style={{ fontSize: 'var(--card-sub-font)' }}>{subtitle || '—'}</div>
       </div>
 
       {/* Status + Tags */}
-      <div className="flex items-center gap-1 flex-nowrap overflow-hidden">
+      <div className="flex items-center gap-1 flex-nowrap overflow-hidden" style={{ fontSize: 'var(--card-chip-font)' }}>
         {c.stale ? (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] whitespace-nowrap flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] whitespace-nowrap flex-shrink-0">
             <Warning size={9} /> Incomplete
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] whitespace-nowrap flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] whitespace-nowrap flex-shrink-0">
             <CheckCircle size={9} /> Complete
           </span>
         )}
         {tags.map((t) => (
           <span
             key={t}
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold flex-shrink-0 whitespace-nowrap ${tagColorClass(t)}`}
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0 whitespace-nowrap ${tagColorClass(t)}`}
           >
             <Tag size={8} weight="fill" /> {t}
           </span>
         ))}
         {(c.tags || []).length > 2 && (
-          <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0">+{(c.tags || []).length - 2}</span>
+          <span className="text-[var(--text-tertiary)] flex-shrink-0">+{(c.tags || []).length - 2}</span>
         )}
       </div>
 
       {/* Type pill */}
-      <div className="mt-auto pt-1 border-t border-[var(--border-subtle)] flex items-center justify-between">
-        <span className="text-[10px] text-[var(--text-tertiary)] font-semibold uppercase tracking-wider">
+      <div className="mt-auto pt-1 border-t border-[var(--border-subtle)] flex items-center justify-between" style={{ fontSize: 'var(--card-chip-font)' }}>
+        <span className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wider">
           {isOrg ? 'Organization' : 'Person'}
         </span>
         {c.assignedTo && (
-          <span className="text-[10px] text-[var(--text-tertiary)] truncate">{c.assignedTo}</span>
+          <span className="text-[var(--text-tertiary)] truncate">{c.assignedTo}</span>
         )}
       </div>
     </div>

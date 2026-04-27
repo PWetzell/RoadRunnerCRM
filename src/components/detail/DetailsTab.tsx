@@ -1,24 +1,76 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ContactWithEntries, AddressEntry, EmailEntry, PhoneEntry, WebsiteEntry, NameEntry, IdentifierEntry } from '@/types/contact';
 import { useContactStore } from '@/stores/contact-store';
-import { PencilSimple, X, CheckCircle, Warning, MapPin, EnvelopeSimple, Phone as PhoneIcon, Globe, Buildings, ShieldCheck, Fingerprint, Sparkle, IdentificationBadge, Factory, Hash, FloppyDisk, Trash, Plus, Check, Briefcase, Info, DotsSixVertical, PushPin, EyeSlash, Eye, UserPlus, UserMinus } from '@phosphor-icons/react';
+import { PencilSimple, X, CheckCircle, Warning, MapPin, EnvelopeSimple, Phone as PhoneIcon, Globe, Buildings, ShieldCheck, Fingerprint, Sparkle, IdentificationBadge, Factory, Hash, FloppyDisk, Trash, Plus, Check, Briefcase, Info, DotsSixVertical, PushPin, EyeSlash, Eye, UserPlus, UserMinus, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { fmtDate, uid, initials, getAvatarColor, ACME_COLORS } from '@/lib/utils';
 import SectionCard, { FieldRow } from '@/components/detail/SectionCard';
 import { ValidationRule, validate, isValid, isEmail, isPhone, isUrl, maxLength } from '@/lib/validation';
 import { validateIdentifier, placeholderForType, isStateScoped, isDateType, numberFieldLabel, US_STATES } from '@/lib/validation/identifiers';
 import { getSectors, getChildren, getNodeByCode, getAncestors, formatCodeLabel } from '@/lib/data/naics';
+import { getEntrySuggestions, type EntrySuggestion } from '@/lib/data/mock-ai/entry-suggestions';
+import InlineAISuggestion, { INLINE_AI_THRESHOLD } from '@/components/ai/InlineAISuggestion';
 import { useUserStore } from '@/stores/user-store';
+import { toast } from '@/lib/toast';
+
+const PIN_LABELS: Record<string, string> = {
+  identity: 'Identity', visibility: 'Visibility & Access', names: 'Names',
+  jobtitle: 'Job Title', skills: 'Skills', addresses: 'Addresses', emails: 'Emails',
+  phones: 'Phone', websites: 'Websites', general: 'General Information',
+  industries: 'Industries', identifiers: 'Identification',
+};
+
+// Labels for every card on the Details tab, keyed by cardId. Used by
+// the "Hidden cards" restore bar so the user can turn a card back on
+// by name. Includes non-pinnable cards (Visibility, System IDs, AI
+// Health) because the hide/show control is independent of pin state.
+const CARD_LABELS: Record<string, string> = {
+  'card-identity': 'Identity',
+  'card-visibility': 'Visibility & Access',
+  'card-names': 'Names',
+  'card-jobtitle': 'Job Title',
+  'card-skills': 'Skills',
+  'card-addresses': 'Addresses',
+  'card-emails': 'Emails',
+  'card-phones': 'Phone',
+  'card-websites': 'Websites',
+  'card-general': 'General Information',
+  'card-industries': 'Industries',
+  'card-identification': 'Identification',
+  'card-sysids': 'System Identifiers',
+  'card-aihealth': 'AI Record Health',
+};
+
+const SECTION_LABELS: Record<string, { singular: string }> = {
+  identity: { singular: 'Identity' },
+  general: { singular: 'General info' },
+  addresses: { singular: 'Address' },
+  emails: { singular: 'Email' },
+  phones: { singular: 'Phone' },
+  websites: { singular: 'Website' },
+  names: { singular: 'Name' },
+  identifiers: { singular: 'Identifier' },
+  industries: { singular: 'Industry' },
+  jobtitle: { singular: 'Job title' },
+  skills: { singular: 'Skills' },
+};
 
 interface DetailsTabProps {
   contact: ContactWithEntries;
+  scrollToCardId?: string | null;
+  onScrolled?: () => void;
 }
 
 type EditingState = { section: string; entryId: string | null } | null;
 
-export default function DetailsTab({ contact: c }: DetailsTabProps) {
+export default function DetailsTab({ contact: c, scrollToCardId, onScrolled }: DetailsTabProps) {
   const updateContact = useContactStore((s) => s.updateContact);
+  // Used by suggestion engine for cross-contact inferences (e.g. resolving
+  // a person's employer → the org's address as a high-confidence Worksite
+  // suggestion). Without this the person address pool falls back to
+  // generic, low-confidence guesses.
+  const allContacts = useContactStore((s) => s.contacts);
   const aiEnabled = useUserStore((s) => s.aiEnabled);
   const rawNotifications = useUserStore((s) => s.notifications);
   // AI-gated sub-toggles are AND-ed with the master AI switch
@@ -30,22 +82,192 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
   const [editing, setEditing] = useState<EditingState>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ section: string; entryId: string } | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  useEffect(() => {
+    if (!scrollToCardId) return;
+    const el = document.querySelector(`[data-card-id="${scrollToCardId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      (el as HTMLElement).classList.add('ring-2', 'ring-[var(--brand-primary)]');
+      setTimeout(() => (el as HTMLElement).classList.remove('ring-2', 'ring-[var(--brand-primary)]'), 1600);
+    }
+    onScrolled?.();
+  }, [scrollToCardId, onScrolled]);
   const isOrg = c.type === 'org';
   const currentAvatarColor = getAvatarColor(c.id, c.avatarColor);
   const overviewCards = c.overviewCards || [];
 
   const togglePin = (cardId: string) => {
     const current = c.overviewCards || [];
-    const updated = current.includes(cardId)
-      ? current.filter((id) => id !== cardId)
-      : [...current, cardId];
+    const wasPinned = current.includes(cardId);
+    const updated = wasPinned ? current.filter((id) => id !== cardId) : [...current, cardId];
     updateContact(c.id, { overviewCards: updated } as Partial<ContactWithEntries>);
+    const label = PIN_LABELS[cardId] || cardId;
+    if (wasPinned) {
+      toast.info(`Unpinned “${label}” from Overview`, {
+        action: {
+          label: 'Undo',
+          onClick: () => updateContact(c.id, { overviewCards: current } as Partial<ContactWithEntries>),
+        },
+      });
+    } else {
+      toast.success(`Pinned “${label}” to Overview`, {
+        action: {
+          label: 'Undo',
+          onClick: () => updateContact(c.id, { overviewCards: current } as Partial<ContactWithEntries>),
+        },
+      });
+    }
   };
 
   const isPinned = (cardId: string) => overviewCards.includes(cardId);
 
+  // Hide / restore — per-contact so the user can tailor the Details
+  // layout for each record. HubSpot's "Customize left sidebar" and
+  // Pipedrive's "Customize this view" do similar. Hiding is independent
+  // of pinning (the pin button controls Overview presence; hide wipes
+  // the card from both Details and Overview).
+  const hiddenCards = c.hiddenCards || [];
+  const isCardHidden = (cardId: string) => hiddenCards.includes(cardId);
+
+  const hideCard = (cardId: string) => {
+    const current = c.hiddenCards || [];
+    if (current.includes(cardId)) return;
+    const next = [...current, cardId];
+    updateContact(c.id, { hiddenCards: next } as Partial<ContactWithEntries>);
+    const label = CARD_LABELS[cardId] || cardId;
+    toast.info(`Hid “${label}”`, {
+      action: {
+        label: 'Undo',
+        onClick: () => updateContact(c.id, { hiddenCards: current } as Partial<ContactWithEntries>),
+      },
+    });
+  };
+
+  const restoreCard = (cardId: string) => {
+    const current = c.hiddenCards || [];
+    const next = current.filter((id) => id !== cardId);
+    updateContact(c.id, { hiddenCards: next } as Partial<ContactWithEntries>);
+    const label = CARD_LABELS[cardId] || cardId;
+    toast.success(`Restored “${label}”`);
+  };
+
+  /**
+   * Dismiss an inline AI suggestion. Persists the suggestion id in the
+   * contact's `dismissedSuggestions` list so it doesn't reappear after
+   * page reload. Idempotent — re-dismissing the same id is a no-op. We
+   * also surface an Undo so an accidental click is recoverable.
+   */
+  const dismissSuggestion = (suggestionId: string, label: string) => {
+    const current = c.dismissedSuggestions || [];
+    if (current.includes(suggestionId)) return;
+    updateContact(c.id, {
+      dismissedSuggestions: [...current, suggestionId],
+    } as Partial<ContactWithEntries>);
+    toast.info(`Dismissed ${label.toLowerCase()} suggestion`, {
+      action: {
+        label: 'Undo',
+        onClick: () =>
+          updateContact(c.id, {
+            dismissedSuggestions: current,
+          } as Partial<ContactWithEntries>),
+      },
+    });
+  };
+
+  /**
+   * Returns ALL inline-eligible suggestions for a section (above threshold
+   * + not dismissed), sorted by confidence descending. Multi-suggestion
+   * sections (Addresses, Phones) need this so e.g. Digital Prospectors'
+   * Exeter HQ + Boston Branch BOTH render as separate one-click chips
+   * stacked in the empty state. Single-suggestion sections (Names,
+   * Websites) still get a single chip — nothing changes for them, the
+   * .map just iterates over a length-1 array.
+   *
+   * Capped at 3 inline chips per section so the empty state doesn't
+   * become a wall of suggestions. Anything beyond 3 stays in the AI tab.
+   */
+  const inlineSuggestionsFor = (section: string): EntrySuggestion[] => {
+    const suggestions = getEntrySuggestions(section, c, allContacts);
+    const dismissed = new Set(c.dismissedSuggestions || []);
+    return suggestions
+      .filter((s) => s.confidence >= INLINE_AI_THRESHOLD && !dismissed.has(s.id))
+      .slice(0, 3);
+  };
+
+  /**
+   * Counts how many AI suggestions were previously dismissed for this
+   * section. Suggestion ids are stable and shaped `ai-<section>-<contactId>-<slug>`
+   * so a startsWith match against `ai-<section>-<contactId>-` is enough
+   * to scope to the current card.
+   *
+   * Drives the per-card "↻ Restore N hidden" footer link — Paul wanted to
+   * be able to come back to a contact weeks later and recall the
+   * suggestions he'd ignored, in case the underlying data has matured
+   * (e.g. a previously low-confidence guess is now corroborated by
+   * another source). Mirrors HubSpot's "View dismissed insights" toggle
+   * and Salesforce Einstein's "Show dismissed" affordance.
+   */
+  const hiddenSuggestionCount = (section: string): number => {
+    const prefix = `ai-${section}-${c.id}-`;
+    return (c.dismissedSuggestions || []).filter((id) => id.startsWith(prefix)).length;
+  };
+
+  /**
+   * Restore every dismissed suggestion for this section by stripping the
+   * matching ids from `dismissedSuggestions`. The suggestion engine's
+   * output is unchanged — those candidates were always being emitted,
+   * they were just being filtered out of the inline render by the
+   * dismissed-set check in `inlineSuggestionsFor`. Removing the ids
+   * brings them back into rotation immediately on the next render.
+   *
+   * Toast surfaces an Undo so an accidental restore is recoverable.
+   */
+  const restoreHiddenForSection = (section: string) => {
+    const prefix = `ai-${section}-${c.id}-`;
+    const current = c.dismissedSuggestions || [];
+    const next = current.filter((id) => !id.startsWith(prefix));
+    const restored = current.length - next.length;
+    if (restored === 0) return;
+    updateContact(c.id, { dismissedSuggestions: next } as Partial<ContactWithEntries>);
+    toast.success(`Restored ${restored} hidden suggestion${restored === 1 ? '' : 's'}`, {
+      action: {
+        label: 'Undo',
+        onClick: () =>
+          updateContact(c.id, { dismissedSuggestions: current } as Partial<ContactWithEntries>),
+      },
+    });
+  };
+
+  /**
+   * Tiny footer link rendered at the bottom of each suggestion-eligible
+   * card when there are any hidden suggestions for that section. Stays
+   * subtle (small + tertiary text) so it doesn't compete with live
+   * suggestion chips above it.
+   */
+  const renderHiddenSuggestionsLink = (section: string) => {
+    const n = hiddenSuggestionCount(section);
+    if (n === 0) return null;
+    return (
+      <button
+        type="button"
+        onClick={() => restoreHiddenForSection(section)}
+        title="Bring back AI suggestions you previously dismissed"
+        className="self-start inline-flex items-center gap-1 px-1 py-0.5 mt-1 text-[10px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] bg-transparent border-none cursor-pointer transition-colors"
+      >
+        <ArrowCounterClockwise size={11} weight="bold" />
+        Restore {n} hidden suggestion{n === 1 ? '' : 's'}
+      </button>
+    );
+  };
+
   const startEdit = (section: string, entryId: string | null = null) => {
     setEditing({ section, entryId });
+    const cardId = section === 'identifiers' ? 'card-identification' : `card-${section}`;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-card-id="${cardId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const cancelEdit = () => setEditing(null);
@@ -53,6 +275,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
   const saveEntry = useCallback((section: string, entryId: string | null, data: Record<string, string>) => {
     const entries = { ...c.entries };
     const isNew = !entryId || entryId === 'new';
+    const label = SECTION_LABELS[section]?.singular || section;
 
     if (section === 'identity') {
       const updates: Record<string, unknown> = {};
@@ -60,6 +283,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
       if (data.status) updates.status = data.status;
       updateContact(c.id, updates as Partial<ContactWithEntries>);
       setEditing(null);
+      toast.success(`${label} updated`);
       return;
     }
 
@@ -68,6 +292,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
       Object.entries(data).forEach(([k, v]) => { if (v) updates[k] = v; });
       updateContact(c.id, updates as Partial<ContactWithEntries>);
       setEditing(null);
+      toast.success(`${label} updated`);
       return;
     }
 
@@ -101,6 +326,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
 
     updateContact(c.id, { entries: { ...entries, [key]: arr } } as Partial<ContactWithEntries>);
     setEditing(null);
+    toast.success(isNew ? `${label} added` : `${label} updated`);
   }, [c, updateContact, isOrg]);
 
   const deleteEntry = useCallback((section: string, entryId: string) => {
@@ -113,18 +339,38 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
     const key = sectionMap[section];
     if (!key) return;
     const arr = (entries[key] as unknown[]).filter((e: any) => e.id !== entryId);
+    const label = SECTION_LABELS[section]?.singular || section;
     updateContact(c.id, { entries: { ...entries, [key]: arr } } as Partial<ContactWithEntries>);
     setConfirmDelete(null);
     setEditing(null);
+    toast.success(`${label} deleted`);
   }, [c, updateContact]);
 
   const isEditing = (section: string, entryId?: string) =>
     editing?.section === section && (entryId ? editing.entryId === entryId : true);
 
   return (
-    <div className="grid grid-cols-2 gap-5">
+    <div>
+      {hiddenCards.length > 0 && (
+        <HiddenCardsBar
+          hiddenIds={hiddenCards}
+          onRestore={restoreCard}
+          onRestoreAll={() => {
+            const prev = c.hiddenCards || [];
+            updateContact(c.id, { hiddenCards: [] } as Partial<ContactWithEntries>);
+            toast.success(`Restored ${prev.length} card${prev.length === 1 ? '' : 's'}`, {
+              action: {
+                label: 'Undo',
+                onClick: () => updateContact(c.id, { hiddenCards: prev } as Partial<ContactWithEntries>),
+              },
+            });
+          }}
+        />
+      )}
+    <div className="grid grid-cols-2" style={{ gap: 'var(--detail-section-gap, 20px)' }}>
       {/* LEFT COLUMN */}
-      <div className="flex flex-col gap-4 min-h-[100px] p-0.5 rounded-xl border-2 border-dashed border-transparent transition-all detail-column"
+      <div className="flex flex-col min-h-[100px] p-0.5 rounded-xl border-2 border-dashed border-transparent transition-all detail-column"
+        style={{ gap: 'var(--detail-stack-gap, 16px)' }}
         data-column="left"
         onDragOver={(e) => {
           e.preventDefault();
@@ -167,12 +413,12 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
       >
         {/* Identity */}
         <SectionCard icon={<Buildings size={16} />} title="Identity" cardId="card-identity"
+          hidden={isCardHidden('card-identity')} onHide={() => hideCard('card-identity')}
           isEditing={isEditing('identity')}
           onEdit={() => startEdit('identity')} onCancel={cancelEdit}>
           {isEditing('identity') ? (
             <EditForm fields={[
               { key: 'name', label: isOrg ? 'Company Name' : 'Full Name', value: c.name, required: true, maxLength: 120 },
-              { key: 'status', label: 'Status', value: c.status, type: 'select', options: ['active', 'inactive'], required: true },
             ]} onSave={(data) => saveEntry('identity', null, data)} onCancel={cancelEdit} />
           ) : (
             <>
@@ -202,6 +448,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                             onClick={() => {
                               updateContact(c.id, { avatarColor: color.hex } as Partial<ContactWithEntries>);
                               setShowColorPicker(false);
+                              toast.info(`Avatar color set to ${color.name}`);
                             }}
                             className={`w-8 h-8 rounded-lg cursor-pointer transition-all hover:scale-110 hover:shadow-md border-2 ${
                               currentAvatarColor === color.hex ? 'border-[var(--text-primary)] scale-110' : 'border-transparent'
@@ -215,6 +462,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                         onClick={() => {
                           updateContact(c.id, { avatarColor: undefined } as Partial<ContactWithEntries>);
                           setShowColorPicker(false);
+                          toast.info('Avatar color reset');
                         }}
                         className="mt-2 text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors bg-transparent border-none cursor-pointer"
                       >
@@ -235,18 +483,19 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
               </div>
 
               <FieldRow label="Name" value={c.name} />
-              <FieldRow label="Status" value={
-                c.status === 'active'
-                  ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]"><CheckCircle size={12} /> Active</span>
-                  : 'Inactive'
-              } />
               <FieldRow label="Last Updated" value={fmtDate(c.lastUpdated)} />
+              {/* Record creator. Lives on the Identity card (not Visibility &
+                  Access) because it's record audit metadata — nothing to do
+                  with who set the privacy toggle. Matches HubSpot/Salesforce/
+                  Attio convention of grouping audit fields with identity. */}
+              <FieldRow label="Created By" value={c.createdBy || 'Unknown'} />
             </>
           )}
         </SectionCard>
 
         {/* Visibility & Access */}
         <SectionCard icon={<EyeSlash size={16} />} title="Visibility & Access" cardId="card-visibility"
+          hidden={isCardHidden('card-visibility')} onHide={() => hideCard('card-visibility')}
           isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}>
           <VisibilityCard contact={c} />
         </SectionCard>
@@ -254,6 +503,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
         {/* Names */}
         <SectionCard icon={isOrg ? <Buildings size={16} /> : <IdentificationBadge size={16} />}
           title={isOrg ? 'Company Names' : 'Names'} cardId="card-names"
+          hidden={isCardHidden('card-names')} onHide={() => hideCard('card-names')}
           isEditing={isEditing('names')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
           isPinned={isPinned('names')} onTogglePin={() => togglePin('names')}>
           {isEditing('names') ? (
@@ -280,7 +530,31 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                 <EntryRow key={n.id} type={n.type} value={n.value} isPrimary={n.primary}
                   onEdit={() => startEdit('names', n.id)} />
               ))}
+              {/* Empty-state inline AI: when the contact has a display
+                  name (c.name) but no Names entry yet, offer a one-click
+                  split into prefix/first/middle/last/suffix. Confidence
+                  99 — we're not guessing, we're echoing the user's own
+                  input back in a structured form. */}
+              {c.entries.names.length === 0 && (() => {
+                const leads = inlineSuggestionsFor('names');
+                if (leads.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {leads.map((lead) => (
+                      <InlineAISuggestion
+                        key={lead.id}
+                        suggestion={lead}
+                        label="Name"
+                        onAccept={() => saveEntry('names', 'new', lead.fieldValues)}
+                        onEdit={() => startEdit('names', 'new')}
+                        onIgnore={() => dismissSuggestion(lead.id, 'Name')}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
               <AddButton label="Add Name" onClick={() => startEdit('names', 'new')} />
+              {renderHiddenSuggestionsLink('names')}
             </>
           )}
         </SectionCard>
@@ -288,22 +562,34 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
         {/* Job Title (Person only) */}
         {!isOrg && (
           <SectionCard icon={<Briefcase size={16} />} title="Job Title" cardId="card-jobtitle" isPinned={isPinned('jobtitle')} onTogglePin={() => togglePin('jobtitle')}
+            hidden={isCardHidden('card-jobtitle')} onHide={() => hideCard('card-jobtitle')}
+            // Job Title is incomplete if EITHER the title or the
+            // organization is missing. Organization (orgName) lives
+            // here now — moved out of the deleted General Information
+            // person variant, since HubSpot/Salesforce/Pipedrive/Attio
+            // all group employer + role together. Hiding this card
+            // therefore opts out of BOTH required-field checks.
+            incomplete={(!('title' in c) || !c.title) || (!('orgName' in c) || !c.orgName)}
             isEditing={isEditing('jobtitle')} onEdit={() => startEdit('jobtitle')} onCancel={cancelEdit}>
             {isEditing('jobtitle') ? (
               <EditForm fields={[
                 { key: 'title', label: 'Title', value: 'title' in c ? c.title : '', maxLength: 120 },
+                { key: 'orgName', label: 'Organization', value: 'orgName' in c ? c.orgName : '', maxLength: 120 },
                 { key: 'department', label: 'Department', value: 'department' in c ? c.department : '', type: 'select', options: ['Executive', 'Finance', 'Operations', 'Technology', 'Compliance', 'Sales', 'Marketing', 'Legal', 'HR', 'Engineering', 'Product'] },
                 { key: 'reportsTo', label: 'Reports To', value: '', maxLength: 120 },
               ]} onSave={(data) => {
                 const updates: Record<string, unknown> = {};
                 if (data.title) updates.title = data.title;
+                if (data.orgName) updates.orgName = data.orgName;
                 if (data.department) updates.department = data.department;
                 updateContact(c.id, updates as Partial<ContactWithEntries>);
                 setEditing(null);
+                toast.success('Job title updated');
               }} onCancel={cancelEdit} />
             ) : (
               <>
                 <FieldRow label="Title" value={'title' in c ? c.title : '—'} />
+                <FieldRow label="Organization" value={'orgName' in c ? c.orgName : '—'} />
                 <FieldRow label="Department" value={'department' in c ? c.department : '—'} />
                 <FieldRow label="Reports To" value="Not specified" />
               </>
@@ -323,6 +609,8 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
             editable={false}
             isPinned={isPinned('skills')}
             onTogglePin={() => togglePin('skills')}
+            hidden={isCardHidden('card-skills')}
+            onHide={() => hideCard('card-skills')}
           >
             <div className="flex flex-wrap gap-1.5 py-1">
               {c.skills.map((s) => (
@@ -342,9 +630,9 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
 
         {/* Addresses */}
         <SectionCard icon={<MapPin size={16} />} title="Addresses" cardId="card-addresses"
+          hidden={isCardHidden('card-addresses')} onHide={() => hideCard('card-addresses')}
           isEditing={isEditing('addresses')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
-          incomplete={c.entries.addresses.length === 0}
-          isPinned={isPinned('addresses')} onTogglePin={() => togglePin('addresses')}>
+          incomplete={c.entries.addresses.length === 0}>
           {isEditing('addresses') ? (
             <EntryEditForm
               section="addresses" entryId={editing!.entryId} contact={c}
@@ -365,14 +653,33 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                 <EntryRow key={a.id} type={a.type} value={`${a.value}\n${a.city}, ${a.state} ${a.zip}`} isPrimary={a.primary}
                   onEdit={() => startEdit('addresses', a.id)} />
               ))}
-              {c.entries.addresses.length === 0 && <EmptyField />}
+              {c.entries.addresses.length === 0 && (() => {
+                const leads = inlineSuggestionsFor('addresses');
+                if (leads.length === 0) return <EmptyField />;
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {leads.map((lead) => (
+                      <InlineAISuggestion
+                        key={lead.id}
+                        suggestion={lead}
+                        label="Address"
+                        onAccept={() => saveEntry('addresses', 'new', lead.fieldValues)}
+                        onEdit={() => startEdit('addresses', 'new')}
+                        onIgnore={() => dismissSuggestion(lead.id, 'Address')}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
               <AddButton label="Add Address" onClick={() => startEdit('addresses', 'new')} />
+              {renderHiddenSuggestionsLink('addresses')}
             </>
           )}
         </SectionCard>
 
         {/* Emails */}
         <SectionCard icon={<EnvelopeSimple size={16} />} title="Emails" cardId="card-emails"
+          hidden={isCardHidden('card-emails')} onHide={() => hideCard('card-emails')}
           isEditing={isEditing('emails')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
           incomplete={c.entries.emails.length === 0}
           isPinned={isPinned('emails')} onTogglePin={() => togglePin('emails')}>
@@ -393,14 +700,33 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                 <EntryRow key={e.id} type={e.type} value={e.value} isPrimary={e.primary}
                   onEdit={() => startEdit('emails', e.id)} />
               ))}
-              {c.entries.emails.length === 0 && <EmptyField />}
+              {c.entries.emails.length === 0 && (() => {
+                const leads = inlineSuggestionsFor('emails');
+                if (leads.length === 0) return <EmptyField />;
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {leads.map((lead) => (
+                      <InlineAISuggestion
+                        key={lead.id}
+                        suggestion={lead}
+                        label="Email"
+                        onAccept={() => saveEntry('emails', 'new', lead.fieldValues)}
+                        onEdit={() => startEdit('emails', 'new')}
+                        onIgnore={() => dismissSuggestion(lead.id, 'Email')}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
               <AddButton label="Add Email" onClick={() => startEdit('emails', 'new')} />
+              {renderHiddenSuggestionsLink('emails')}
             </>
           )}
         </SectionCard>
 
         {/* Phone */}
         <SectionCard icon={<PhoneIcon size={16} />} title="Phone" cardId="card-phones"
+          hidden={isCardHidden('card-phones')} onHide={() => hideCard('card-phones')}
           isEditing={isEditing('phones')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
           incomplete={c.entries.phones.length === 0}
           isPinned={isPinned('phones')} onTogglePin={() => togglePin('phones')}>
@@ -421,14 +747,40 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                 <EntryRow key={p.id} type={p.type} value={p.value} isPrimary={p.primary}
                   onEdit={() => startEdit('phones', p.id)} />
               ))}
-              {c.entries.phones.length === 0 && <EmptyField />}
+              {c.entries.phones.length === 0 && (() => {
+                // Multi-suggestion: when we have enrichment data for the
+                // contact's company (e.g. Holly @ Digital Prospectors),
+                // surface every published phone — Exeter HQ main, Boston
+                // Branch main, fax, etc. — as separate one-click chips.
+                // For persons w/o enrichment, the engine returns nothing
+                // above-threshold (mobile guesses max out at 80%) and we
+                // fall through to the EmptyField placeholder.
+                const leads = inlineSuggestionsFor('phones');
+                if (leads.length === 0) return <EmptyField />;
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {leads.map((lead) => (
+                      <InlineAISuggestion
+                        key={lead.id}
+                        suggestion={lead}
+                        label="Phone"
+                        onAccept={() => saveEntry('phones', 'new', lead.fieldValues)}
+                        onEdit={() => startEdit('phones', 'new')}
+                        onIgnore={() => dismissSuggestion(lead.id, 'Phone')}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
               <AddButton label="Add Phone" onClick={() => startEdit('phones', 'new')} />
+              {renderHiddenSuggestionsLink('phones')}
             </>
           )}
         </SectionCard>
 
         {/* Websites */}
         <SectionCard icon={<Globe size={16} />} title="Websites" cardId="card-websites"
+          hidden={isCardHidden('card-websites')} onHide={() => hideCard('card-websites')}
           isEditing={isEditing('websites')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
           incomplete={c.entries.websites.length === 0}
           isPinned={isPinned('websites')} onTogglePin={() => togglePin('websites')}>
@@ -449,15 +801,40 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
                 <EntryRow key={w.id} type={w.type} value={w.value} isPrimary={w.primary}
                   onEdit={() => startEdit('websites', w.id)} />
               ))}
-              {c.entries.websites.length === 0 && <EmptyField />}
+              {/* Empty-state with inline AI: when there are no websites yet
+                  AND the suggestion engine has a high-confidence candidate
+                  (e.g. company domain pulled from the contact's work email),
+                  show a one-click "+ Add" chip right there. Avoids forcing
+                  the user to click "Add Website" → switch to the AI tab to
+                  discover something we already knew. */}
+              {c.entries.websites.length === 0 && (() => {
+                const leads = inlineSuggestionsFor('websites');
+                if (leads.length === 0) return <EmptyField />;
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {leads.map((lead) => (
+                      <InlineAISuggestion
+                        key={lead.id}
+                        suggestion={lead}
+                        label="Website"
+                        onAccept={() => saveEntry('websites', 'new', lead.fieldValues)}
+                        onEdit={() => startEdit('websites', 'new')}
+                        onIgnore={() => dismissSuggestion(lead.id, 'Website')}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
               <AddButton label="Add Website" onClick={() => startEdit('websites', 'new')} />
+              {renderHiddenSuggestionsLink('websites')}
             </>
           )}
         </SectionCard>
       </div>
 
       {/* RIGHT COLUMN */}
-      <div className="flex flex-col gap-4 min-h-[100px] p-0.5 rounded-xl border-2 border-dashed border-transparent transition-all detail-column"
+      <div className="flex flex-col min-h-[100px] p-0.5 rounded-xl border-2 border-dashed border-transparent transition-all detail-column"
+        style={{ gap: 'var(--detail-stack-gap, 16px)' }}
         data-column="right"
         onDragOver={(e) => {
           e.preventDefault();
@@ -497,45 +874,44 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
           }
         }}
       >
-        {/* General Info */}
-        <SectionCard icon={<Hash size={16} />} title="General Information" cardId="card-general"
-          isPinned={isPinned('general')} onTogglePin={() => togglePin('general')}
-          isEditing={isEditing('general')} onEdit={() => startEdit('general')} onCancel={cancelEdit}>
-          {isEditing('general') ? (
-            <EditForm fields={isOrg ? [
-              { key: 'industry', label: 'Industry', value: 'industry' in c ? c.industry : '', type: 'select', options: ['Financial Services', 'Data & Analytics', 'Investment Mgmt', 'Technology', 'Healthcare', 'Insurance', 'Legal', 'Real Estate'] },
-              { key: 'employees', label: 'Employees', value: 'employees' in c ? c.employees : '', type: 'select', options: ['1-10', '11-25', '25-50', '50-100', '100-250', '250-500', '500-1000', '1000+'] },
-              { key: 'hq', label: 'Headquarters', value: 'hq' in c ? c.hq : '', required: true, maxLength: 120 },
-              { key: 'description', label: 'Description', value: 'description' in c ? c.description : '', type: 'textarea', maxLength: 500 },
-            ] : [
-              { key: 'orgName', label: 'Organization', value: 'orgName' in c ? c.orgName : '', maxLength: 120 },
-              { key: 'email', label: 'Email', value: 'email' in c ? c.email : '', validate: 'email', placeholder: 'name@company.com' },
-              { key: 'phone', label: 'Phone', value: 'phone' in c ? c.phone : '', validate: 'phone', placeholder: '+1 555 123 4567' },
-            ]} onSave={(data) => saveEntry('general', null, data)} onCancel={cancelEdit} />
-          ) : (
-            <>
-              {isOrg ? (
-                <>
-                  <FieldRow label="Industry" value={'industry' in c ? c.industry : '—'} />
-                  <FieldRow label="Employees" value={'employees' in c ? c.employees : '—'} />
-                  <FieldRow label="Headquarters" value={'hq' in c ? c.hq : '—'} />
-                  <FieldRow label="Description" value={'description' in c ? c.description : '—'} small />
-                </>
-              ) : (
-                <>
-                  <FieldRow label="Organization" value={'orgName' in c ? c.orgName : '—'} />
-                  <FieldRow label="Email" value={'email' in c ? c.email : '—'} />
-                  <FieldRow label="Phone" value={'phone' in c ? c.phone : '—'} />
-                  <FieldRow label="Last Updated" value={fmtDate(c.lastUpdated)} />
-                </>
-              )}
-            </>
-          )}
-        </SectionCard>
+        {/* General Information — ORG ONLY. Previously also rendered for
+            persons with Organization / Email / Phone / Last Updated, but
+            those fields all duplicate dedicated cards (orgName moved to
+            Job Title; Email + Phone live in their own multi-entry
+            cards; Last Updated lives on Identity). The person variant
+            existed because the legacy single-field schema (Person.email,
+            Person.phone) predated the multi-entry refactor — keeping it
+            in the UI just confused the completeness check and gave
+            users a redundant card to maintain. For orgs, the card still
+            holds Industry / Employees / HQ / Description which DO
+            belong here. */}
+        {isOrg && (
+          <SectionCard icon={<Hash size={16} />} title="General Information" cardId="card-general"
+            hidden={isCardHidden('card-general')} onHide={() => hideCard('card-general')}
+            isPinned={isPinned('general')} onTogglePin={() => togglePin('general')}
+            isEditing={isEditing('general')} onEdit={() => startEdit('general')} onCancel={cancelEdit}>
+            {isEditing('general') ? (
+              <EditForm fields={[
+                { key: 'industry', label: 'Industry', value: 'industry' in c ? c.industry : '', type: 'select', options: ['Financial Services', 'Data & Analytics', 'Investment Mgmt', 'Technology', 'Healthcare', 'Insurance', 'Legal', 'Real Estate'] },
+                { key: 'employees', label: 'Employees', value: 'employees' in c ? c.employees : '', type: 'select', options: ['1-10', '11-25', '25-50', '50-100', '100-250', '250-500', '500-1000', '1000+'] },
+                { key: 'hq', label: 'Headquarters', value: 'hq' in c ? c.hq : '', required: true, maxLength: 120 },
+                { key: 'description', label: 'Description', value: 'description' in c ? c.description : '', type: 'textarea', maxLength: 500 },
+              ]} onSave={(data) => saveEntry('general', null, data)} onCancel={cancelEdit} />
+            ) : (
+              <>
+                <FieldRow label="Industry" value={'industry' in c ? c.industry : '—'} />
+                <FieldRow label="Employees" value={'employees' in c ? c.employees : '—'} />
+                <FieldRow label="Headquarters" value={'hq' in c ? c.hq : '—'} />
+                <FieldRow label="Description" value={'description' in c ? c.description : '—'} small />
+              </>
+            )}
+          </SectionCard>
+        )}
 
         {/* Industries (org) */}
         {isOrg && (
           <SectionCard icon={<Factory size={16} />} title="Industries" cardId="card-industries"
+            hidden={isCardHidden('card-industries')} onHide={() => hideCard('card-industries')}
             isEditing={isEditing('industries')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
             incomplete={c.entries.industries.length === 0}
             isPinned={isPinned('industries')} onTogglePin={() => togglePin('industries')}>
@@ -617,6 +993,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
 
         {/* Identification */}
         <SectionCard icon={<ShieldCheck size={16} />} title="Identification" cardId="card-identification"
+          hidden={isCardHidden('card-identification')} onHide={() => hideCard('card-identification')}
           isEditing={isEditing('identifiers')} onEdit={() => {}} onCancel={cancelEdit} editable={false}
           incomplete={c.entries.identifiers.length === 0}
           isPinned={isPinned('identifiers')} onTogglePin={() => togglePin('identifiers')}>
@@ -685,14 +1062,18 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
         </SectionCard>
 
         {/* System IDs */}
-        <SectionCard icon={<Fingerprint size={16} />} title="System Identifiers" cardId="card-sysids" isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}>
+        <SectionCard icon={<Fingerprint size={16} />} title="System Identifiers" cardId="card-sysids"
+          hidden={isCardHidden('card-sysids')} onHide={() => hideCard('card-sysids')}
+          isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}>
           <FieldRow label="Navigator ID" value={c.id} />
           <FieldRow label="CRM Record #" value={`CRM-${c.id.replace(/[^0-9]/g, '').padStart(6, '0')}`} />
         </SectionCard>
 
         {/* AI Health — hidden when user has disabled stale alerts or the master AI toggle */}
         {notifications.staleAlerts && (
-          <SectionCard icon={<Sparkle size={16} weight="duotone" />} title="AI Record Health" cardId="card-aihealth" isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}>
+          <SectionCard icon={<Sparkle size={16} weight="duotone" />} title="AI Record Health" cardId="card-aihealth"
+            hidden={isCardHidden('card-aihealth')} onHide={() => hideCard('card-aihealth')}
+            isEditing={false} onEdit={() => {}} onCancel={() => {}} editable={false}>
             <div className={`p-2.5 rounded-[var(--radius-md)] text-xs font-semibold leading-relaxed ${
               c.stale ? 'bg-[var(--warning-bg)] text-[var(--warning)]' : 'bg-[var(--success-bg)] text-[var(--success)]'
             }`}>
@@ -719,6 +1100,7 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
         </div>
       )}
     </div>
+    </div>
   );
 }
 
@@ -728,6 +1110,65 @@ export default function DetailsTab({ contact: c }: DetailsTabProps) {
 
 // SectionCard + FieldRow were moved to '@/components/detail/SectionCard'
 // so Sales detail pages share the same visual + edit affordances as Contacts.
+
+/**
+ * Summary bar that sits above the two-column card grid when any cards
+ * are hidden. Click the chip to open a dropdown listing every hidden
+ * card with a one-click "Show" action. "Show all" restores everything
+ * in a single batch. Matches the HubSpot "X hidden sections" /
+ * Pipedrive "Customize this view" affordance — the user always has a
+ * visible path back.
+ */
+function HiddenCardsBar({
+  hiddenIds,
+  onRestore,
+  onRestoreAll,
+}: {
+  hiddenIds: string[];
+  onRestore: (cardId: string) => void;
+  onRestoreAll: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] cursor-pointer hover:text-[var(--text-primary)] transition-colors"
+      >
+        <Eye size={12} weight="regular" />
+        {hiddenIds.length} hidden card{hiddenIds.length === 1 ? '' : 's'}
+        <span className="text-[var(--text-tertiary)]">·</span>
+        <span className="text-[var(--brand-primary)]">{open ? 'Hide list' : 'Show list'}</span>
+      </button>
+      {hiddenIds.length > 1 && (
+        <button
+          type="button"
+          onClick={onRestoreAll}
+          className="text-[11.5px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer hover:underline"
+        >
+          Show all
+        </button>
+      )}
+      {open && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {hiddenIds.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onRestore(id)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--surface-card)] text-[var(--text-secondary)] border border-dashed border-[var(--border)] cursor-pointer hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] transition-colors"
+              title={`Show “${CARD_LABELS[id] || id}”`}
+            >
+              <Plus size={10} weight="bold" />
+              {CARD_LABELS[id] || id}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function EntryRow({ type, value, isPrimary, onEdit }: { type: string; value: string; isPrimary: boolean; onEdit: () => void }) {
   return (
@@ -759,6 +1200,10 @@ function EmptyField() {
   return null;
 }
 
+// InlineAISuggestion has been moved to '@/components/ai/InlineAISuggestion'
+// so the same chip can render on both the Details tab AND the Overview
+// Address card without duplicating the markup or threshold constant.
+
 // ═══════════════════════════════════════════
 // VISIBILITY & ACCESS CARD
 // ═══════════════════════════════════════════
@@ -771,21 +1216,23 @@ function VisibilityCard({ contact: c }: { contact: ContactWithEntries }) {
 
   const isPrivate = c.isPrivate ?? false;
   const visibleTo = c.visibleTo || [];
-  const createdBy = c.createdBy || 'Unknown';
 
   const togglePrivate = () => {
     updateContact(c.id, { isPrivate: !isPrivate } as Partial<ContactWithEntries>);
+    toast.info(!isPrivate ? 'Contact set to Private' : 'Contact set to Public');
   };
 
   const addUser = (name: string) => {
     if (!visibleTo.includes(name)) {
       updateContact(c.id, { visibleTo: [...visibleTo, name] } as Partial<ContactWithEntries>);
+      toast.success(`${name} granted access`);
     }
     setShowAddUser(false);
   };
 
   const removeUser = (name: string) => {
     updateContact(c.id, { visibleTo: visibleTo.filter((u) => u !== name) } as Partial<ContactWithEntries>);
+    toast.info(`${name} removed from access list`);
   };
 
   const availableToAdd = AVAILABLE_USERS.filter((u) => !visibleTo.includes(u));
@@ -815,11 +1262,10 @@ function VisibilityCard({ contact: c }: { contact: ContactWithEntries }) {
         </button>
       </div>
 
-      {/* Created By */}
-      <div className="flex items-center justify-between py-2 border-b border-[var(--border-subtle)]">
-        <span className="text-[11px] text-[var(--text-tertiary)]">Created by</span>
-        <span className="text-[12px] font-semibold text-[var(--text-primary)]">{createdBy}</span>
-      </div>
+      {/* "Created by" was here previously but it's record audit metadata,
+          not visibility/access metadata — the placement made it read like
+          "created by [whoever set the access]" which was never the
+          intent. Moved to the Identity card next to Last Updated. */}
 
       {/* Assigned To */}
       {c.assignedTo && (
@@ -1209,9 +1655,84 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
 
   const titleMap: Record<string, string> = { addresses: 'Edit Address', emails: 'Edit Email', phones: 'Edit Phone', websites: 'Edit Website', names: 'Edit Name', identifiers: 'Edit Identifier', industries: 'Edit Industry' };
 
+  const aiSupported = entryId === 'new' && (section === 'addresses' || section === 'emails' || section === 'phones' || section === 'websites');
+  const suggestions = aiSupported ? getEntrySuggestions(section, contact) : [];
+  const hasSuggestions = suggestions.length > 0;
+  const [entryMode, setEntryMode] = useState<'ai' | 'own'>(hasSuggestions ? 'ai' : 'own');
+  const [appliedSuggestion, setAppliedSuggestion] = useState<EntrySuggestion | null>(null);
+
+  const applySuggestion = (s: EntrySuggestion) => {
+    const next: Record<string, string> = { ...values, ...s.fieldValues };
+    setValues(next);
+    setTouched(new Set(Object.keys(s.fieldValues)));
+    setErrors({});
+    setAppliedSuggestion(s);
+    toast.info(`Filled from ${s.sourceLabel}`, { description: 'Review and edit any field before saving.' });
+  };
+
   return (
     <div className="animate-[fieldSlideIn_0.25s_ease-out]">
       <p className="text-sm font-bold text-[var(--text-primary)] mb-3">{entryId === 'new' ? titleMap[section]?.replace('Edit', 'New') : titleMap[section]}</p>
+      {hasSuggestions && (
+        <div className="mb-3 flex items-center gap-0.5 bg-[var(--surface-raised)] border border-[var(--border)] rounded-full p-0.5 w-fit">
+          <button
+            type="button"
+            onClick={() => { setEntryMode('ai'); }}
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer border-none transition-colors ${entryMode === 'ai' ? 'bg-[var(--ai)] text-white' : 'bg-transparent text-[var(--text-secondary)]'}`}
+          >
+            <Sparkle size={11} weight="duotone" /> AI Suggestions
+          </button>
+          <button
+            type="button"
+            onClick={() => { setEntryMode('own'); setAppliedSuggestion(null); }}
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer border-none transition-colors ${entryMode === 'own' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)]'}`}
+          >
+            <PencilSimple size={11} weight="bold" /> Enter My Own
+          </button>
+        </div>
+      )}
+      {hasSuggestions && entryMode === 'ai' && !appliedSuggestion && (
+        <div className="mb-3 bg-[var(--ai-bg)] border border-[var(--ai-border)] rounded-[var(--radius-md)] p-2.5">
+          <p className="text-[10px] text-[var(--text-secondary)] mb-2 italic">Pick a suggestion to auto-fill the form — you can still tweak any field before saving.</p>
+          <div className="flex flex-col gap-1.5">
+            {suggestions.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => applySuggestion(s)}
+                className="flex items-start gap-2 p-2 bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)] cursor-pointer text-left hover:border-[var(--ai)] hover:shadow-sm transition-all"
+              >
+                <Sparkle size={14} weight="duotone" className="text-[var(--ai)] mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-bold text-[var(--text-primary)] truncate">{s.primaryLabel}</div>
+                  {s.secondaryLabel && <div className="text-[10px] text-[var(--text-secondary)]">{s.secondaryLabel}</div>}
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]">{s.sourceLabel}</span>
+                    <span className={`text-[9px] font-bold ${s.confidence >= 90 ? 'text-[var(--success)]' : s.confidence >= 75 ? 'text-[var(--brand-primary)]' : 'text-[var(--warning)]'}`}>{s.confidence}% confidence</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {hasSuggestions && entryMode === 'ai' && appliedSuggestion && (
+        <div className="mb-3 bg-[var(--ai-bg)] border border-[var(--ai-border)] rounded-[var(--radius-md)] p-2.5 flex items-start gap-2">
+          <Sparkle size={14} weight="duotone" className="text-[var(--ai)] mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-bold text-[var(--ai-dark)]">Filled from {appliedSuggestion.sourceLabel}</div>
+            <div className="text-[10px] text-[var(--text-secondary)]">Review and edit any field below, then Save.</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAppliedSuggestion(null)}
+            className="text-[10px] font-bold text-[var(--ai)] bg-transparent border-none cursor-pointer hover:underline whitespace-nowrap"
+          >
+            Pick different
+          </button>
+        </div>
+      )}
+      {(!hasSuggestions || entryMode === 'own' || (entryMode === 'ai' && appliedSuggestion)) && (
       <div className="flex flex-col gap-2.5">
         {visibleFields.map((f) => {
           const resolvedType = resolveFieldType(f, values);
@@ -1264,6 +1785,14 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
           </div>
         </div>
       </div>
+      )}
+      {hasSuggestions && entryMode === 'ai' && !appliedSuggestion && (
+        <div className="flex justify-end pt-1">
+          <button onClick={onCancel} className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] border border-[var(--border)] rounded-[var(--radius-sm)] bg-transparent cursor-pointer">
+            <X size={14} /> Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

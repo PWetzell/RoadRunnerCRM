@@ -42,6 +42,13 @@ interface ListStore {
 
   /** True if the entity is in its entity-type's Favorites list. */
   isFavorite: (entityId: string, entityType: ListEntityType) => boolean;
+
+  /** Replace lists/memberships with the demo seed dataset. */
+  seedDemoData: () => void;
+  /** Wipe lists/memberships. Called on real sign-in and sign-out so demo
+   *  Saved Lists ("Portsmouth Branch", "High Priority Q2", etc.) don't
+   *  bleed into real accounts. */
+  clearAll: () => void;
 }
 
 function uid(prefix: string) {
@@ -51,8 +58,9 @@ function uid(prefix: string) {
 export const useListStore = create<ListStore>()(
   persist(
     (set, get) => ({
-      lists: SEED_LISTS,
-      memberships: SEED_MEMBERSHIPS,
+      // Empty by default — demo whitelist gets seeded via AuthGate.
+      lists: [],
+      memberships: [],
 
       pickerOpen: false,
       pickerEntityId: null,
@@ -77,6 +85,14 @@ export const useListStore = create<ListStore>()(
           entityType,
           visibility,
           color,
+          // Auto-pin newly-created lists to the sidebar. Matches Attio /
+          // Folk / Linear / Notion / monday: "you just made it, you can
+          // see it." The gear icon next to "Saved Lists" lets users
+          // unpin lists they don't want cluttering the rail. Without
+          // this default, a freshly-created list silently disappeared
+          // and the sidebar still read "No lists pinned" — the exact
+          // scenario that confused Paul.
+          pinnedInSidebar: true,
           createdAt: now,
           updatedAt: now,
         };
@@ -149,20 +165,58 @@ export const useListStore = create<ListStore>()(
           (m) => m.listId === favId && m.entityId === entityId && m.entityType === entityType,
         );
       },
+
+      /**
+       * Only seed when the store is fully empty. Without this guard, every
+       * AuthGate invocation (i.e. every page load for demo users) overwrote
+       * lists/memberships wholesale — including any saved list the user had
+       * created in the prior session. From the user's POV: "I made a saved
+       * list, hit refresh, and it disappeared from the sidebar."
+       *
+       * Once the user has any data, we trust localStorage and leave it alone.
+       * To start fresh from the demo seed, sign out (`clearAll()` empties
+       * everything) and sign back in.
+       */
+      seedDemoData: () => set((s) => {
+        if (s.lists.length > 0 || s.memberships.length > 0) return s;
+        return { lists: SEED_LISTS, memberships: SEED_MEMBERSHIPS };
+      }),
+      clearAll: () => set({ lists: [], memberships: [] }),
     }),
     {
-      name: 'roadrunner-lists',
+      // Bumped to v2 to invalidate stale localStorage copies still
+      // containing seeded lists (Portsmouth Branch et al).
+      name: 'roadrunner-lists-v2',
       partialize: (s) => ({
         lists: s.lists,
         memberships: s.memberships,
       }),
       merge: (persisted: unknown, current) => {
         const p = persisted as Partial<ListStore> | undefined;
+        // ── One-time-style migration: ensure every persisted list has an
+        // explicit `pinnedInSidebar` value. Lists created before the
+        // auto-pin-on-create fix were stored with the field undefined,
+        // which the sidebar filter treats as "unpinned" — so a list the
+        // user created didn't visually appear in the sidebar until they
+        // manually turned it on via the gear icon.
+        //
+        // Rule: `undefined → true` (default to visible, the new contract).
+        //       `true → true`, `false → false` (preserve explicit user
+        //       choices — once unpinned, stay unpinned).
+        //
+        // Idempotent: after first run, every list has an explicit boolean,
+        // so this is a no-op on subsequent loads. Safe to run every time.
+        const migratedLists = (p?.lists ?? []).map((l) => ({
+          ...l,
+          pinnedInSidebar: l.pinnedInSidebar === undefined ? true : l.pinnedInSidebar,
+        }));
         return {
           ...current,
           ...p,
-          lists: p?.lists ?? SEED_LISTS,
-          memberships: p?.memberships ?? SEED_MEMBERSHIPS,
+          // Empty default — demo dataset arrives via seedDemoData(), not
+          // via persist hydration.
+          lists: migratedLists,
+          memberships: p?.memberships ?? [],
         };
       },
     },

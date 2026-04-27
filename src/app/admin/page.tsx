@@ -6,13 +6,24 @@ import { Sparkle, ShieldCheck, ArrowClockwise, Gear, UsersThree, Database, Clock
 import { useContactStore } from '@/stores/contact-store';
 import { useSalesStore } from '@/stores/sales-store';
 import { useDocumentStore } from '@/stores/document-store';
+import { useUserStore } from '@/stores/user-store';
 import { useAdminDashboardStore } from '@/stores/admin-dashboard-store';
+import { isDemoEmail } from '@/lib/auth/demo-accounts';
+import { initials } from '@/lib/utils';
 import GenericWidgetGrid from '@/components/dashboard/GenericWidgetGrid';
 import ViewToolbar from '@/components/dashboard/ViewToolbar';
 import { WidgetStoreProvider, WidgetStoreActions } from '@/components/dashboard/WidgetStoreContext';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import ConfigurableCard from '@/components/ui/ConfigurableCard';
 
+/**
+ * DEMO admin dataset — only rendered for the demo whitelist
+ * (`isDemoEmail`). Real accounts get the live single-user view computed
+ * below from their own profile. Without this gating Paul's brand-new
+ * pwentzell64 account showed Sarah Chen / Marcus Webb / Diana Reyes
+ * sitting in User Management before he'd ever invited anyone — the bug
+ * he flagged on 2026-04-27.
+ */
 const DEMO_USERS = [
   { id: 'u-1', name: 'Paul Wentzell', email: 'paul@roadrunnercrm.com', role: 'Admin', status: 'Active', color: '#1955A6' },
   { id: 'u-2', name: 'Sarah Chen', email: 's.chen@roadrunnercrm.com', role: 'Manager', status: 'Active', color: '#047857' },
@@ -21,7 +32,7 @@ const DEMO_USERS = [
   { id: 'u-5', name: 'Tom Nakamura', email: 't.nakamura@roadrunnercrm.com', role: 'Sales Rep', status: 'Inactive', color: '#0B2F5C' },
 ];
 
-const AUDIT_LOG = [
+const DEMO_AUDIT_LOG = [
   { id: 'a-1', action: 'Deal created', target: 'Inbound inquiry', user: 'Paul Wentzell', time: '2h ago', icon: <Handbag size={12} /> },
   { id: 'a-2', action: 'Contact updated', target: 'Sarah Chen', user: 'Paul Wentzell', time: '3h ago', icon: <User size={12} /> },
   { id: 'a-3', action: 'Document uploaded', target: 'Q2 Forecast', user: 'Paul Wentzell', time: '5h ago', icon: <File size={12} /> },
@@ -29,7 +40,7 @@ const AUDIT_LOG = [
   { id: 'a-5', action: 'Settings changed', target: 'Theme updated', user: 'Paul Wentzell', time: '3d ago', icon: <Gear size={12} /> },
 ];
 
-const ROLES = [
+const DEMO_ROLES = [
   { id: 'r-1', name: 'Admin', desc: 'Full access', users: 1, perms: ['All'] },
   { id: 'r-2', name: 'Manager', desc: 'View all, manage team', users: 1, perms: ['Contacts', 'Sales', 'Reporting'] },
   { id: 'r-3', name: 'Sales Rep', desc: 'Own contacts + deals', users: 2, perms: ['Contacts (own)', 'Sales (own)'] },
@@ -40,6 +51,49 @@ export default function AdminPage() {
   const contacts = useContactStore((s) => s.contacts);
   const deals = useSalesStore((s) => s.deals);
   const documents = useDocumentStore((s) => s.documents);
+  const currentUser = useUserStore((s) => s.user);
+
+  // Demo whitelist gets the seeded fake-team / fake-audit dataset so
+  // hiring managers see a populated workspace. Everyone else (real
+  // accounts) gets ONLY their own profile in User Management — every
+  // other section renders an empty state with a CTA. No fabricated
+  // teammates, no fabricated audit log entries, no fabricated AI usage
+  // numbers, no fabricated system-health detail strings. Paul flagged
+  // explicitly on 2026-04-27: "I don't want any fake data for my
+  // account!!!!" — so REAL_* fallback constants got deleted in favor
+  // of `null` which the JSX renders as an empty-state card.
+  const isDemo = isDemoEmail(currentUser.email);
+  const users = isDemo
+    ? DEMO_USERS
+    : [
+        {
+          id: 'me',
+          name: currentUser.name || currentUser.email || 'You',
+          email: currentUser.email,
+          role: 'Admin',
+          status: 'Active',
+          color: currentUser.avatarColor || '#1955A6',
+        },
+      ];
+  const auditLog = isDemo ? DEMO_AUDIT_LOG : [];
+  const roles = isDemo ? DEMO_ROLES : [];
+  // Demo AI Usage shows fabricated traffic numbers; real accounts show
+  // a single empty state — no zeros (which would imply "we measured 0",
+  // we haven't), no fabricated model name.
+  const aiUsage = isDemo
+    ? { callsToday: '142', thisMonth: '3,847', model: 'Sonnet', avgResponse: '1.2s' }
+    : null;
+  // Demo System Health shows fabricated DB sizes / AI call counts /
+  // storage usage; real accounts show a single empty state until we
+  // wire actual telemetry endpoints.
+  const health = isDemo
+    ? {
+        api: 'All endpoints responding',
+        db: 'PostgreSQL 16.2 — 156 MB',
+        ai: 'Claude Sonnet — 142 calls',
+        storage: '156 MB of 500 MB (31%)',
+      }
+    : null;
 
   const views = useAdminDashboardStore((s) => s.views);
   const activeViewId = useAdminDashboardStore((s) => s.activeViewId);
@@ -77,7 +131,7 @@ export default function AdminPage() {
             </div>
             <div className="text-[13px] text-[var(--text-secondary)]">
               <strong className="font-extrabold text-[var(--text-primary)]">System Admin</strong>
-              <span> · {DEMO_USERS.length} users · {contacts.length} contacts · {deals.length} deals · {documents.length} documents</span>
+              <span> · {users.length} user{users.length !== 1 ? 's' : ''} · {contacts.length} contacts · {deals.length} deals · {documents.length} documents</span>
             </div>
             {staleCount > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
@@ -108,17 +162,25 @@ export default function AdminPage() {
 
           {/* Static admin sections below the widget grid */}
           <ConfigurableCard cardId="admin-system-health" title="System Health" defaultIconName="CheckCircle">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <HealthItem label="API Status" ok detail="All endpoints responding" />
-              <HealthItem label="Database" ok detail="PostgreSQL 16.2 — 156 MB" />
-              <HealthItem label="AI Service" ok detail="Claude Sonnet — 142 calls" />
-              <HealthItem label="Storage" detail="156 MB of 500 MB (31%)" />
-            </div>
+            {health ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <HealthItem label="API Status" ok detail={health.api} />
+                <HealthItem label="Database" ok detail={health.db} />
+                <HealthItem label="AI Service" ok detail={health.ai} />
+                <HealthItem label="Storage" detail={health.storage} />
+              </div>
+            ) : (
+              <EmptyState
+                icon={<CheckCircle size={18} weight="duotone" />}
+                title="System health telemetry not yet available"
+                hint="Real-time API, database, and storage metrics will appear here once monitoring is configured."
+              />
+            )}
           </ConfigurableCard>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ConfigurableCard cardId="admin-user-mgmt" title="User Management" defaultIconName="UsersThree" headerExtra={<button className="flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer hover:underline"><Plus size={12} weight="bold" /> Invite</button>}>
-              {DEMO_USERS.map((u) => {
+              {users.map((u) => {
                 // Admin tag uses brand colors by default; other roles use neutral.
                 // Both override with the card's custom tag vars when set.
                 const isAdmin = u.role === 'Admin';
@@ -127,7 +189,7 @@ export default function AdminPage() {
                 const tagBorder = isAdmin ? 'var(--card-tag-border, var(--brand-primary))' : 'var(--card-tag-border, var(--border))';
                 return (
                   <div key={u.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--border-subtle)] last:border-0">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white flex-shrink-0" style={{ background: u.color }}>{u.name.split(' ').map(n=>n[0]).join('')}</div>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white flex-shrink-0" style={{ background: u.color }}>{initials(u.name)}</div>
                     <div className="flex-1 min-w-0">
                       {/* Name reads the card's Value (content) color + size so the
                           existing "Value" typography tier controls it. */}
@@ -169,7 +231,14 @@ export default function AdminPage() {
             </ConfigurableCard>
 
             <ConfigurableCard cardId="admin-roles" title="Roles & Permissions" defaultIconName="ShieldCheck" headerExtra={<button className="flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer hover:underline"><Plus size={12} weight="bold" /> New Role</button>}>
-              {ROLES.map((r) => (
+              {roles.length === 0 && (
+                <EmptyState
+                  icon={<ShieldCheck size={18} weight="duotone" />}
+                  title="No roles configured yet"
+                  hint="Click + New Role to define what teammates can see and edit."
+                />
+              )}
+              {roles.map((r) => (
                 <div key={r.id} className="py-2.5 border-b border-[var(--border-subtle)] last:border-0">
                   <div className="flex items-center justify-between mb-1">
                     {/* Role name reads the Value color + size */}
@@ -217,14 +286,22 @@ export default function AdminPage() {
           </div>
 
           <ConfigurableCard cardId="admin-audit-log" title="Recent Activity" defaultIconName="ClockClockwise">
-            {AUDIT_LOG.map((e) => (
-              <div key={e.id} className="flex items-center gap-3 py-2 border-b border-[var(--border-subtle)] last:border-0">
-                <div className="w-7 h-7 rounded-full bg-[var(--surface-raised)] flex items-center justify-center text-[var(--text-secondary)] flex-shrink-0">{e.icon}</div>
-                <div className="flex-1 min-w-0"><span className="text-[12px] text-[var(--text-primary)]"><span className="font-bold">{e.action}</span> — {e.target}</span></div>
-                <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0">{e.user}</span>
-                <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0 w-[60px] text-right">{e.time}</span>
-              </div>
-            ))}
+            {auditLog.length === 0 ? (
+              <EmptyState
+                icon={<ClockClockwise size={18} weight="duotone" />}
+                title="No activity yet"
+                hint="Workspace events (deals, contacts, document uploads, settings changes) will appear here as you work."
+              />
+            ) : (
+              auditLog.map((e) => (
+                <div key={e.id} className="flex items-center gap-3 py-2 border-b border-[var(--border-subtle)] last:border-0">
+                  <div className="w-7 h-7 rounded-full bg-[var(--surface-raised)] flex items-center justify-center text-[var(--text-secondary)] flex-shrink-0">{e.icon}</div>
+                  <div className="flex-1 min-w-0"><span className="text-[12px] text-[var(--text-primary)]"><span className="font-bold">{e.action}</span> — {e.target}</span></div>
+                  <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0">{e.user}</span>
+                  <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0 w-[60px] text-right">{e.time}</span>
+                </div>
+              ))
+            )}
           </ConfigurableCard>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -236,17 +313,49 @@ export default function AdminPage() {
               </div>
             </ConfigurableCard>
             <ConfigurableCard cardId="admin-ai-usage" title="AI Usage" defaultIconName="Sparkle">
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <MetricBox label="Calls Today" value="142" />
-                <MetricBox label="This Month" value="3,847" />
-                <MetricBox label="Model" value="Sonnet" />
-                <MetricBox label="Avg Response" value="1.2s" />
-              </div>
+              {aiUsage ? (
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <MetricBox label="Calls Today" value={aiUsage.callsToday} />
+                  <MetricBox label="This Month" value={aiUsage.thisMonth} />
+                  <MetricBox label="Model" value={aiUsage.model} />
+                  <MetricBox label="Avg Response" value={aiUsage.avgResponse} />
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<Sparkle size={18} weight="duotone" />}
+                  title="No AI calls yet"
+                  hint="Usage stats will appear here once you start using AI-assisted features like contact enrichment or email drafting."
+                />
+              )}
             </ConfigurableCard>
           </div>
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Empty-state used by every admin section when the signed-in user has
+ * no real data yet. Single shared component so the cards stay visually
+ * consistent (icon + title + hint copy in a centered column with a
+ * neutral surface). Showing fabricated zeros / placeholder strings
+ * here was Paul's complaint on 2026-04-27 ("I don't want any fake data
+ * for my account!!!!"), so this is the only thing real accounts ever
+ * see in the affected sections.
+ */
+function EmptyState({ icon, title, hint }: { icon: React.ReactNode; title: string; hint: string }) {
+  return (
+    <div className="flex flex-col items-center text-center py-8 px-4">
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center mb-3 text-[var(--text-tertiary)]"
+        style={{ background: 'var(--surface-raised)' }}
+      >
+        {icon}
+      </div>
+      <div className="text-[12px] font-bold text-[var(--text-primary)] mb-1">{title}</div>
+      <div className="text-[11px] text-[var(--text-tertiary)] max-w-[320px] leading-relaxed">{hint}</div>
+    </div>
   );
 }
 

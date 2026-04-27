@@ -343,3 +343,168 @@ Built with Claude Code. Claude was the pair programmer for every architectural d
 - `docs/ROADMAP.md` — product direction.
 - `docs/DATA-POLICY.md` — why fake data is banned in AI paths.
 - `docs/DATA-SOURCES.md` — every provider, every rate limit.
+
+---
+
+# Part 3: UX Polish — The Decisions Behind the Details
+
+**Duration:** Apr 21, 2026 (one-day polish sprint before portfolio push)
+
+Part 1 was speed. Part 2 was trust. Part 3 was **craft** — a full day spent making the existing features feel considered, consistent, and hiring-manager-ready. Every change in this section came from a specific UX principle or industry precedent, not from "make it prettier." What follows is the decision log.
+
+---
+
+## 1. Sticky Actions column on every grid
+
+**The call:** Pin edit/delete icons to the right edge of every data table so users never have to scroll horizontally to find them. Add an "Actions" header label. Show icons on row hover only.
+
+**The principle:** **Fitts's Law** — frequently-used controls should be close and always reachable. Hiding edit/delete behind horizontal scroll violates this. Hover-only visibility keeps visual noise low while preserving discoverability.
+
+**Industry precedent:** Salesforce, HubSpot, Linear, and Notion all pin row actions to the right edge of data tables. This is the default in every mature CRM.
+
+**Implementation detail:** Since every grid in the app uses a shared `SharedDataGrid` component (Contacts, Placements, Recruiting, Documents, Custom Reports), one change pinned Actions globally.
+
+---
+
+## 2. Private contact filter — match the app's filter language
+
+**The call:** Add a "Private" filter pill to the Contacts filter bar. Initially shipped it in red. Walked it back to brand blue to match Favorites and the type filter.
+
+**The principle:** **Color consistency + semantic color reservation.** Red should mean *danger* or *destructive*, not *category*. A red "Private" pill implied the filter was dangerous — it's not, it's just a category.
+
+**What this shows:** Restraint. The instinct was "private = hide = red." The right move was "category filter = the color all other category filters use."
+
+---
+
+## 3. 3-dot menu → inline icons when the action count is small
+
+**The call:** Replaced the Placements grid's 3-dot overflow menu (with "Open deal" and "Delete" inside) with two inline icons.
+
+**The principle:** **Progressive disclosure at the wrong layer.** A 3-dot menu is the right pattern when you have 5+ actions. With only 2 actions, it adds an extra click with zero payoff. The overflow menu is a tool for hiding density, not complexity.
+
+**Industry precedent:** Linear, Height, and Shortcut all use inline icons when action count ≤ 3.
+
+---
+
+## 4. Tabbed help panel — ending the scrollfest
+
+**The call:** The help panel was ~770px of vertical scroll in a 600px viewport — AI ask + tips + eleven tour cards + quick links, all stacked. Redesigned into a pill-segmented **Tips / Tours / Resources** tab system with the current-page's tour pinned at the top of the Tours tab as "Recommended for this page."
+
+**The principles:**
+- **Minimize scrollfests in fixed-height UI.** Side panels and popovers have a hard ceiling; stacked content past the fold is invisible.
+- **Consistency of pattern.** First attempt used underline tabs — I pointed out they didn't read as navigation. Shipped as pill-segments matching the List/Card toggle and All/Organizations/People filter already used throughout the app.
+- **Remove decorative metrics.** A "12" count badge on the Tours tab was dropped — a raw number without units is noise, not information.
+
+**What this shows:** A count only helps if the user can act on it ("12 unread") or compare it to something meaningful ("12 of 40 complete"). A naked "12" of tours is just clutter.
+
+---
+
+## 5. Chart palette picker — user agency over visual output
+
+**The call:** Add a palette selector to every chart widget (Pipeline by stage, Deals by source, Custom Reports). Eight curated palettes — brand, AI-themed, analytical, etc.
+
+**The principle:** **User agency.** Dashboards are personal. Hardcoded palettes say "I know what's best for you"; customization says "this is yours." The moment a user can't recolor a chart to match their presentation deck, they stop using the tool.
+
+**Industry precedent:** Mixpanel, Amplitude, Looker, Tableau — all expose palette pickers.
+
+---
+
+## 6. Admin card customization — restrict the surface to what matters
+
+**The call:** Admin cards (User Management, AI Usage, System Health) got a customization popover. First draft let users change card background, border color, inner tile background, tag colors, name/email typography, value and subtitle text styles. Cut it down to **inner tile background + tag styling + typography for names/emails/values/subtitles** — dropped card body background and card border as editable fields.
+
+**The principle:** **Limit customization surface to where it matters.** Forty knobs creates decision paralysis and inconsistent output across a team. Three to five knobs that cover 90% of real use cases is the right balance.
+
+**What got cut and why:**
+- **Card body background** — if every admin card has a different body color, the dashboard stops feeling like one surface.
+- **Card border color** — borders should be part of the shared design system, not per-card.
+- **Inner tile background** (kept) — this is the content-level customization users actually want.
+
+---
+
+## 7. 3-column popover layout for customization
+
+**The call:** The customization popover's 6+ fields in a single column felt long. Restructured as three columns: **Appearance** / **Sub-elements** / **Typography**.
+
+**The principle:** **Horizontal grouping beats vertical stacking for categorical content.** Vertical lists force scanning top-to-bottom. A 3-column layout lets users glance and locate — their eyes pattern-match on category labels instead of reading through every row.
+
+---
+
+## 8. Color chip system — saturated + tints + Ink/Paper ends
+
+**The call:** Color pickers shipped with 10 saturated chips. Added a second row of tints. Anchored both rows with **Ink (black)** and **Paper (white)** at the ends. Pushed the tints darker twice when they read as "too light" against white card backgrounds (`#F8FAFC` → `#F1F5F9` → `#E8EEF5`).
+
+**The principle:** **Scaffolded color systems.** This mirrors how Material Design and Tailwind structure color tokens — base hues, plus tint/shade ramps, plus neutral anchors. Designers recognize the pattern instantly, which builds trust in the app's design literacy.
+
+**The iteration detail:** Tints shipped at Tailwind's `slate-50` default. The iteration to `#E8EEF5` was driven by one observation — the chip was so close to the card background that users couldn't tell they'd selected anything. Visibility of selection is non-negotiable.
+
+---
+
+## 9. Right-pane contact chooser instead of full-page route
+
+**The call:** The "+ New Contact" button in the Contacts grid used to route to a full-page wizard at `/contacts/new`. Moved it into a slide-over right pane that appears over the grid.
+
+**The principle:** **Context preservation.** Full-page routes break the user's task context — they lose their place in the grid, their filter state, the row they were about to click. Slide-over panels keep the grid visible behind them and let the user abandon the new-contact flow without losing anything.
+
+**Industry precedent:** Notion, Linear, Things, and Figma all use slide-overs or modals for "quick-add" tasks initiated from a primary surface.
+
+---
+
+## 10. Multiple exit paths for the contact form
+
+**The call:** The full-page new-contact form had only the browser's back button and a breadcrumb as ways to leave. Added a prominent X in the form's top-right corner + ESC keyboard support + the breadcrumb already there.
+
+**The principle:** **User control and freedom** (Nielsen heuristic #3). A single exit method fails users who click outside expecting dismissal or who reach for ESC. Three exit paths = zero stuck users.
+
+---
+
+## 11. Toast notifications for every significant action
+
+**The call:** Added a four-severity toast system (success / error / warning / info) and wired it into every contact save, deal save, document upload, resume parse, stage drag, and settings change. Destructive actions (contact delete, deal delete) got toasts with an **Undo** action.
+
+**The principles:**
+- **Acknowledgment of action** (Shneiderman's rule 4). Every destructive or permanent action needs confirmation feedback. Silent success is disorienting — users re-perform the action because they're unsure it worked.
+- **Reversibility reduces fear.** Undo-in-toast is the gold-standard pattern — Gmail archive/trash, Slack message delete, Figma layer delete. It lets users act fast without second-guessing.
+
+**The refinement:** First pass missed contact deletion instrumentation. Caught by the direct question *"if I delete a contact will I see a toast?"* — which exposed the gap. Toast + Undo added to both Contacts and Placements delete flows.
+
+---
+
+## 12. Column pinning, persisted
+
+**The call:** Added left/right column pinning to every grid via the Columns dropdown. Pin buttons always visible (not hover-only). Pinning state persists across refresh via Zustand's `persist` middleware.
+
+**The principle:** **User-controlled information priority.** Wide tables force horizontal scroll; pinning lets users decide which columns stay visible. This is the same pattern Excel has used for 30 years, which is why it feels right immediately.
+
+**The discoverability fix:** First pass had pin icons hidden until hover — following the same hover-reveal pattern as other column actions. User feedback caught that nobody knew pinning existed. Made pin icons always visible in the Columns dropdown. **Frequency of use trumps visual quiet when the feature is hidden.**
+
+---
+
+## 13. Grid help tour
+
+**The call:** Added a route-agnostic "Grids" tour that teaches the shared toolbar every data grid uses in the app — Views, Columns (with pinning), Density, Reset, sticky Actions, the header interactions (sort, filter, drag, resize).
+
+**The principle:** **Feature discoverability.** All those grid controls are powerful but hidden. A tour is the lowest-effort way to expose them without cluttering the UI with persistent tooltips. Progressive onboarding beats tooltip-everywhere because it lets users opt in when they want to learn.
+
+**The scoping decision:** The tour targets elements that only exist on list-view pages. Launching from a non-grid page (Settings, Admin) auto-navigates to `/contacts` first — so the tour always has targets to spotlight. Avoids the "tour starts, nothing to highlight, user confused" failure mode.
+
+---
+
+## The through-lines
+
+Six themes run through all thirteen decisions:
+
+| Theme | Where it showed up |
+|---|---|
+| **Consistency of pattern** | Private filter matching Favorites · pill tabs matching List/Card · color chip system matching Material/Tailwind |
+| **Reduce friction for frequent actions** | Sticky Actions · inline icons · right-pane over full-page · column pinning |
+| **Reserve semantic weight** | No red for non-danger · no decorative counts · restrict customization surface |
+| **Multiple paths for users** | ESC + X + breadcrumb · toast + Undo |
+| **Customization where it matters, not everywhere** | Inner tile yes, card border no · 5 knobs not 40 |
+| **Hide complexity until needed, but not so deep it disappears** | Hover-only icons except pinning · tours over tooltips · tabbed panel |
+
+Every one of these is a small choice. The case study's point is that **small, principled choices compound** — a CRM where the edit icon is always in the same place, the filter pills use the same color language, and the help panel doesn't bury the tour you need is a CRM that respects the user's time. That respect is what separates a demo from a product.
+
+---
+
+**Credits (Part 3):** One day. Claude Code as pair programmer. Every decision above was discussed, challenged, and shipped collaboratively.

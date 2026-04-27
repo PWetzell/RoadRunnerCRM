@@ -1,135 +1,254 @@
 import { ContactWithEntries } from '@/types/contact';
+import { BULK_CONTACTS } from './seed-contacts-bulk';
 
-export const SEED_CONTACTS: ContactWithEntries[] = [
+/**
+ * Seed data uses real, publicly-known companies and their published HQ
+ * addresses so the Overview map pins to a real location. People, phone
+ * numbers, and identifiers are still fabricated (fake 555 numbers, no
+ * real EINs), but employers, emails, and office locations reflect the
+ * real businesses.
+ *
+ * This file defines the original 12 "core story" contacts — the ones
+ * notes, documents, and deals deep-reference. Bulk 2026 recruiter book-
+ * of-business (additional 20+ orgs, 25 hiring managers, 80 candidates)
+ * lives in `seed-contacts-bulk.ts` and is merged at the bottom.
+ */
+const CORE_CONTACTS: ContactWithEntries[] = [
   {
-    id: 'org-1', type: 'org', name: 'Meridian Capital Group', avatarColor: '#1955A6', industry: 'Financial Services',
-    employees: '250-500', hq: 'Boston, MA', website: 'meridiancapital.com',
-    description: 'Independent investment advisory firm specializing in institutional asset management.',
-    lastUpdated: '2024-02-15', status: 'active', stale: true,
-    staleReason: 'No activity in 14 months — record may be outdated', aiStatus: 'stale',
+    id: 'org-1', type: 'org', name: 'Fidelity Investments', avatarColor: '#1955A6', industry: 'Investment Management',
+    employees: '10,000+', hq: 'Boston, MA', website: 'fidelity.com',
+    description: 'Multinational financial services firm offering investment management, retirement planning, brokerage, and wealth management for individual and institutional clients.',
+    structure: 'Private', category: 'National',
+    revenueVolume: { annual: 28000000000 },
+    lastUpdated: '2026-04-08', status: 'active', stale: false, aiStatus: 'verified',
     tags: ['Contacts Tag', 'Sales Tag'], assignedTo: 'Tom Coffee', createdBy: 'Paul Wentzell',
     entries: {
       addresses: [
-        { id: 'a1', type: 'Branch', value: '100 Cummings Center Ste-230-G', city: 'Portsmouth', state: 'NH', zip: '03811', primary: true },
-        { id: 'a2', type: 'Agency', value: 'PO Box 2345', city: 'Portsmouth', state: 'NH', zip: '03811', primary: false },
-        { id: 'a3', type: 'Department', value: '100 Cummings Center', city: 'Portsmouth', state: 'NH', zip: '03811', primary: false },
+        { id: 'a1', type: 'Headquarters', value: '245 Summer Street', city: 'Boston', state: 'MA', zip: '02210', primary: true },
+        { id: 'a2', type: 'Regional Office', value: '900 Salem Street', city: 'Smithfield', state: 'RI', zip: '02917', primary: false },
       ],
       emails: [
-        { id: 'e1', type: 'Work', value: 'info@meridiancapital.com', primary: true },
-        { id: 'e2', type: 'Support', value: 'support@meridiancapital.com', primary: false },
+        { id: 'e1', type: 'Work', value: 'institutional@fidelity.com', primary: true },
+        { id: 'e2', type: 'Support', value: 'service@fidelity.com', primary: false },
       ],
       phones: [
-        { id: 'p1', type: 'Office', value: '+1 (603) 555-1234', primary: true },
-        { id: 'p2', type: 'Fax', value: '+1 (603) 555-5678', primary: false },
+        { id: 'p1', type: 'Office', value: '+1 (617) 563-7000', primary: true },
+        { id: 'p2', type: 'Toll-Free', value: '+1 (800) 343-3548', primary: false },
       ],
       websites: [
-        { id: 'w1', type: 'Primary', value: 'meridiancapital.com', primary: true },
-        { id: 'w2', type: 'LinkedIn', value: 'linkedin.com/company/meridian-capital-group', primary: false },
+        { id: 'w1', type: 'Primary', value: 'fidelity.com', primary: true },
+        { id: 'w2', type: 'LinkedIn', value: 'linkedin.com/company/fidelity-investments', primary: false },
       ],
       names: [
-        { id: 'cn1', type: 'Primary · Legal', value: 'Meridian Capital Group', primary: true },
-        { id: 'cn2', type: 'Full', value: 'The Meridian Capital Group Companies', primary: false },
-        { id: 'cn3', type: 'Doing Business As', value: 'The Meridian Capital Group', primary: false },
+        { id: 'cn1', type: 'Primary · Legal', value: 'FMR LLC', primary: true },
+        { id: 'cn2', type: 'Doing Business As', value: 'Fidelity Investments', primary: false },
       ],
       identifiers: [
-        { id: 'id1', type: 'Social Security Number (SSN)', authority: 'Social Security Administration (SSA)', value: '', primary: false },
-        { id: 'id2', type: 'Federal Tax ID (EIN)', authority: 'Social Security Administration (SSA)', value: '', primary: false },
-        { id: 'id3', type: 'Federal Vendor ID (DUNS)', authority: 'System for Award Management (SAM)', value: '', primary: false },
+        { id: 'id1', type: 'Federal Tax ID (EIN)', authority: 'Internal Revenue Service (IRS)', value: '', primary: false },
+        { id: 'id2', type: 'Federal Vendor ID (DUNS)', authority: 'System for Award Management (SAM)', value: '', primary: false },
       ],
       industries: [
-        { id: 'ind1', code: '52111', name: 'Monetary Authorities-Central Bank', primary: false },
-        { id: 'ind2', code: '54121', name: 'Accounting, Tax Preparation, Bookkeep...', primary: false },
+        { id: 'ind1', code: '52393', name: 'Investment Advice', primary: true },
+        { id: 'ind2', code: '52312', name: 'Securities Brokerage', primary: false },
       ],
     },
   },
   {
-    id: 'org-2', type: 'org', name: 'Vertex Analytics', avatarColor: '#7C3AED', industry: 'Data & Analytics',
-    employees: '50-100', hq: 'New York, NY', website: 'vertexanalytics.io',
-    description: 'Data intelligence platform for financial markets research.',
-    structure: 'Private', category: 'National',
-    revenueVolume: { annual: 8000000, quarterly: 2000000, monthly: 670000 },
-    salesVolume: { annual: 6500000, quarterly: 1625000, monthly: 540000 },
+    id: 'org-2', type: 'org', name: 'Stripe, Inc.', avatarColor: '#635BFF', industry: 'Payments / Software',
+    employees: '5,000-10,000', hq: 'South San Francisco, CA', website: 'stripe.com',
+    description: 'Financial infrastructure platform — payments, billing, identity verification, and embedded finance APIs used by millions of businesses worldwide.',
+    structure: 'Private', category: 'Global',
+    revenueVolume: { annual: 16200000000 },
+    salesVolume: { annual: 14500000000 },
     products: [
-      { id: 'prod-v1', type: 'Software (SaaS)', description: 'Vertex Insights — market data platform' },
-      { id: 'prod-v2', type: 'Professional Services', description: 'Custom analytics engagements' },
+      { id: 'prod-s1', type: 'Software (API)', description: 'Stripe Payments — online card processing' },
+      { id: 'prod-s2', type: 'Software (API)', description: 'Stripe Connect — marketplace and platform payments' },
+      { id: 'prod-s3', type: 'Software (SaaS)', description: 'Stripe Billing — subscription management' },
     ],
-    lastUpdated: '2025-11-20', status: 'active', stale: false, aiStatus: 'verified',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 'info@vertexanalytics.io', primary: true }], phones: [{ id: 'p1', type: 'Office', value: '+1 (212) 555-0391', primary: true }], websites: [{ id: 'w1', type: 'Primary', value: 'vertexanalytics.io', primary: true }], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Vertex Analytics', primary: true }], identifiers: [], industries: [] },
+    lastUpdated: '2026-03-28', status: 'active', stale: false, aiStatus: 'verified',
+    tags: ['Sales Tag', 'VIP'], assignedTo: 'Paul Wentzell', createdBy: 'Paul Wentzell',
+    entries: {
+      addresses: [
+        { id: 'a1', type: 'Headquarters', value: '354 Oyster Point Boulevard', city: 'South San Francisco', state: 'CA', zip: '94080', primary: true },
+      ],
+      emails: [
+        { id: 'e1', type: 'Work', value: 'sales@stripe.com', primary: true },
+        { id: 'e2', type: 'Support', value: 'support@stripe.com', primary: false },
+      ],
+      phones: [
+        { id: 'p1', type: 'Office', value: '+1 (888) 926-2289', primary: true },
+      ],
+      websites: [
+        { id: 'w1', type: 'Primary', value: 'stripe.com', primary: true },
+        { id: 'w2', type: 'LinkedIn', value: 'linkedin.com/company/stripe', primary: false },
+      ],
+      names: [
+        { id: 'cn1', type: 'Primary · Legal', value: 'Stripe, Inc.', primary: true },
+      ],
+      identifiers: [
+        { id: 'id1', type: 'Federal Tax ID (EIN)', authority: 'Internal Revenue Service (IRS)', value: '', primary: false },
+      ],
+      industries: [
+        { id: 'ind1', code: '51321', name: 'Software Publishers', primary: true },
+      ],
+    },
   },
   {
-    id: 'org-3', type: 'org', name: 'Clearpath Advisors', avatarColor: '#0E7490', industry: 'Investment Mgmt',
-    employees: '25-50', hq: 'Chicago, IL', website: 'clearpathfin.com',
-    description: 'Boutique advisory firm focused on mid-market M&A transactions.',
-    lastUpdated: '2025-08-03', status: 'active', stale: true,
-    staleReason: 'Website domain may have changed — verify contact info', aiStatus: 'stale',
-    entries: { addresses: [], emails: [], phones: [], websites: [{ id: 'w1', type: 'Primary', value: 'clearpathfin.com', primary: true }], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Clearpath Advisors', primary: true }], identifiers: [], industries: [] },
+    id: 'org-3', type: 'org', name: 'HubSpot, Inc.', avatarColor: '#FF7A59', industry: 'Marketing Software',
+    employees: '5,000-10,000', hq: 'Cambridge, MA', website: 'hubspot.com',
+    description: 'Customer platform with software, integrations, and resources for marketing, sales, customer service, CMS, and operations teams. Publicly traded on NYSE (HUBS).',
+    structure: 'Public', category: 'Global',
+    revenueVolume: { annual: 2630000000, quarterly: 657500000 },
+    lastUpdated: '2026-04-02', status: 'active', stale: false, aiStatus: 'verified',
+    tags: ['Sales Tag', 'Client'], assignedTo: 'Paul Wentzell', createdBy: 'Paul Wentzell',
+    entries: {
+      addresses: [
+        { id: 'a1', type: 'Headquarters', value: '2 Canal Park', city: 'Cambridge', state: 'MA', zip: '02141', primary: true },
+      ],
+      emails: [
+        { id: 'e1', type: 'Work', value: 'sales@hubspot.com', primary: true },
+      ],
+      phones: [
+        { id: 'p1', type: 'Office', value: '+1 (888) 482-7768', primary: true },
+      ],
+      websites: [
+        { id: 'w1', type: 'Primary', value: 'hubspot.com', primary: true },
+        { id: 'w2', type: 'LinkedIn', value: 'linkedin.com/company/hubspot', primary: false },
+      ],
+      names: [
+        { id: 'cn1', type: 'Primary · Legal', value: 'HubSpot, Inc.', primary: true },
+      ],
+      identifiers: [
+        { id: 'id1', type: 'Federal Tax ID (EIN)', authority: 'Internal Revenue Service (IRS)', value: '', primary: false },
+      ],
+      industries: [
+        { id: 'ind1', code: '51321', name: 'Software Publishers', primary: true },
+      ],
+    },
   },
   {
-    id: 'org-4', type: 'org', name: 'Harborline Financial', avatarColor: '#BE185D', industry: 'Financial Services',
-    employees: '100-250', hq: 'Seattle, WA', website: 'harborlinefin.com',
-    description: 'Regional wealth management and financial planning services.',
-    structure: 'LLC', category: 'Regional',
-    revenueVolume: { annual: 24000000, quarterly: 6000000 },
-    // salesVolume + products intentionally left blank to showcase partial data
-    lastUpdated: '2026-01-05', status: 'active', stale: false, aiStatus: 'verified',
-    entries: { addresses: [], emails: [], phones: [], websites: [{ id: 'w1', type: 'Primary', value: 'harborlinefin.com', primary: true }], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Harborline Financial', primary: true }], identifiers: [], industries: [] },
+    id: 'org-4', type: 'org', name: 'Dow Jones & Company', avatarColor: '#0B2F5C', industry: 'Business News & Information',
+    employees: '5,000-10,000', hq: 'New York, NY', website: 'dowjones.com',
+    description: 'Global provider of business and financial news and information — publisher of The Wall Street Journal, Barron\'s, MarketWatch, Dow Jones Newswires, and Factiva. Subsidiary of News Corp.',
+    structure: 'Private', category: 'Global',
+    revenueVolume: { annual: 2230000000 },
+    lastUpdated: '2026-03-19', status: 'active', stale: false, aiStatus: 'verified',
+    tags: ['Contacts Tag', 'Vendor'], assignedTo: 'Tom Coffee', createdBy: 'Paul Wentzell',
+    entries: {
+      addresses: [
+        { id: 'a1', type: 'Headquarters', value: '1211 Avenue of the Americas', city: 'New York', state: 'NY', zip: '10036', primary: true },
+      ],
+      emails: [
+        { id: 'e1', type: 'Work', value: 'info@dowjones.com', primary: true },
+      ],
+      phones: [
+        { id: 'p1', type: 'Office', value: '+1 (212) 416-2000', primary: true },
+      ],
+      websites: [
+        { id: 'w1', type: 'Primary', value: 'dowjones.com', primary: true },
+        { id: 'w2', type: 'LinkedIn', value: 'linkedin.com/company/dow-jones', primary: false },
+      ],
+      names: [
+        { id: 'cn1', type: 'Primary · Legal', value: 'Dow Jones & Company, Inc.', primary: true },
+      ],
+      identifiers: [
+        { id: 'id1', type: 'Federal Tax ID (EIN)', authority: 'Internal Revenue Service (IRS)', value: '', primary: false },
+      ],
+      industries: [
+        { id: 'ind1', code: '51112', name: 'Periodical Publishers', primary: true },
+      ],
+    },
   },
   {
     id: 'per-1', type: 'person', name: 'Sarah Chen', avatarColor: '#047857', title: 'VP of Operations',
-    orgId: 'org-1', orgName: 'Meridian Capital Group', email: 's.chen@meridiancapital.com',
+    orgId: 'org-1', orgName: 'Fidelity Investments', email: 's.chen@fidelity.com',
     phone: '+1 617 555 0142', department: 'Operations',
-    lastUpdated: '2026-01-10', status: 'active', stale: false, aiStatus: 'verified',
+    lastUpdated: '2026-04-10', status: 'active', stale: false, aiStatus: 'verified',
     tags: ['Contacts Tag'], assignedTo: 'Tom Coffee', isPrivate: true, visibleTo: ['Paul Wentzell', 'Janet Parker'], createdBy: 'Paul Wentzell',
     entries: {
-      addresses: [{ id: 'a1', type: 'Home', value: '875 Greenland Rd., Ste. 230, G', city: 'Portsmouth', state: 'NH', zip: '03811', primary: true }],
-      emails: [{ id: 'e1', type: 'Work', value: 's.chen@meridiancapital.com', primary: true }, { id: 'e2', type: 'Personal', value: 'sarah@gmail.com', primary: false }],
-      phones: [{ id: 'p1', type: 'Mobile', value: '+1 617 555 0142', primary: true }, { id: 'p2', type: 'Office', value: '+1 (603) 555-0000', primary: false }],
-      websites: [{ id: 'w1', type: 'LinkedIn', value: 'linkedin.com/in/sarah-chen', primary: false }],
-      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Sarah Chen', primary: true }, { id: 'cn2', type: 'Given', value: 'Sarah S. Chen', primary: false }],
-      identifiers: [
-        { id: 'id1', type: 'Social Security Number (SSN)', authority: 'Social Security Administration (SSA)', value: '', primary: false },
-        { id: 'id2', type: 'Federal Tax ID (EIN)', authority: 'Social Security Administration (SSA)', value: '', primary: false },
-        { id: 'id3', type: 'Federal Vendor ID (DUNS)', authority: 'System for Award Management (SAM)', value: '', primary: false },
-      ],
+      addresses: [{ id: 'a1', type: 'Home', value: '125 Beacon Street, Apt 4B', city: 'Boston', state: 'MA', zip: '02116', primary: true }],
+      emails: [{ id: 'e1', type: 'Work', value: 's.chen@fidelity.com', primary: true }, { id: 'e2', type: 'Personal', value: 'sarah.s.chen@gmail.com', primary: false }],
+      phones: [{ id: 'p1', type: 'Mobile', value: '+1 617 555 0142', primary: true }, { id: 'p2', type: 'Office', value: '+1 (617) 563-7142', primary: false }],
+      websites: [{ id: 'w1', type: 'LinkedIn', value: 'linkedin.com/in/sarah-chen-ops', primary: false }],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Sarah Chen', primary: true }],
+      identifiers: [],
       industries: [],
     },
   },
   {
-    id: 'per-2', type: 'person', name: 'Marcus Webb', avatarColor: '#C2410C', title: 'Chief Data Officer',
-    orgId: 'org-2', orgName: 'Vertex Analytics', email: 'm.webb@vertexanalytics.io',
-    phone: '+1 212 555 0391', department: 'Technology',
-    lastUpdated: '2024-06-22', status: 'active', stale: true,
-    staleReason: 'Title may have changed — CDO role was restructured Q3 2024', aiStatus: 'stale',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 'm.webb@vertexanalytics.io', primary: true }], phones: [{ id: 'p1', type: 'Mobile', value: '+1 212 555 0391', primary: true }], websites: [], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Marcus Webb', primary: true }], identifiers: [], industries: [] },
+    id: 'per-2', type: 'person', name: 'Marcus Webb', avatarColor: '#C2410C', title: 'Engineering Manager, Payments Platform',
+    orgId: 'org-2', orgName: 'Stripe, Inc.', email: 'm.webb@stripe.com',
+    phone: '+1 415 555 0391', department: 'Engineering',
+    lastUpdated: '2026-03-15', status: 'active', stale: false, aiStatus: 'verified',
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Work', value: 'm.webb@stripe.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Mobile', value: '+1 415 555 0391', primary: true }],
+      websites: [{ id: 'w1', type: 'LinkedIn', value: 'linkedin.com/in/marcus-webb-eng', primary: false }],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Marcus Webb', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
   {
-    id: 'per-3', type: 'person', name: 'Diana Reyes', avatarColor: '#6A0FB8', title: 'Managing Director',
-    orgId: 'org-3', orgName: 'Clearpath Advisors', email: 'd.reyes@clearpathfin.com',
-    phone: '+1 312 555 0278', department: 'Executive',
-    lastUpdated: '2025-09-14', status: 'active', stale: false, aiStatus: 'verified',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 'd.reyes@clearpathfin.com', primary: true }], phones: [{ id: 'p1', type: 'Mobile', value: '+1 312 555 0278', primary: true }], websites: [], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Diana Reyes', primary: true }], identifiers: [], industries: [] },
+    id: 'per-3', type: 'person', name: 'Diana Reyes', avatarColor: '#6A0FB8', title: 'Director of Customer Success',
+    orgId: 'org-3', orgName: 'HubSpot, Inc.', email: 'd.reyes@hubspot.com',
+    phone: '+1 617 555 0278', department: 'Customer Success',
+    lastUpdated: '2026-04-05', status: 'active', stale: false, aiStatus: 'verified',
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Work', value: 'd.reyes@hubspot.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Mobile', value: '+1 617 555 0278', primary: true }],
+      websites: [],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Diana Reyes', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
   {
     id: 'per-4', type: 'person', name: 'Tom Nakamura', avatarColor: '#0B2F5C', title: 'Director of Compliance',
-    orgId: 'org-1', orgName: 'Meridian Capital Group', email: 't.nakamura@meridiancapital.com',
+    orgId: 'org-1', orgName: 'Fidelity Investments', email: 't.nakamura@fidelity.com',
     phone: '+1 617 555 0209', department: 'Compliance',
-    lastUpdated: '2026-02-28', status: 'active', stale: false, aiStatus: 'verified',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 't.nakamura@meridiancapital.com', primary: true }], phones: [{ id: 'p1', type: 'Office', value: '+1 617 555 0209', primary: true }], websites: [], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Tom Nakamura', primary: true }], identifiers: [], industries: [] },
+    lastUpdated: '2026-03-30', status: 'active', stale: false, aiStatus: 'verified',
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Work', value: 't.nakamura@fidelity.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Office', value: '+1 (617) 563-7209', primary: true }],
+      websites: [],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Tom Nakamura', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
   {
-    id: 'per-5', type: 'person', name: 'Lisa Park', avatarColor: '#9D174D', title: 'Senior Analyst',
-    orgId: 'org-2', orgName: 'Vertex Analytics', email: 'l.park@vertexanalytics.io',
-    phone: '+1 212 555 0157', department: 'Finance',
-    lastUpdated: '2025-04-17', status: 'inactive', stale: true,
-    staleReason: 'No longer in company directory — may have left', aiStatus: 'stale',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 'l.park@vertexanalytics.io', primary: true }], phones: [{ id: 'p1', type: 'Mobile', value: '+1 212 555 0157', primary: true }], websites: [], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Lisa Park', primary: true }], identifiers: [], industries: [] },
+    id: 'per-5', type: 'person', name: 'Lisa Park', avatarColor: '#9D174D', title: 'Senior Solutions Architect',
+    orgId: 'org-2', orgName: 'Stripe, Inc.', email: 'l.park@stripe.com',
+    phone: '+1 415 555 0157', department: 'Solutions Engineering',
+    lastUpdated: '2026-03-22', status: 'active', stale: false, aiStatus: 'verified',
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Work', value: 'l.park@stripe.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Mobile', value: '+1 415 555 0157', primary: true }],
+      websites: [],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Lisa Park', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
   {
     id: 'per-6', type: 'person', name: 'James Harford', avatarColor: '#1D4ED8', title: 'Head of Talent Acquisition',
-    orgId: 'org-4', orgName: 'Harborline Financial', email: 'j.harford@harborlinefin.com',
-    phone: '+1 206 555 0183', department: 'Human Resources',
+    orgId: 'org-4', orgName: 'Dow Jones & Company', email: 'j.harford@dowjones.com',
+    phone: '+1 212 555 0183', department: 'Human Resources',
     lastUpdated: '2026-03-25', status: 'active', stale: false, aiStatus: 'verified',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 'j.harford@harborlinefin.com', primary: true }], phones: [{ id: 'p1', type: 'Office', value: '+1 206 555 0183', primary: true }], websites: [], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'James Harford', primary: true }], identifiers: [], industries: [] },
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Work', value: 'j.harford@dowjones.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Office', value: '+1 (212) 416-2183', primary: true }],
+      websites: [],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'James Harford', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
   {
     id: 'per-7', type: 'person', name: 'Alex Rivera', avatarColor: '#059669', title: 'Staff Data Engineer',
@@ -137,13 +256,32 @@ export const SEED_CONTACTS: ContactWithEntries[] = [
     phone: '+1 415 555 0294', department: '',
     lastUpdated: '2026-04-12', status: 'active', stale: false, aiStatus: 'verified',
     tags: ['Prospect'], assignedTo: 'Paul Wentzell',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Personal', value: 'alex.rivera@gmail.com', primary: true }], phones: [{ id: 'p1', type: 'Mobile', value: '+1 415 555 0294', primary: true }], websites: [{ id: 'w1', type: 'LinkedIn', value: 'linkedin.com/in/alexrivera', primary: false }], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Alex Rivera', primary: true }], identifiers: [], industries: [] },
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Personal', value: 'alex.rivera@gmail.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Mobile', value: '+1 415 555 0294', primary: true }],
+      websites: [{ id: 'w1', type: 'LinkedIn', value: 'linkedin.com/in/alexrivera', primary: false }],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Alex Rivera', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
   {
-    id: 'per-8', type: 'person', name: 'Priya Shah', avatarColor: '#D97706', title: 'Senior Analyst',
-    orgId: 'org-3', orgName: 'Clearpath Advisors', email: 'p.shah@clearpathfin.com',
-    phone: '+1 312 555 0344', department: 'Advisory',
+    id: 'per-8', type: 'person', name: 'Priya Shah', avatarColor: '#D97706', title: 'Senior Product Marketing Manager',
+    orgId: 'org-3', orgName: 'HubSpot, Inc.', email: 'p.shah@hubspot.com',
+    phone: '+1 617 555 0344', department: 'Product Marketing',
     lastUpdated: '2026-04-07', status: 'active', stale: false, aiStatus: 'verified',
-    entries: { addresses: [], emails: [{ id: 'e1', type: 'Work', value: 'p.shah@clearpathfin.com', primary: true }], phones: [{ id: 'p1', type: 'Mobile', value: '+1 312 555 0344', primary: true }], websites: [], names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Priya Shah', primary: true }], identifiers: [], industries: [] },
+    entries: {
+      addresses: [],
+      emails: [{ id: 'e1', type: 'Work', value: 'p.shah@hubspot.com', primary: true }],
+      phones: [{ id: 'p1', type: 'Mobile', value: '+1 617 555 0344', primary: true }],
+      websites: [],
+      names: [{ id: 'cn1', type: 'Primary · Legal', value: 'Priya Shah', primary: true }],
+      identifiers: [],
+      industries: [],
+    },
   },
 ];
+
+/** Full seed — original 12 story contacts merged with the 2026 bulk book. */
+export const SEED_CONTACTS: ContactWithEntries[] = [...CORE_CONTACTS, ...BULK_CONTACTS];

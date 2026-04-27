@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTourStore } from '@/stores/tour-store';
 import { TOUR_STEPS, TourStep } from '@/lib/tour-steps';
 import TourSpotlight from './TourSpotlight';
@@ -22,11 +24,27 @@ export default function ActiveTourOverlay() {
   const walkthroughStep = useTourStore((s) => s.walkthroughStep);
   const setWalkthroughStep = useTourStore((s) => s.setWalkthroughStep);
   const exitTour = useTourStore((s) => s.exitTour);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const tourSteps = activeWalkthrough ? (TOUR_STEPS[activeWalkthrough] || []) : [];
+  const currentStep: TourStep | null = tourSteps[walkthroughStep] || null;
+
+  // Handle per-step navigateTo — runs here (in the always-mounted tour
+  // overlay) rather than in HelpPanel, because the help panel closes
+  // itself when a tour starts, which previously killed the navigation
+  // effect for every step after step 1. Compares the full URL (path +
+  // query) so `navigateTo: '/contacts?list=X'` works.
+  useEffect(() => {
+    if (!currentStep?.navigateTo) return;
+    if (typeof window === 'undefined') return;
+    const currentUrl = pathname + window.location.search;
+    if (currentUrl !== currentStep.navigateTo) {
+      router.push(currentStep.navigateTo);
+    }
+  }, [currentStep, pathname, router]);
 
   if (!activeWalkthrough) return null;
-
-  const tourSteps = TOUR_STEPS[activeWalkthrough] || [];
-  const currentStep: TourStep | null = tourSteps[walkthroughStep] || null;
 
   if (!currentStep || tourSteps.length === 0) {
     if (activeWalkthrough) exitTour();

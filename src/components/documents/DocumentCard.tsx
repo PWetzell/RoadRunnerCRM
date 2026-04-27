@@ -6,6 +6,8 @@ import { fmtDate } from '@/lib/utils';
 import InlineCardSettings, { useCardStyleVars, useCardHeaderColor } from '@/components/ui/InlineCardSettings';
 import { useIsDark } from '@/hooks/useIsDark';
 import FileTypePreview from './FileTypePreview';
+import { getTagPillData, getTagIcon } from '@/lib/document-tag-style';
+import { dc } from '@/lib/pill-colors';
 
 interface Props {
   doc: CrmDocument;
@@ -121,11 +123,24 @@ export default function DocumentCard({ doc, onPreview, onRemove }: Props) {
         {/* Extension badge + tags */}
         <div className="flex items-center gap-1 flex-wrap mt-auto">
           <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: isDark ? getExtBgColor(doc.fileName, doc.fileFamily) : `color-mix(in srgb, ${color} 12%, white)`, color, border: `1px solid ${color}` }}>{ext}</span>
-          {doc.tags && doc.tags.length > 0 && doc.tags.slice(0, 3).map((t) => (
-            <span key={t} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)]">
-              <Tag size={8} weight="bold" /> {t}
-            </span>
-          ))}
+          {doc.tags && doc.tags.length > 0 && doc.tags.slice(0, 3).map((t) => {
+            // Canonical tag pill — shared with list grid + preview panel so
+            // "resume" stays blue + CV icon and "candidate" stays violet
+            // everywhere. Source: @/lib/document-tag-style.
+            const pill = dc(getTagPillData(t), isDark);
+            const TagIcon = getTagIcon(t);
+            return (
+              <span
+                key={t}
+                title={t}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold border"
+                style={{ background: pill.bg, color: pill.color, borderColor: pill.color }}
+              >
+                <TagIcon size={8} weight="fill" className="flex-shrink-0" />
+                {t}
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -37,6 +37,11 @@ interface CustomReportStore {
 
   // Lookup
   getReport: (id: string) => CustomReport | undefined;
+
+  /** Replace reports with the demo seed dataset. */
+  seedDemoData: () => void;
+  /** Wipe reports. Called on real sign-in and sign-out. */
+  clearAll: () => void;
 }
 
 function uid() {
@@ -46,7 +51,8 @@ function uid() {
 export const useCustomReportStore = create<CustomReportStore>()(
   persist(
     (set, get) => ({
-      reports: SEED_CUSTOM_REPORTS,
+      // Empty by default — demo whitelist gets seeded via AuthGate.
+      reports: [],
 
       builderOpen: false,
       editingReportId: null,
@@ -105,9 +111,20 @@ export const useCustomReportStore = create<CustomReportStore>()(
       })),
 
       getReport: (id) => get().reports.find((r) => r.id === id),
+
+      // Only seed when empty — once the user creates or duplicates any
+      // custom report, trust localStorage. Otherwise every page load
+      // wipes their work. Same rationale as list-store seedDemoData.
+      seedDemoData: () => set((s) => {
+        if (s.reports.length > 0) return s;
+        return { reports: SEED_CUSTOM_REPORTS };
+      }),
+      clearAll: () => set({ reports: [] }),
     }),
     {
-      name: 'roadrunner-custom-reports',
+      // Bumped to v2 to invalidate stale localStorage copies containing
+      // the seeded reports dataset.
+      name: 'roadrunner-custom-reports-v2',
       skipHydration: true,
       partialize: (s) => ({ reports: s.reports }),
       merge: (persisted: unknown, current) => {
@@ -115,7 +132,8 @@ export const useCustomReportStore = create<CustomReportStore>()(
         return {
           ...current,
           ...p,
-          reports: p?.reports ?? SEED_CUSTOM_REPORTS,
+          // Empty fallback — demo dataset arrives via seedDemoData().
+          reports: p?.reports ?? [],
           // Never persist UI state
           builderOpen: false,
           editingReportId: null,

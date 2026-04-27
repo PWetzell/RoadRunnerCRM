@@ -25,7 +25,7 @@ export interface Toast {
   description?: string;
   /** Optional footer action button/link. */
   action?: ToastAction;
-  /** Auto-dismiss delay in ms. 0 = sticky (manual close only). Default 5000. */
+  /** Auto-dismiss delay in ms. 0 = sticky (manual close only). Default 3000. */
   duration?: number;
   /** When this toast was pushed. Used to drive the auto-dismiss timer. */
   createdAt: number;
@@ -45,7 +45,13 @@ export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   push: (t) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const full: Toast = { ...t, id, createdAt: Date.now() };
+    // Apply the documented default duration (3000ms) if the caller didn't
+    // pass one. Without this, undefined falls through to Toast.tsx which
+    // treats `!t.duration` as "sticky" and never schedules auto-dismiss —
+    // every call site that omits duration would hang on screen forever.
+    // Pass `duration: 0` explicitly to opt into sticky behavior.
+    const duration = t.duration === undefined ? 3000 : t.duration;
+    const full: Toast = { ...t, duration, id, createdAt: Date.now() };
     set((s) => ({ toasts: [...s.toasts, full] }));
     return id;
   },

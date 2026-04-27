@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowsDownUp, Buildings, User, Warning, CheckCircle, Sparkle, PencilSimple, Trash } from '@phosphor-icons/react';
+import { ArrowsDownUp, Buildings, User, Warning, CheckCircle, Sparkle, PencilSimple, Trash, EnvelopeSimple } from '@phosphor-icons/react';
 import { useContactStore } from '@/stores/contact-store';
 import { Contact, ContactWithEntries } from '@/types/contact';
 import { initials, fmtDate, getAvatarColor } from '@/lib/utils';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { toast } from '@/lib/toast';
+import { useUnreadCountForContact } from '@/hooks/use-unread-emails';
 
 export default function ContactTable() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function ContactTable() {
               className="px-3.5 py-2.5 text-left text-[11px] font-extrabold tracking-wider uppercase text-[var(--text-tertiary)] bg-[var(--surface-raised)] border-b border-[var(--border)] cursor-pointer hover:text-[var(--brand-primary)] hover:bg-[var(--brand-bg)]"
               onClick={() => toggleSort('lastUpdated')}
             >
-              <span className="flex items-center gap-1">Updated <ArrowsDownUp size={13} /></span>
+              <span className="flex items-center gap-1">Last Activity <ArrowsDownUp size={13} /></span>
             </th>
             <th className="px-3.5 py-2.5 text-left text-[11px] font-extrabold tracking-wider uppercase text-[var(--text-tertiary)] bg-[var(--surface-raised)] border-b border-[var(--border)]">AI Status</th>
             <th className="px-3.5 py-2.5 bg-[var(--surface-raised)] border-b border-[var(--border)] w-[72px]"></th>
@@ -100,15 +101,28 @@ export default function ContactTable() {
           </>
         ) : ''}
         confirmLabel="Delete Contact"
-        onConfirm={() => {
-          if (deleteTarget) {
-            const snapshot = deleteTarget;
-            deleteContact(snapshot.id);
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          const snapshot = deleteTarget;
+          // Optimistic UI: drop from the grid immediately, then call the
+          // DELETE endpoint. If the server rejects, restore the snapshot
+          // and surface a loud error toast. Mirrors the HubSpot/Linear
+          // delete pattern: instant feedback, conservative on failure.
+          deleteContact(snapshot.id);
+          setDeleteTarget(null);
+          try {
+            const r = await fetch(`/api/contacts/${snapshot.id}`, { method: 'DELETE' });
+            const body = await r.json().catch(() => ({} as { error?: string }));
+            if (!r.ok) throw new Error(body.error || `delete failed (${r.status})`);
             toast.success('Contact deleted', {
               description: snapshot.name,
               action: { label: 'Undo', onClick: () => addContact(snapshot) },
             });
-            setDeleteTarget(null);
+          } catch (e) {
+            // Roll back the optimistic removal so the row reappears.
+            addContact(snapshot);
+            const msg = e instanceof Error ? e.message : 'Delete failed';
+            toast.error('Couldn\u2019t delete contact', { description: msg });
           }
         }}
         onCancel={() => setDeleteTarget(null)}
@@ -120,6 +134,12 @@ export default function ContactTable() {
 function ContactRow({ contact: c, onClick, onDelete }: { contact: ContactWithEntries; onClick: () => void; onDelete: () => void }) {
   const col3 = c.type === 'org' ? ('industry' in c ? c.industry || '—' : '—') : ('title' in c ? c.title || '—' : '—');
   const col4 = c.type === 'org' ? ('hq' in c ? c.hq || '—' : '—') : ('orgName' in c ? c.orgName || '—' : '—');
+  // Unread email count is surfaced inline next to the name — mirrors
+  // HubSpot's inbox-pressure chip on the list view. Keeps the grid width
+  // unchanged while making unread contacts eye-catching at scan speed.
+  // Subscribes to the store's read-override set so opening an email in
+  // EmailsPanel clears the chip without a page reload.
+  const unread = useUnreadCountForContact(c.id);
 
   return (
     <tr
@@ -138,7 +158,19 @@ function ContactRow({ contact: c, onClick, onDelete }: { contact: ContactWithEnt
             {initials(c.name)}
           </div>
           <div>
-            <div className="text-[13px] font-bold text-[var(--text-primary)] leading-tight">{c.name}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[13px] font-bold text-[var(--text-primary)] leading-tight">{c.name}</span>
+              {unread > 0 && (
+                <span
+                  aria-label={`${unread} unread email${unread === 1 ? '' : 's'}`}
+                  title={`${unread} unread email${unread === 1 ? '' : 's'}`}
+                  className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold leading-none"
+                >
+                  <EnvelopeSimple size={10} weight="fill" />
+                  {unread}
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-[var(--text-tertiary)] font-medium mt-0.5">
               {c.type === 'org' ? ('employees' in c ? `${c.employees} employees` : '') : ('title' in c ? c.title : '')}
             </div>

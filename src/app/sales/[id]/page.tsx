@@ -16,6 +16,7 @@ import ConvertToCustomerDialog from '@/components/sales/ConvertToCustomerDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { getLeadCompleteness } from '@/lib/leadCompleteness';
 import Link from 'next/link';
+import { toast } from '@/lib/toast';
 
 export default function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -29,7 +30,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [activeTab, setActiveTab] = useState<SalesTabId>('overview');
   const [showConvert, setShowConvert] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const person = useMemo(() => contacts.find((c) => c.id === deal?.personContactId), [contacts, deal?.personContactId]);
   const org = useMemo(() => contacts.find((c) => c.id === deal?.orgContactId), [contacts, deal?.orgContactId]);
@@ -55,16 +55,17 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
   function handleStageChange(s: DealStage) {
     updateDeal(deal!.id, { stage: s, ...(s === 'closed-lost' ? { closedAt: new Date().toISOString().split('T')[0] } : {}) });
-    setToast(`Stage moved to ${s.replace('-', ' ')}`);
-    setTimeout(() => setToast(null), 2000);
+    toast.success(`Stage moved to ${s.replace('-', ' ')}`);
   }
 
   function handleConvert() {
     const result = convertToCustomer(deal!.id);
     setShowConvert(false);
     if (result.ok) {
-      setToast(`🎉 ${result.orgName} is now a customer`);
+      toast.success(`${result.orgName} is now a customer`, { description: 'Deal converted and tagged Customer.' });
       setTimeout(() => router.push('/sales'), 1400);
+    } else {
+      toast.error('Could not convert deal', { description: 'Check that the deal has an org contact.' });
     }
   }
 
@@ -99,12 +100,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[var(--text-primary)] text-[var(--surface-card)] px-4 py-2.5 rounded-md text-[13px] font-semibold shadow-xl z-[200]">
-          {toast}
-        </div>
-      )}
-
       {showConvert && (
         <ConvertToCustomerDialog deal={deal} org={org} onCancel={() => setShowConvert(false)} onConfirm={handleConvert} />
       )}
@@ -115,7 +110,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
         message="This cannot be undone. The linked contacts will not be affected."
         confirmLabel="Delete"
         confirmVariant="danger"
-        onConfirm={() => { deleteDeal(deal.id); router.push('/sales'); }}
+        onConfirm={() => { deleteDeal(deal.id); toast.success('Deal deleted'); router.push('/sales'); }}
         onCancel={() => setConfirmDelete(false)}
       />
     </>

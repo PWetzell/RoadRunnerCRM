@@ -9,9 +9,13 @@ export type ActivityLogEventType =
   | 'title_change'
   | 'org_transfer'
   | 'industry_change'
-  | 'note_added';
+  | 'note_added'
+  | 'email_sent'
+  | 'email_received'
+  | 'email_opened'
+  | 'email_clicked';
 
-export type ActivityLogCategory = 'field' | 'relationship' | 'status' | 'entry' | 'note';
+export type ActivityLogCategory = 'field' | 'relationship' | 'status' | 'entry' | 'note' | 'email';
 
 export interface ActivityLogEntry {
   id: string;
@@ -22,6 +26,8 @@ export interface ActivityLogEntry {
   action: string;          // "added", "updated", "removed", "created"
   oldValue?: string;
   newValue?: string;
+  snippet?: string;        // email preview text (not strike-through like oldValue)
+  archived?: boolean;      // email archived — still shown here, hidden from Emails tab
   author: string;
   authorInitials: string;
   authorColor: string;

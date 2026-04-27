@@ -53,6 +53,14 @@ interface AlertStore {
   // Computed
   getVisibleAlerts: () => CrmAlert[];
   getUnreadCount: () => number;
+
+  /** Replace alerts/rules/reminders with the demo seed dataset. Called by
+   *  AuthGate when a demo-whitelist email signs in. */
+  seedDemoData: () => void;
+  /** Wipe alerts/rules/reminders. Called on real sign-in and sign-out so
+   *  the next session doesn't inherit demo notifications (the "50" red
+   *  badge on the bell that bit Paul on 2026-04-27). */
+  clearAll: () => void;
 }
 
 function uid(prefix: string) {
@@ -62,9 +70,12 @@ function uid(prefix: string) {
 export const useAlertStore = create<AlertStore>()(
   persist(
     (set, get) => ({
-      alerts: SEED_ALERTS,
-      rules: SEED_RULES,
-      reminders: SEED_REMINDERS,
+      // Empty by default — only the demo account gets seeded with
+      // SEED_ALERTS/RULES/REMINDERS via `seedDemoData()` from AuthGate.
+      // Real accounts start with a clean notification panel.
+      alerts: [],
+      rules: [],
+      reminders: [],
       settings: DEFAULT_ALERT_SETTINGS,
       panelOpen: false,
       settingsOpen: false,
@@ -208,9 +219,31 @@ export const useAlertStore = create<AlertStore>()(
         const visible = get().getVisibleAlerts();
         return visible.filter((a) => !a.read).length;
       },
+
+      // Only seed when ALL three collections are empty — any pre-existing
+      // data means the user is mid-session and re-running the seed would
+      // wipe their dismissed alerts, custom rules, or reminders. Same
+      // rationale as list-store seedDemoData.
+      seedDemoData: () => set((s) => {
+        if (s.alerts.length > 0 || s.rules.length > 0 || s.reminders.length > 0) return s;
+        return {
+          alerts: SEED_ALERTS,
+          rules: SEED_RULES,
+          reminders: SEED_REMINDERS,
+        };
+      }),
+      clearAll: () => set({
+        alerts: [],
+        rules: [],
+        reminders: [],
+      }),
     }),
     {
-      name: 'roadrunner-alerts',
+      // Bumped from `roadrunner-alerts` → v2 to invalidate stale localStorage
+      // copies that still contain the seeded alerts. Without the bump,
+      // existing browsers would keep replaying the seed data on every load
+      // even after we changed the in-code defaults to empty.
+      name: 'roadrunner-alerts-v2',
       partialize: (s) => ({
         alerts: s.alerts,
         settings: s.settings,
@@ -219,14 +252,16 @@ export const useAlertStore = create<AlertStore>()(
       }),
       merge: (persisted: unknown, current) => {
         const p = persisted as Partial<AlertStore> | undefined;
-        // If persisted alerts have grown beyond 50, reset to seed data
-        const alerts = (p?.alerts && p.alerts.length <= 50) ? p.alerts : SEED_ALERTS;
+        // No more SEED_* fallback here — empty is the correct shape for
+        // un-persisted state. The demo whitelist gets its data via
+        // AuthGate → seedDemoData(), not via persist hydration.
+        const alerts = (p?.alerts && p.alerts.length <= 50) ? p.alerts : [];
         return {
           ...current,
           ...p,
           alerts,
-          rules: p?.rules ?? SEED_RULES,
-          reminders: p?.reminders ?? SEED_REMINDERS,
+          rules: p?.rules ?? [],
+          reminders: p?.reminders ?? [],
         };
       },
     },

@@ -6,6 +6,13 @@ import { Bell, Lifebuoy, X, Sun, Moon, UserCircle, Gear, SignOut, CaretDown } fr
 import { useTheme } from '@/hooks/useTheme';
 import { useUserStore } from '@/stores/user-store';
 import { useAlertStore } from '@/stores/alert-store';
+import { useGmailStatusStore } from '@/stores/gmail-status-store';
+import { useContactStore } from '@/stores/contact-store';
+import { useSalesStore } from '@/stores/sales-store';
+import { useListStore } from '@/stores/list-store';
+import { useDocumentStore } from '@/stores/document-store';
+import { useCustomReportStore } from '@/stores/custom-report-store';
+import { createClient } from '@/lib/supabase/client';
 import { initials } from '@/lib/utils';
 import AlertPanel from '@/components/alerts/AlertPanel';
 import HelpPanel from '@/components/help/HelpPanel';
@@ -165,7 +172,52 @@ export default function Topbar({ title = 'Contacts', children }: TopbarProps) {
               </Link>
               <div className="h-px bg-[var(--border-subtle)] my-1" />
               <button
-                onClick={() => { setUserMenuOpen(false); signOut(); }}
+                onClick={async () => {
+                  setUserMenuOpen(false);
+                  // Kill the Supabase session cookie *before* flipping the
+                  // Zustand auth flag. Otherwise AuthGate's `getUser()` /
+                  // `onAuthStateChange` listener still sees a valid session
+                  // on its next tick and silently signs the user back in —
+                  // which is exactly the "I signed out but I'm still
+                  // logged in" bug Paul reported.
+                  try {
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                  } catch {
+                    // Best-effort: even if the network call fails the local
+                    // store flip below will still drop the user onto the
+                    // sign-in screen.
+                  }
+                  // Reset Gmail status so the AuthGate's downstream surfaces
+                  // (banner, settings card) don't render a stale
+                  // "connected as <email>" pill the next time the user
+                  // signs in as a different account.
+                  useGmailStatusStore.getState().setOptimistic({ connected: false });
+                  // Wipe EVERY seedable store so the next sign-in (demo
+                  // or real) doesn't briefly flash the previous
+                  // identity's data before AuthGate's
+                  // dispatchDataForUser takes over. Especially
+                  // important when switching FROM demo TO real —
+                  // without this, real users would see demo contacts /
+                  // deals / alerts / saved lists / documents / custom
+                  // reports flashing for a tick on every login. (The
+                  // 50-alerts-on-the-bell bug Paul hit on 2026-04-27
+                  // was specifically alerts surviving sign-out.)
+                  useContactStore.getState().clearAll();
+                  useSalesStore.getState().clearAll();
+                  useAlertStore.getState().clearAll();
+                  useListStore.getState().clearAll();
+                  useDocumentStore.getState().clearAll();
+                  useCustomReportStore.getState().clearAll();
+                  // Clear the AuthGate identity tracker so the next
+                  // sign-in is treated as a fresh identity (forces a
+                  // clean clearAll + re-seed). Without this, signing
+                  // out then signing in as the same email skips the
+                  // wipe and inherits whatever's still in localStorage
+                  // from a partial state during sign-out.
+                  try { localStorage.removeItem('roadrunner.lastDispatchedEmail'); } catch {}
+                  signOut();
+                }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[var(--danger)] hover:bg-[var(--danger-bg)] bg-transparent border-none cursor-pointer text-left"
               >
                 <SignOut size={14} /> Sign out

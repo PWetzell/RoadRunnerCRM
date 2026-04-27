@@ -1,8 +1,27 @@
 export const initials = (name: string): string =>
   name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
-export const fmtDate = (d: string): string =>
-  new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+/**
+ * Formats a date string as "Apr 27, 2026".
+ *
+ * Critical detail: `new Date("2026-04-27")` parses bare YYYY-MM-DD strings
+ * as **UTC midnight**, per the ECMAScript spec. The browser then renders
+ * that moment in the user's local timezone — so anyone west of UTC sees
+ * the date roll back a day (UTC midnight Apr 27 = 8 PM Apr 26 EDT).
+ *
+ * Every contact in the grid was showing yesterday's date because of this
+ * one parsing rule. We now detect bare YYYY-MM-DD and pin it to local
+ * midnight, so the displayed day matches what the server stamped.
+ *
+ * Full ISO timestamps (with `T...Z`) are still parsed normally — those
+ * carry their own timezone and `toLocaleDateString` handles them correctly.
+ */
+export const fmtDate = (d: string): string => {
+  if (!d) return '';
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const date = dateOnly ? new Date(`${d}T00:00:00`) : new Date(d);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 export const uid = (prefix: string): string =>
   `${prefix}-${Date.now()}`;

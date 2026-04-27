@@ -8,6 +8,8 @@ import KeyboardShortcuts from "@/components/keyboard/KeyboardShortcuts";
 import AlertAutoGenMount from "@/components/alerts/AlertAutoGenMount";
 import ManageListsDialog from "@/components/lists/ManageListsDialog";
 import ToastHost from "@/components/ui/ToastHost";
+import OnboardingImportMount from "@/components/onboarding/OnboardingImportMount";
+import GmailSyncBanner from "@/components/gmail/GmailSyncBanner";
 
 const mulish = Mulish({
   variable: "--font-mulish",
@@ -42,6 +44,12 @@ export default function RootLayout({
               <Sidebar />
             </Suspense>
             <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-[var(--surface-bg)]">
+              {/* Global Gmail-connection banner — shows on every page when the
+                  user has a Supabase session but no gmail_connections row.
+                  Dismissible; hidden entirely once connected. */}
+              <div className="px-5 pt-3 flex flex-col gap-2 [&:empty]:hidden">
+                <GmailSyncBanner />
+              </div>
               {/* Page-level Suspense — any route that calls `useSearchParams()`
                   (Contacts, Sales, Documents, etc.) needs this so Next.js can
                   statically prerender the shell while the client component
@@ -54,6 +62,7 @@ export default function RootLayout({
           <KeyboardShortcuts />
           <AlertAutoGenMount />
           <ManageListsDialog />
+          <OnboardingImportMount />
           <ToastHost />
         </AuthGate>
       </body>

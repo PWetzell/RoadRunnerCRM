@@ -16,11 +16,38 @@ export interface BaseContact {
   aiStatus: AIStatus;
   avatarColor?: string;
   overviewCards?: string[];
+  /** Left-column card order on Overview. Card ids include the built-in
+   *  `summary`, `address`, `industries`, and any `card-*` from overviewCards.
+   *  Missing ids render in default order after the ordered ones. */
+  overviewLeftOrder?: string[];
+  /** Card ids the user has turned OFF for this contact. Hidden cards
+   *  don't render on Details, and are excluded from Overview even if
+   *  they were pinned. HubSpot/Pipedrive do the same per-record layout
+   *  override on top of the global layout. */
+  hiddenCards?: string[];
+  /** AI suggestion IDs the user has explicitly dismissed for this contact.
+   *  IDs are content-based (`ai-{section}-{contactId}-{slug}`) so a
+   *  dismissed suggestion stays dismissed even if rotation/filtering
+   *  changes its position. Per-contact (not global) because the same
+   *  suggestion shape might be wanted on contact A but rejected on
+   *  contact B. */
+  dismissedSuggestions?: string[];
   tags?: ContactTag[];
   isPrivate?: boolean;
   assignedTo?: string;
   visibleTo?: string[];
   createdBy?: string;
+  /** Per-contact email-activity summary attached by GET /api/contacts.
+   *  Drives the contacts-grid Unread column's "New" pill + paperclip
+   *  indicator. Optional because the field only exists on rows
+   *  hydrated from the API — locally-created contacts won't have it
+   *  until the next round-trip. The grid's seed-fallback path
+   *  handles `undefined` gracefully. */
+  recentEmail?: {
+    hasNew: boolean;
+    hasAttachment: boolean;
+    lastEmailAt: string | null;
+  };
 }
 
 /** Revenue/Sales volume breakdown (annual/quarterly/monthly). Neutral B2B

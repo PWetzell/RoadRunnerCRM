@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDocumentStore } from '@/stores/document-store';
 import { CrmDocument } from '@/types/document';
 import DocumentCard from '@/components/documents/DocumentCard';
@@ -11,12 +11,20 @@ import { Plus, Rows, SquaresFour, File, FilePdf, FileDoc, FileText, FileZip, Fil
 import { formatFileSize, getFileExtension, FileFamily, getExtColor, getExtBgColor } from '@/types/document';
 import { fmtDate } from '@/lib/utils';
 import { useIsDark } from '@/hooks/useIsDark';
+import { toast } from '@/lib/toast';
 
 interface Props {
   /** Filter documents to this contact ID. */
   contactId?: string;
   /** Filter documents to this deal ID. */
   dealId?: string;
+  /** When set, auto-opens this document's preview panel on mount. Used for
+   *  deep-links from elsewhere in the app (e.g. the Location link in the
+   *  global /documents library preview). The parent should clear its own
+   *  seed via onInitialPreviewConsumed so subsequent remounts don't re-open. */
+  initialPreviewId?: string;
+  /** Called once after initialPreviewId has been applied. */
+  onInitialPreviewConsumed?: () => void;
 }
 
 const FAMILY_ICON: Record<FileFamily, typeof File> = {
@@ -31,15 +39,28 @@ const FAMILY_COLOR: Record<FileFamily, string> = {
  * Shows documents linked to a specific contact or deal, with grid/card
  * toggle, upload button, preview panel, and remove confirmation.
  */
-export default function DocumentsTab({ contactId, dealId }: Props) {
+export default function DocumentsTab({ contactId, dealId, initialPreviewId, onInitialPreviewConsumed }: Props) {
   const allDocs = useDocumentStore((s) => s.documents);
   const removeDocument = useDocumentStore((s) => s.removeDocument);
   const isDark = useIsDark();
 
   const [view, setView] = useState<'grid' | 'card'>('card');
-  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(initialPreviewId ?? null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+
+  // Deep-link: when the parent supplies a fresh initialPreviewId (e.g. the
+  // user clicked a Location link from the global /documents library), honour
+  // it and tell the parent we've consumed it so the URL param can be cleared.
+  useEffect(() => {
+    if (initialPreviewId) {
+      setPreviewId(initialPreviewId);
+      onInitialPreviewConsumed?.();
+    }
+    // Parent is responsible for only firing this once; we don't want
+    // onInitialPreviewConsumed in deps or we'd loop on re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPreviewId]);
 
   const docs = allDocs.filter((d) => {
     if (contactId && d.contactId === contactId) return true;
@@ -160,10 +181,13 @@ export default function DocumentsTab({ contactId, dealId }: Props) {
         )}
       </div>
 
-      {/* Side preview */}
+      {/* Side preview — pass the ambient contact id so the panel knows to
+           hide the redundant "Location" row (we're already on this contact's
+           page; repeating it is noise). */}
       {previewDoc && (
         <DocumentPreviewPanel
           doc={previewDoc}
+          ambientContactId={contactId}
           onClose={() => setPreviewId(null)}
           onRemove={(id) => { setPreviewId(null); setRemoveTarget(id); }}
         />
@@ -182,7 +206,7 @@ export default function DocumentsTab({ contactId, dealId }: Props) {
         message="This document will be removed from this record."
         confirmLabel="Remove"
         confirmVariant="danger"
-        onConfirm={() => { if (removeTarget) removeDocument(removeTarget); setRemoveTarget(null); }}
+        onConfirm={() => { if (removeTarget) { removeDocument(removeTarget); toast.success('Document removed'); } setRemoveTarget(null); }}
         onCancel={() => setRemoveTarget(null)}
       />
     </div>

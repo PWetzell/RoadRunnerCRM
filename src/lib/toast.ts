@@ -24,12 +24,13 @@ interface ToastOpts {
   duration?: number;
 }
 
-/** Default dismiss timings — errors linger longer, info goes quicker. */
+/** Default dismiss timing — 3s across all severities per product spec.
+ *  Users with longer reading time can hover to pause the timer. */
 const DEFAULT_DURATION: Record<ToastSeverity, number> = {
-  success: 4000,
-  info: 4000,
-  warning: 6000,
-  error: 8000,
+  success: 3000,
+  info: 3000,
+  warning: 3000,
+  error: 3000,
 };
 
 function fire(severity: ToastSeverity, title: string, opts: ToastOpts = {}): string {

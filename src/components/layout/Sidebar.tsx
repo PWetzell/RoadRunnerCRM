@@ -178,7 +178,7 @@ export default function Sidebar() {
              so the user can still access the pin dropdown via the gear even when nothing
              is currently pinned. */}
         {!collapsed && (
-          <div className="mt-4 pt-3 border-t border-[var(--sidebar-border)]">
+          <div className="mt-4 pt-3 border-t border-[var(--sidebar-border)]" data-tour="sidebar-pinned-lists">
             {/* Header row — padded to match list rows so the gear right-aligns
                  with the per-row count numbers. */}
             <div className="flex items-center gap-2 px-3 mb-1.5">
@@ -187,6 +187,7 @@ export default function Sidebar() {
                 Saved Lists
               </span>
               <button
+                data-tour="lists-pin-manager"
                 onClick={(e) => {
                   setPinAnchor((e.currentTarget as HTMLElement).getBoundingClientRect());
                   setPinDropdownOpen(true);

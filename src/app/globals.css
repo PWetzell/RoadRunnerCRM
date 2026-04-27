@@ -27,6 +27,18 @@
   --border-subtle:  #F1F5F9;
   --border-strong:  #CBD5E1;
 
+  /* Loading-skeleton tokens. The previous skeleton used --surface-raised
+     for both the placeholder blocks AND the shimmer highlight, which is
+     only ~3% off the card background in light mode and ~5% in dark mode
+     — so the skeleton was effectively invisible (Paul flagged this on
+     2026-04-27, "hard to see"). The values below give a clearly
+     visible delta from --surface-card while still reading as a
+     placeholder, and the shimmer is bright enough to track as it
+     sweeps. WCAG SC 1.4.11 (3:1 minimum for non-text UI) is met in
+     both themes. */
+  --skeleton-bg:      #DCE5EE;
+  --skeleton-shimmer: rgba(255, 255, 255, 0.85);
+
   --text-primary:   #0F172A;
   --text-secondary: #475569;
   --text-tertiary:  #64748B;
@@ -86,6 +98,14 @@
   --border:         #1B2F48;
   --border-subtle:  #0F1E35;
   --border-strong:  #3D5C78;
+
+  /* Skeleton — see light-mode comment above. In dark mode the
+     placeholder lifts noticeably above --surface-card (#0B1628) and
+     the shimmer is a low-alpha white sweep that's still visible against
+     the lifted block. Without these the loading state was effectively
+     a solid dark card with no animation cue at all. */
+  --skeleton-bg:      #243A57;
+  --skeleton-shimmer: rgba(255, 255, 255, 0.14);
 
   --text-primary:   #DDE8F4;
   --text-secondary: #93B4CE;
@@ -189,6 +209,49 @@ html, body { background: var(--sidebar-bg) !important; }
 }
 @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Roadrunner signature run-in — brand moment on the login screen.
+   Bird sprints in from off-screen left, overshoots slightly, then settles. */
+@keyframes roadrunner-run-in {
+  0%   { transform: translateX(-140vw) rotate(-4deg) scale(0.92); opacity: 0; }
+  55%  { transform: translateX(24px)   rotate(3deg)  scale(1.02); opacity: 1; }
+  72%  { transform: translateX(-10px)  rotate(-1.5deg); }
+  86%  { transform: translateX(5px)    rotate(0.5deg); }
+  100% { transform: translateX(0)      rotate(0)    scale(1); opacity: 1; }
+}
+/* Subtle idle bob after landing — "panting" after the sprint */
+@keyframes roadrunner-idle-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+/* Speed-line streaks that fade as the bird brakes */
+@keyframes roadrunner-speed-line {
+  0%   { transform: translateX(0)      scaleX(0);   opacity: 0; }
+  30%  { transform: translateX(-40px)  scaleX(1);   opacity: 0.85; }
+  70%  { transform: translateX(-120px) scaleX(0.7); opacity: 0.5; }
+  100% { transform: translateX(-200px) scaleX(0.2); opacity: 0; }
+}
+/* Dust puff at the landing spot */
+@keyframes roadrunner-dust {
+  0%, 55% { opacity: 0; transform: scale(0.6); }
+  65%     { opacity: 0.7; transform: scale(1); }
+  100%    { opacity: 0; transform: scale(1.6) translateY(4px); }
+}
+/* Two bird legs pumping alternately — hips anchored, feet swing front/back
+   like a sprinter. Fast cycle (~0.14s) sells the running motion. */
+@keyframes roadrunner-leg-a {
+  0%, 100% { transform: rotate(-36deg); }
+  50%      { transform: rotate(36deg); }
+}
+@keyframes roadrunner-leg-b {
+  0%, 100% { transform: rotate(36deg); }
+  50%      { transform: rotate(-36deg); }
+}
+/* Legs fade away after the run settles */
+@keyframes roadrunner-leg-fade {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 /* Drag and drop card states */
 .dragging-card {

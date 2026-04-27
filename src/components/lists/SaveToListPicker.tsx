@@ -165,6 +165,7 @@ export default function SaveToListPicker({ entityId, entityType, onClose, classN
           {/* Create new list button */}
           <div className="flex-shrink-0 border-b border-[var(--border-subtle)]">
             <button
+              data-tour="save-to-list-create"
               onClick={() => setMode('create')}
               className="w-full flex items-center gap-2 px-4 py-2.5 text-[12px] font-bold text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] bg-transparent border-none cursor-pointer text-left"
             >

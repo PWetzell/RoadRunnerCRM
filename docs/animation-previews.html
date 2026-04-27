@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animation Previews — Roadrunner Case Study</title>
+<style>
+  :root {
+    --bg: #F1EFEA;
+    --surface: #FFFFFF;
+    --ink: #1C1C1C;
+    --ink-soft: #3A3A3A;
+    --ink-mute: #6F6F6F;
+    --hair: #DEDAD1;
+    --accent: #E6552A;
+    --success: #5E9B4E;
+    --success-bg: #EFF6EB;
+    --danger: #C0392B;
+    --danger-bg: #F8E5E3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 56px 22px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell { max-width: 860px; margin: 0 auto; }
+  .page-h1 {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 8px;
+  }
+  .page-lede {
+    font-size: 14.5px; color: var(--ink-soft); margin: 0 0 36px; max-width: 640px;
+  }
+
+  .animation-slot {
+    margin: 40px 0 14px; padding-top: 30px; border-top: 1px solid var(--hair);
+  }
+  .animation-slot:first-of-type { border-top: 0; padding-top: 10px; margin-top: 14px; }
+  .slot-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  .slot-title {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.008em; margin: 4px 0 2px;
+  }
+  .slot-note {
+    font-size: 13px; color: var(--ink-mute); margin: 0 0 14px; max-width: 620px;
+  }
+  .section-meta {
+    font-size: 12px; color: var(--ink-mute); margin-top: 10px;
+    padding: 10px 14px; background: #F7F4EE; border-radius: 6px;
+    border-left: 3px solid var(--accent);
+  }
+  .section-meta strong { color: var(--ink); }
+
+  .anim-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 28px 28px 22px;
+  }
+  .anim-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-bottom: 14px;
+  }
+  .anim-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .anim-cap {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  /* Animation 3: count-up hero stats */
+  .hero-stats {
+    background: #1C1C1C; color: #fff;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    padding: 24px 0; border-radius: 8px;
+  }
+  .hero-stats .stat { text-align: center; border-right: 1px solid #2E2E2E; padding: 0 10px; }
+  .hero-stats .stat:last-child { border-right: 0; }
+  .hero-stats .n {
+    font-size: 28px; font-weight: 800; color: var(--accent); line-height: 1;
+    letter-spacing: -0.01em; opacity: 0;
+    animation: countUp 0.9s ease-out forwards;
+  }
+  .hero-stats .l {
+    font-size: 9.5px; color: #C9C4BB; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-top: 6px; line-height: 1.3;
+  }
+  .hero-stats .stat:nth-child(1) .n { animation-delay: 0.1s; }
+  .hero-stats .stat:nth-child(2) .n { animation-delay: 0.35s; }
+  .hero-stats .stat:nth-child(3) .n { animation-delay: 0.6s; }
+  .hero-stats .stat:nth-child(4) .n { animation-delay: 0.85s; }
+  @keyframes countUp {
+    0% { opacity: 0; transform: translateY(14px) scale(0.85); }
+    60% { opacity: 1; transform: translateY(-2px) scale(1.04); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 620px) {
+    .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 14px 0; }
+    .hero-stats .stat { border-right: 0; border-bottom: 1px solid #2E2E2E; padding-bottom: 14px; }
+    .hero-stats .stat:nth-child(3), .hero-stats .stat:nth-child(4) { border-bottom: 0; padding-top: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<h1 class="page-h1">Animation previews — three options</h1>
+<p class="page-lede">Three animations built to Acme style. Preview each in context — tell me which ones to drop into the Roadrunner case study.</p>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ANIMATION 1 — DIRTY DATA DETECTION                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="animation-slot">
+  <span class="slot-tag">Animation 1 · Research section</span>
+  <h2 class="slot-title">Dirty data detection — the feature, visualized</h2>
+  <p class="slot-note">A stream of contact records floats into the AI scanner. Duplicates light red and get flagged. Clean records light green. Loops every 10 seconds.</p>
+
+  <!-- ─── STYLE A · DIRTY DATA, SAME HUMAN, THREE STALE RECORDS ─── -->
+  <div style="margin: 12px 0 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);">Style A · Typing surfaces record sprawl — three stale versions of the same person</div>
+  <p style="font-size: 12.5px; color: var(--ink-mute); margin: 0 0 10px; font-style: italic;">The real dirty-data problem at Madison Resources and PayFactors: one person, three CRM records from three role changes. Same email, different phones, different titles. User types "Tom Cof", AI surfaces all three, user picks the current VP record, form fields populate with the right version. 14-second loop.</p>
+
+  <div class="anim-wrap">
+    <div class="anim-title">Same human. Three records. The AI surfaces the sprawl.</div>
+    <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg" aria-label="User types Tom Cof, three stale CRM records appear for the same person at Meridian Capital, user picks the current VP record, form populates" role="img" style="max-width:880px;">
+      <!-- 14-second timeline:
+           0.0 – 2.0s  : user types "Tom Cof" in Last Name (partial)
+           1.0 – 5.0s  : AI panel wakes, scanning bar extends
+           4.5 – 7.0s  : three CRM records appear — same human, three role stages
+           6.5 – 8.5s  : cursor moves to third card (VP, current)
+           8.0 – 8.8s  : click ripple, third card highlights, others dim
+           8.8 – 10.5s : Email, Phone, Company, Title populate from chosen record
+           10.5 – 12.5s: "Merged from CRM" success toast
+           12.5 – 14.0s: hold, fade, loop
+      -->
+
+      <!-- ═══ LEFT: NEW CONTACT FORM ═══ -->
+      <rect x="20" y="20" width="380" height="480" rx="14" fill="#FFFFFF" stroke="#DEDAD1"/>
+      <text x="40" y="46" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#1C1C1C">New Contact</text>
+      <line x1="20" y1="58" x2="400" y2="58" stroke="#E8E4D9"/>
+
+      <!-- First name -->
+      <text x="40" y="84" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">FIRST NAME</text>
+      <rect x="40" y="92" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#E6552A" stroke-width="1.5"/>
+      <text x="52" y="113" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">
+        <tspan opacity="0">T<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.02;0.04;1" dur="14s" repeatCount="indefinite"/></tspan><tspan opacity="0">o<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.04;0.06;1" dur="14s" repeatCount="indefinite"/></tspan><tspan opacity="0">m<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.06;0.08;1" dur="14s" repeatCount="indefinite"/></tspan>
+      </text>
+
+      <!-- Last name field — user types "Cof" (partial) -->
+      <text x="40" y="148" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">LAST NAME</text>
+      <rect x="40" y="156" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1">
+        <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#E6552A;#E6552A;#DEDAD1" keyTimes="0;0.08;0.10;0.28;0.3" dur="14s" repeatCount="indefinite"/>
+      </rect>
+      <text x="52" y="177" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">
+        <tspan opacity="0">C<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.10;0.12;1" dur="14s" repeatCount="indefinite"/></tspan><tspan opacity="0">o<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.12;0.14;1" dur="14s" repeatCount="indefinite"/></tspan><tspan opacity="0">f<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.14;0.16;1" dur="14s" repeatCount="indefinite"/></tspan>
+      </text>
+
+      <!-- Email field — populates from selected record -->
+      <text x="40" y="212" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">EMAIL</text>
+      <rect x="40" y="220" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1">
+        <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#EFF6EB;#DEDAD1" keyTimes="0;0.63;0.66;0.82" dur="14s" repeatCount="indefinite"/>
+        <animate attributeName="fill" values="#FAF8F3;#FAF8F3;#EFF6EB;#FAF8F3" keyTimes="0;0.63;0.66;0.82" dur="14s" repeatCount="indefinite"/>
+      </rect>
+      <g opacity="0">
+        <text x="52" y="241" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">tom.coffee@meridian.com</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.63;0.65;0.67;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+      <g opacity="0">
+        <rect x="288" y="227" width="84" height="18" rx="9" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="330" y="239" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1C1C1C" text-anchor="middle">FROM CRM · #3</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.63;0.67;0.69;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Phone field -->
+      <text x="40" y="276" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">PHONE</text>
+      <rect x="40" y="284" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1">
+        <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#EFF6EB;#DEDAD1" keyTimes="0;0.67;0.70;0.82" dur="14s" repeatCount="indefinite"/>
+        <animate attributeName="fill" values="#FAF8F3;#FAF8F3;#EFF6EB;#FAF8F3" keyTimes="0;0.67;0.70;0.82" dur="14s" repeatCount="indefinite"/>
+      </rect>
+      <g opacity="0">
+        <text x="52" y="305" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">+1 617 555 0142</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.67;0.69;0.71;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+      <g opacity="0">
+        <rect x="288" y="291" width="84" height="18" rx="9" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="330" y="303" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1C1C1C" text-anchor="middle">FROM CRM · #3</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.67;0.71;0.73;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Company field -->
+      <text x="40" y="340" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">COMPANY</text>
+      <rect x="40" y="348" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1">
+        <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#EFF6EB;#DEDAD1" keyTimes="0;0.71;0.74;0.85" dur="14s" repeatCount="indefinite"/>
+        <animate attributeName="fill" values="#FAF8F3;#FAF8F3;#EFF6EB;#FAF8F3" keyTimes="0;0.71;0.74;0.85" dur="14s" repeatCount="indefinite"/>
+      </rect>
+      <g opacity="0">
+        <text x="52" y="369" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">Meridian Capital Group</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.71;0.73;0.75;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+      <g opacity="0">
+        <rect x="288" y="355" width="84" height="18" rx="9" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="330" y="367" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1C1C1C" text-anchor="middle">FROM CRM · #3</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.71;0.75;0.77;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- NEW: Title field — populates with CURRENT title from selected record -->
+      <text x="40" y="404" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">TITLE</text>
+      <rect x="40" y="412" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1">
+        <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#EFF6EB;#DEDAD1" keyTimes="0;0.75;0.78;0.88" dur="14s" repeatCount="indefinite"/>
+        <animate attributeName="fill" values="#FAF8F3;#FAF8F3;#EFF6EB;#FAF8F3" keyTimes="0;0.75;0.78;0.88" dur="14s" repeatCount="indefinite"/>
+      </rect>
+      <g opacity="0">
+        <text x="52" y="433" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">VP, Relationship Management</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.75;0.77;0.79;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+      <g opacity="0">
+        <rect x="288" y="419" width="84" height="18" rx="9" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="330" y="431" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#1C1C1C" text-anchor="middle">FROM CRM · #3</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0" keyTimes="0;0.75;0.79;0.81;0.97;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+
+      <!-- ═══ RIGHT: AI DUPLICATE DETECTION PANEL ═══ -->
+      <rect x="420" y="20" width="440" height="480" rx="14" fill="#FFFFFF" stroke="#DEDAD1"/>
+
+      <g transform="translate(440, 36)">
+        <circle cx="0" cy="0" r="4" fill="#7A6BAA"/>
+        <circle cx="-6" cy="-6" r="2" fill="#7A6BAA" opacity="0.6"/>
+        <circle cx="6" cy="6" r="2" fill="#7A6BAA" opacity="0.6"/>
+        <circle cx="7" cy="-4" r="1.5" fill="#7A6BAA" opacity="0.4"/>
+      </g>
+      <text x="456" y="41" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#4F4170">AI Duplicate Detection</text>
+
+      <g opacity="0">
+        <rect x="746" y="28" width="92" height="20" rx="10" fill="#ECE6F3" stroke="#7A6BAA"/>
+        <circle cx="762" cy="38" r="3" fill="#7A6BAA"><animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/></circle>
+        <text x="772" y="42" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#4F4170">Scanning</text>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.04;0.06;0.33;0.35;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+      <line x1="420" y1="58" x2="860" y2="58" stroke="#E8E4D9"/>
+
+      <!-- Empty state -->
+      <text x="440" y="84" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.02;0.04;1" dur="14s" repeatCount="indefinite"/>
+        Start typing — AI cross-references your CRM and</text>
+      <text x="440" y="100" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.02;0.04;1" dur="14s" repeatCount="indefinite"/>
+        public data sources to catch dirty data at intake.</text>
+
+      <!-- Scanning meta line -->
+      <g opacity="0">
+        <text x="440" y="84" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F">
+          Checking <tspan font-weight="700" fill="#1C1C1C">2,847</tspan> CRM contacts · <tspan font-weight="700" fill="#E6552A">3 possible matches</tspan>
+        </text>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.05;0.07;0.58;0.6;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Progress bar -->
+      <g opacity="0">
+        <rect x="440" y="98" width="400" height="3" rx="1.5" fill="#E8E4D9"/>
+        <rect x="440" y="98" width="0" height="3" rx="1.5" fill="#7A6BAA">
+          <animate attributeName="width" values="0;0;400;400" keyTimes="0;0.05;0.28;1" dur="14s" repeatCount="indefinite"/>
+        </rect>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.05;0.07;0.6;0.62;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Group label -->
+      <g opacity="0">
+        <text x="440" y="130" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1.5">POSSIBLE MATCHES · SAME PERSON?</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0;0" keyTimes="0;0.3;0.32;0.34;0.62;0.64;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- ═════ CANDIDATE #1 — Associate (oldest, lowest confidence) ═════ -->
+      <g>
+        <g>
+          <rect x="440" y="140" width="400" height="78" rx="8" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="462" cy="162" r="14" fill="#7A6BAA"/>
+          <text x="462" y="166" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">TC</text>
+          <text x="486" y="160" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+          <text x="486" y="174" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">
+            <tspan font-weight="700" fill="#1C1C1C">Associate</tspan> · Meridian Capital Group
+          </text>
+          <rect x="786" y="150" width="40" height="16" rx="8" fill="#FBF4D8" stroke="#D9B63B"/>
+          <text x="806" y="161" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#8B6B00" text-anchor="middle">72%</text>
+          <rect x="486" y="184" width="36" height="14" rx="3" fill="#F7F4EE" stroke="#DEDAD1"/>
+          <text x="504" y="194" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#1C1C1C" text-anchor="middle">CRM</text>
+          <text x="530" y="194" font-family="Inter, sans-serif" font-size="9" fill="#6F6F6F">created 2019 · last updated 2021</text>
+          <text x="486" y="210" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">tom.coffee@meridian.com · +1 617 555 0098</text>
+          <animate attributeName="opacity" values="0;0;0;1;1;0.2;0.2;0" keyTimes="0;0.3;0.32;0.34;0.56;0.6;0.62;0.64" dur="14s" repeatCount="indefinite"/>
+        </g>
+      </g>
+
+      <!-- ═════ CANDIDATE #2 — AVP (middle, medium confidence) ═════ -->
+      <g>
+        <g>
+          <rect x="440" y="228" width="400" height="78" rx="8" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="462" cy="250" r="14" fill="#7A6BAA"/>
+          <text x="462" y="254" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">TC</text>
+          <text x="486" y="248" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+          <text x="486" y="262" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">
+            <tspan font-weight="700" fill="#1C1C1C">AVP, Client Services</tspan> · Meridian Capital Group
+          </text>
+          <rect x="786" y="238" width="40" height="16" rx="8" fill="#FBF4D8" stroke="#D9B63B"/>
+          <text x="806" y="249" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#8B6B00" text-anchor="middle">85%</text>
+          <rect x="486" y="272" width="36" height="14" rx="3" fill="#F7F4EE" stroke="#DEDAD1"/>
+          <text x="504" y="282" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#1C1C1C" text-anchor="middle">CRM</text>
+          <text x="530" y="282" font-family="Inter, sans-serif" font-size="9" fill="#6F6F6F">created 2021 · last updated 2023</text>
+          <text x="486" y="298" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">tom.coffee@meridian.com · +1 617 555 0133</text>
+          <animate attributeName="opacity" values="0;0;0;1;1;0.2;0.2;0" keyTimes="0;0.33;0.35;0.37;0.56;0.6;0.62;0.64" dur="14s" repeatCount="indefinite"/>
+        </g>
+      </g>
+
+      <!-- ═════ CANDIDATE #3 — VP (current, highest confidence, gets selected) ═════ -->
+      <g>
+        <g>
+          <!-- Card — selected state at 56-58% -->
+          <rect x="440" y="316" width="400" height="78" rx="8" fill="#FAF8F3" stroke="#DEDAD1">
+            <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#7A6BAA;#7A6BAA;#7A6BAA;#DEDAD1" keyTimes="0;0.54;0.56;0.58;0.62;0.64" dur="14s" repeatCount="indefinite"/>
+            <animate attributeName="stroke-width" values="1;1;2;2;2;1" keyTimes="0;0.54;0.56;0.58;0.62;0.64" dur="14s" repeatCount="indefinite"/>
+            <animate attributeName="fill" values="#FAF8F3;#FAF8F3;#ECE6F3;#ECE6F3;#ECE6F3;#FAF8F3" keyTimes="0;0.54;0.56;0.58;0.62;0.64" dur="14s" repeatCount="indefinite"/>
+          </rect>
+          <circle cx="462" cy="338" r="14" fill="#7A6BAA"/>
+          <text x="462" y="342" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">TC</text>
+          <text x="486" y="336" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+          <text x="486" y="350" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">
+            <tspan font-weight="700" fill="#1C1C1C">VP, Relationship Management</tspan> · Meridian Capital Group
+          </text>
+          <rect x="786" y="326" width="40" height="16" rx="8" fill="#F8E5E3" stroke="#C0392B"/>
+          <text x="806" y="337" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#C0392B" text-anchor="middle">94%</text>
+          <rect x="486" y="360" width="36" height="14" rx="3" fill="#F7F4EE" stroke="#DEDAD1"/>
+          <text x="504" y="370" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#1C1C1C" text-anchor="middle">CRM</text>
+          <text x="530" y="370" font-family="Inter, sans-serif" font-size="9" fill="#6F6F6F">created 2023 · last updated 14d ago</text>
+          <text x="486" y="386" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">tom.coffee@meridian.com · +1 617 555 0142</text>
+          <animate attributeName="opacity" values="0;0;0;1;1;1;0" keyTimes="0;0.36;0.38;0.40;0.54;0.62;0.64" dur="14s" repeatCount="indefinite"/>
+        </g>
+      </g>
+
+      <!-- Footer hint -->
+      <g opacity="0">
+        <text x="440" y="420" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F" font-style="italic">
+          Same email, three role changes — pick the current record and merge.
+        </text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0;0" keyTimes="0;0.42;0.44;0.46;0.54;0.56;1" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- ═══ CURSOR — moves down to #3, clicks ═══ -->
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.47;0.49;0.58;0.6" dur="14s" repeatCount="indefinite"/>
+        <g>
+          <path d="M 0 0 L 0 16 L 4 12 L 7 18 L 10 17 L 7 11 L 12 11 Z" fill="#1C1C1C" stroke="#FFFFFF" stroke-width="1"/>
+          <animateTransform attributeName="transform" type="translate"
+            values="620,460; 560,360; 560,354; 560,354"
+            keyTimes="0;0.5;0.8;1"
+            dur="1.8s" begin="6.8s" repeatCount="1" fill="freeze"/>
+        </g>
+      </g>
+
+      <!-- Click ripple on #3 -->
+      <g opacity="0">
+        <circle cx="560" cy="352" r="4" fill="#7A6BAA">
+          <animate attributeName="r" values="4;70" dur="0.6s" repeatCount="1" begin="7.9s" fill="freeze"/>
+          <animate attributeName="opacity" values="0.8;0" dur="0.6s" repeatCount="1" begin="7.9s" fill="freeze"/>
+        </circle>
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.56;0.565;0.6;0.62" dur="14s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- ═══ SUCCESS TOAST ═══ -->
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0;0;1;1;0;0" keyTimes="0;0.74;0.76;0.78;0.92;0.95;1" dur="14s" repeatCount="indefinite"/>
+        <rect x="440" y="430" width="400" height="60" rx="8" fill="#EFF6EB" stroke="#5E9B4E" stroke-width="1.5"/>
+        <circle cx="464" cy="460" r="10" fill="#5E9B4E"/>
+        <path d="M 460 460 L 463 463 L 469 457" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="484" y="456" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#3E7333">Merged from CRM record #3</text>
+        <text x="484" y="474" font-family="Inter, sans-serif" font-size="10" fill="#3E7333">Current title, phone, and company pulled from VP record (updated 14d ago).</text>
+      </g>
+    </svg>
+    <div class="anim-cap">The real dirty-data story. Tom Coffee lived in the CRM three times — Associate in 2019, AVP in 2021, VP today. Same email across all three, different phones from different office setups, different titles from role changes. The AI surfaces every version and lets the user pick the current record. No one at Madison Resources or PayFactors ever said "we have too little data" — they said "we have too many versions of the same person."</div>
+  </div>
+
+  <!-- ─── STYLE B · FORM + PANEL + BADGE ROW ─── -->
+  <div style="margin: 36px 0 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);">Style B · Form + panel + badge flow underneath</div>
+  <p style="font-size: 12.5px; color: var(--ink-mute); margin: 0 0 10px; font-style: italic;">Same form+panel layout as Style A, but with a row of source-provider badges animating underneath — visualizing the parallel fan-out that populates the panel. 10-second loop.</p>
+
+  <div class="anim-wrap">
+    <div class="anim-title">Typing triggers the fan-out. Results stream back.</div>
+    <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg" aria-label="Form + AI panel with provider badges streaming results" role="img">
+      <!-- ═══ LEFT: NEW CONTACT FORM ═══ -->
+      <rect x="20" y="20" width="380" height="360" rx="14" fill="#FFFFFF" stroke="#DEDAD1"/>
+      <text x="40" y="46" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#1C1C1C">New Contact</text>
+      <line x1="20" y1="58" x2="400" y2="58" stroke="#E8E4D9"/>
+
+      <text x="40" y="84" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">FIRST NAME</text>
+      <rect x="40" y="92" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#E6552A" stroke-width="1.5"/>
+      <text x="52" y="113" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">
+        <tspan opacity="0">T<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.04;0.06;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">o<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.08;0.10;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">m<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.12;0.14;1" dur="10s" repeatCount="indefinite"/></tspan>
+      </text>
+
+      <text x="40" y="148" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">LAST NAME</text>
+      <rect x="40" y="156" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1">
+        <animate attributeName="stroke" values="#DEDAD1;#DEDAD1;#E6552A;#E6552A;#DEDAD1" keyTimes="0;0.18;0.2;0.4;0.45" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <text x="52" y="177" font-family="Inter, sans-serif" font-size="13" fill="#1C1C1C">
+        <tspan opacity="0">C<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.22;0.24;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">o<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.26;0.28;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">f<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.30;0.32;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">f<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.32;0.34;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">e<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.34;0.36;1" dur="10s" repeatCount="indefinite"/></tspan><tspan opacity="0">e<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.36;0.38;1" dur="10s" repeatCount="indefinite"/></tspan>
+      </text>
+
+      <text x="40" y="212" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">EMAIL</text>
+      <rect x="40" y="220" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1"/>
+
+      <text x="40" y="276" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">PHONE</text>
+      <rect x="40" y="284" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1"/>
+
+      <text x="40" y="340" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1">COMPANY</text>
+      <rect x="40" y="348" width="340" height="32" rx="6" fill="#FAF8F3" stroke="#DEDAD1"/>
+
+
+      <!-- ═══ RIGHT: AI DUPLICATE DETECTION PANEL ═══ -->
+      <rect x="420" y="20" width="440" height="360" rx="14" fill="#FFFFFF" stroke="#DEDAD1"/>
+
+      <g transform="translate(440, 36)">
+        <circle cx="0" cy="0" r="4" fill="#7A6BAA"/>
+        <circle cx="-6" cy="-6" r="2" fill="#7A6BAA" opacity="0.6"/>
+        <circle cx="6" cy="6" r="2" fill="#7A6BAA" opacity="0.6"/>
+        <circle cx="7" cy="-4" r="1.5" fill="#7A6BAA" opacity="0.4"/>
+      </g>
+      <text x="456" y="41" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#4F4170">AI Duplicate Detection</text>
+
+      <g opacity="0">
+        <rect x="746" y="28" width="92" height="20" rx="10" fill="#ECE6F3" stroke="#7A6BAA"/>
+        <circle cx="762" cy="38" r="3" fill="#7A6BAA"><animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/></circle>
+        <text x="772" y="42" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#4F4170">Scanning</text>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.06;0.1;0.5;0.55;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+      <line x1="420" y1="58" x2="860" y2="58" stroke="#E8E4D9"/>
+
+      <text x="440" y="84" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" opacity="1">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.04;0.08;1" dur="10s" repeatCount="indefinite"/>
+        Start typing — AI cross-references your CRM and</text>
+      <text x="440" y="100" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" opacity="1">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.04;0.08;1" dur="10s" repeatCount="indefinite"/>
+        public data sources to catch dirty data at intake.</text>
+
+      <g opacity="0">
+        <text x="440" y="84" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F">
+          Checking <tspan font-weight="700" fill="#1C1C1C">2,847</tspan> CRM contacts + <tspan font-weight="700" fill="#1C1C1C">public sources</tspan>
+        </text>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.08;0.12;0.95;0.97;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <g opacity="0">
+        <rect x="440" y="98" width="400" height="3" rx="1.5" fill="#E8E4D9"/>
+        <rect x="440" y="98" width="0" height="3" rx="1.5" fill="#7A6BAA">
+          <animate attributeName="width" values="0;0;400;400;0" keyTimes="0;0.08;0.48;0.95;1" dur="10s" repeatCount="indefinite"/>
+        </rect>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.08;0.12;0.95;0.97;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- CRM group -->
+      <g opacity="0">
+        <text x="440" y="130" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1.5">IN YOUR CRM</text>
+        <rect x="440" y="140" width="400" height="76" rx="8" fill="#FAF8F3" stroke="#DEDAD1"/>
+        <circle cx="462" cy="162" r="14" fill="#7A6BAA"/>
+        <text x="462" y="166" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">TC</text>
+        <text x="486" y="160" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+        <text x="486" y="174" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">Meridian Capital Group</text>
+        <rect x="786" y="150" width="40" height="16" rx="8" fill="#F8E5E3" stroke="#C0392B"/>
+        <text x="806" y="161" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#C0392B" text-anchor="middle">94%</text>
+        <rect x="486" y="184" width="36" height="14" rx="3" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="504" y="194" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#1C1C1C" text-anchor="middle">CRM</text>
+        <text x="486" y="210" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">tom@meridian.com · +1 617 555 0142</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0;0" keyTimes="0;0.48;0.52;0.55;0.95;0.97;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Public group -->
+      <g opacity="0">
+        <text x="440" y="236" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1.5">FROM PUBLIC SOURCES</text>
+        <rect x="440" y="246" width="400" height="76" rx="8" fill="#FAF8F3" stroke="#DEDAD1"/>
+        <circle cx="462" cy="268" r="14" fill="#E6552A"/>
+        <text x="462" y="272" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">TC</text>
+        <text x="486" y="266" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+        <text x="486" y="280" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">VP Operations · Meridian Capital</text>
+        <rect x="786" y="256" width="40" height="16" rx="8" fill="#FBF4D8" stroke="#D9B63B"/>
+        <text x="806" y="267" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#8B6B00" text-anchor="middle">78%</text>
+        <rect x="486" y="290" width="50" height="14" rx="3" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="511" y="300" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#1C1C1C" text-anchor="middle">GITHUB</text>
+        <rect x="542" y="290" width="60" height="14" rx="3" fill="#F7F4EE" stroke="#DEDAD1"/>
+        <text x="572" y="300" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#1C1C1C" text-anchor="middle">GRAVATAR</text>
+        <text x="486" y="316" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F">t.coffee@meridian.com · Boston, MA</text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0;0" keyTimes="0;0.55;0.6;0.63;0.95;0.97;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <g opacity="0">
+        <text x="440" y="368" font-family="Inter, sans-serif" font-size="10" fill="#6F6F6F" font-style="italic">
+          Tap any suggestion to review and merge — or keep typing to create a new contact.
+        </text>
+        <animate attributeName="opacity" values="0;0;0;1;1;0;0" keyTimes="0;0.7;0.75;0.78;0.95;0.97;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+
+      <!-- ═══ BOTTOM: PROVIDER FAN-OUT BADGE ROW ═══ -->
+      <!-- Shows the 11 providers firing in parallel, with pulse animations -->
+      <text x="440" y="416" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1.5">PROVIDERS QUERIED IN PARALLEL</text>
+
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.08;0.12;0.95;0.97;1" dur="10s" repeatCount="indefinite"/>
+
+        <!-- 11 provider badges -->
+        <g transform="translate(20, 434)">
+          <!-- Each badge: rect + text + pulse dot -->
+          <rect x="0" y="0" width="70" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.1;0.8;1" dur="10s" repeatCount="indefinite" begin="0s"/></circle>
+          <text x="36" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">Clearbit</text>
+        </g>
+        <g transform="translate(96, 434)">
+          <rect x="0" y="0" width="66" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.12;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="34" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">GitHub</text>
+        </g>
+        <g transform="translate(168, 434)">
+          <rect x="0" y="0" width="74" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.14;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="38" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">Wikidata</text>
+        </g>
+        <g transform="translate(248, 434)">
+          <rect x="0" y="0" width="54" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.16;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="30" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">SEC</text>
+        </g>
+        <g transform="translate(308, 434)">
+          <rect x="0" y="0" width="60" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.18;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="33" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">GLEIF</text>
+        </g>
+        <g transform="translate(374, 434)">
+          <rect x="0" y="0" width="62" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.20;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="34" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">ORCID</text>
+        </g>
+        <g transform="translate(442, 434)">
+          <rect x="0" y="0" width="72" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.22;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="38" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">Gravatar</text>
+        </g>
+        <g transform="translate(520, 434)">
+          <rect x="0" y="0" width="92" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.24;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="48" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">OpenCorp</text>
+        </g>
+        <g transform="translate(618, 434)">
+          <rect x="0" y="0" width="96" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.26;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="50" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">Cos. House</text>
+        </g>
+        <g transform="translate(720, 434)">
+          <rect x="0" y="0" width="64" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.28;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="34" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">SAM.gov</text>
+        </g>
+        <g transform="translate(790, 434)">
+          <rect x="0" y="0" width="62" height="26" rx="13" fill="#FAF8F3" stroke="#DEDAD1"/>
+          <circle cx="11" cy="13" r="3.5" fill="#7A6BAA"><animate attributeName="opacity" values="0.3;1;1;1" keyTimes="0;0.30;0.8;1" dur="10s" repeatCount="indefinite"/></circle>
+          <text x="34" y="17" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" text-anchor="middle">Hunter</text>
+        </g>
+      </g>
+
+      <!-- Footer caption — the "why this matters" one-liner -->
+      <text x="440" y="498" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#6F6F6F">
+        All eleven fire in parallel · any one can fail · the others still return.
+      </text>
+    </svg>
+    <div class="anim-cap">Same form + panel story as Style A, with an added badge row that visualizes the provider fan-out. As the user types, each provider pulses in turn to show the parallel query. Graceful degradation is built in.</div>
+  </div>
+
+  <!-- ─── STYLE C · THREE-STAGE STACKED ─── -->
+  <div style="margin: 36px 0 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);">Style C · Three-stage stacked reveal</div>
+  <p style="font-size: 12.5px; color: var(--ink-mute); margin: 0 0 10px; font-style: italic;">Stage 1 (incomplete) visible always. Stage 2 (AI enriching) fades in, fills fields, fades out. Stage 3 (complete) fades in and holds.</p>
+
+  <div class="anim-wrap">
+    <div class="anim-title">The full journey — one card, three states.</div>
+    <svg viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg" aria-label="Three-stage card reveal" role="img" style="max-width:520px;">
+      <!-- Stage 1: Incomplete (always visible, then fades) -->
+      <g>
+        <text x="40" y="20" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" letter-spacing="1.5">① INCOMPLETE</text>
+        <rect x="20" y="30" width="480" height="140" rx="10" fill="#FFFFFF" stroke="#DEDAD1"/>
+        <line x1="20" y1="58" x2="500" y2="58" stroke="#E8E4D9"/>
+        <text x="40" y="50" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#1C1C1C">Primary Details</text>
+        <rect x="420" y="36" width="70" height="16" rx="8" fill="#FBF4D8" stroke="#D9B63B"/>
+        <text x="455" y="47" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">⚠ 4 INCOMPLETE</text>
+
+        <text x="40" y="78" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">NAME</text>
+        <text x="180" y="78" font-family="Inter, sans-serif" font-size="11" fill="#1C1C1C">Tom Coffee</text>
+        <text x="40" y="100" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">EMAIL</text>
+        <text x="180" y="100" font-family="Inter, sans-serif" font-size="11" fill="#1C1C1C" font-style="italic">tom @meridian</text>
+        <text x="40" y="124" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">PHONE</text>
+        <rect x="180" y="114" width="70" height="14" rx="7" fill="#FBF4D8" stroke="#D9B63B"/>
+        <text x="215" y="125" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">⚠ INCOMPLETE</text>
+        <text x="40" y="148" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">COMPANY</text>
+        <rect x="180" y="138" width="70" height="14" rx="7" fill="#FBF4D8" stroke="#D9B63B"/>
+        <text x="215" y="149" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">⚠ INCOMPLETE</text>
+        <animate attributeName="opacity" values="1;1;0.3;0.3;0.3" keyTimes="0;0.2;0.4;0.95;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Stage 2: AI enriching (fades in around 20%, fades out around 80%) -->
+      <g opacity="0">
+        <text x="40" y="200" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#E6552A" letter-spacing="1.5">② AI ENRICHING · 11 SOURCES</text>
+        <rect x="20" y="210" width="480" height="140" rx="10" fill="#FAF8F3" stroke="#E6552A" stroke-dasharray="4 3"/>
+        <text x="40" y="236" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C">Hunter.io</text>
+        <text x="490" y="236" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#E6552A" text-anchor="end" letter-spacing="0.5">email formatted ✓</text>
+        <line x1="40" y1="244" x2="480" y2="244" stroke="#E8E4D9"/>
+        <text x="40" y="262" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C">Clearbit</text>
+        <text x="490" y="262" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#E6552A" text-anchor="end" letter-spacing="0.5">phone populated ✓</text>
+        <line x1="40" y1="270" x2="480" y2="270" stroke="#E8E4D9"/>
+        <text x="40" y="288" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C">SEC EDGAR</text>
+        <text x="490" y="288" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#E6552A" text-anchor="end" letter-spacing="0.5">company resolved ✓</text>
+        <line x1="40" y1="296" x2="480" y2="296" stroke="#E8E4D9"/>
+        <text x="40" y="314" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C">Wikidata</text>
+        <text x="490" y="314" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#E6552A" text-anchor="end" letter-spacing="0.5">title found ✓</text>
+        <line x1="40" y1="322" x2="480" y2="322" stroke="#E8E4D9"/>
+        <text x="40" y="340" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C">AI merge</text>
+        <text x="490" y="340" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#E6552A" text-anchor="end" letter-spacing="0.5">duplicate resolved ✓</text>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.15;0.3;0.75;0.85;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Stage 3: Complete (fades in at 80%, holds) -->
+      <g opacity="0">
+        <text x="40" y="380" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#1C1C1C" letter-spacing="1.5">③ COMPLETE · EVERY FIELD ATTRIBUTED</text>
+        <rect x="20" y="390" width="480" height="120" rx="10" fill="#FFFFFF" stroke="#1C1C1C" stroke-width="1.5"/>
+        <line x1="20" y1="418" x2="500" y2="418" stroke="#E8E4D9"/>
+        <text x="40" y="410" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#1C1C1C">Primary Details</text>
+        <rect x="430" y="396" width="60" height="16" rx="8" fill="#1C1C1C"/>
+        <text x="460" y="407" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#FFFFFF" text-anchor="middle">✓ COMPLETE</text>
+
+        <text x="40" y="438" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">EMAIL <tspan fill="#E6552A">· HUNTER</tspan></text>
+        <text x="280" y="438" font-family="Inter, sans-serif" font-size="11" fill="#1C1C1C">tom.coffee@meridian.com</text>
+        <text x="40" y="460" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">PHONE <tspan fill="#E6552A">· CLEARBIT</tspan></text>
+        <text x="280" y="460" font-family="Inter, sans-serif" font-size="11" fill="#1C1C1C">+1 617 555 0142</text>
+        <text x="40" y="482" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">COMPANY <tspan fill="#E6552A">· SEC</tspan></text>
+        <text x="280" y="482" font-family="Inter, sans-serif" font-size="11" fill="#1C1C1C">Meridian Capital Group</text>
+        <text x="40" y="504" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" letter-spacing="1">TITLE <tspan fill="#E6552A">· WIKIDATA</tspan></text>
+        <text x="280" y="504" font-family="Inter, sans-serif" font-size="11" fill="#1C1C1C">VP Operations</text>
+
+        <animate attributeName="opacity" values="0;0;0;1;1" keyTimes="0;0.75;0.85;0.95;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+    </svg>
+    <div class="anim-cap">Three stages stacked top-to-bottom. The Incomplete card dims, AI enrichment logs each source's contribution, and the final Complete card holds to close the loop.</div>
+  </div>
+
+  <div style="height: 1px; background: var(--hair); margin: 36px 0 20px;"></div>
+
+  <!-- Legacy version placeholder — keeping code path in case user wants to revert -->
+  <div style="display:none;">
+    <svg viewBox="0 0 780 320" xmlns="http://www.w3.org/2000/svg" aria-label="AI cleans a dirty record field by field" role="img">
+      <defs>
+        <linearGradient id="scannerGlow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#E6552A" stop-opacity="0.35"/>
+          <stop offset="1" stop-color="#E6552A" stop-opacity="0"/>
+        </linearGradient>
+        <marker id="arrA1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#E6552A"/>
+        </marker>
+      </defs>
+
+      <!-- Column labels — all in Acme orange / neutral -->
+      <text x="100" y="24" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#6F6F6F" text-anchor="middle" letter-spacing="1.5">INCOMPLETE · IN</text>
+      <text x="390" y="24" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#E6552A" text-anchor="middle" letter-spacing="1.5">AI ENRICHES</text>
+      <text x="680" y="24" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#1C1C1C" text-anchor="middle" letter-spacing="1.5">COMPLETE · OUT</text>
+
+      <!-- ─── LEFT: DIRTY INPUT CARD — uses the real "Incomplete" warning style ─── -->
+      <g>
+        <rect x="20" y="60" width="160" height="180" rx="8" fill="#FFFFFF" stroke="#DEDAD1" stroke-width="1"/>
+        <rect x="20" y="60" width="160" height="22" rx="8" fill="#F7F4EE"/>
+        <text x="100" y="75" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#6F6F6F" text-anchor="middle" letter-spacing="1">NEW CONTACT</text>
+        <!-- Name (known) -->
+        <text x="32" y="98" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">NAME</text>
+        <text x="32" y="112" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+        <!-- Email (malformed) -->
+        <text x="32" y="132" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">EMAIL</text>
+        <text x="32" y="146" font-family="Inter, sans-serif" font-size="10" font-style="italic" fill="#1C1C1C">tom @meridian</text>
+        <rect x="32" y="149" width="90" height="2" fill="#E6552A"/>
+        <!-- Phone (missing) — uses the Incomplete pill style from the actual app -->
+        <text x="32" y="166" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">PHONE</text>
+        <rect x="32" y="172" width="70" height="14" rx="7" fill="#FBF4D8" stroke="#D9B63B" stroke-width="1"/>
+        <text x="67" y="182" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">⚠ INCOMPLETE</text>
+        <!-- Company (unknown) -->
+        <text x="32" y="204" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">COMPANY</text>
+        <rect x="32" y="210" width="70" height="14" rx="7" fill="#FBF4D8" stroke="#D9B63B" stroke-width="1"/>
+        <text x="67" y="220" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">⚠ INCOMPLETE</text>
+      </g>
+
+      <!-- ─── MIDDLE: AI SCANNER — all orange/neutral ─── -->
+      <g>
+        <rect x="260" y="60" width="260" height="220" rx="12" fill="#FAF8F3" stroke="#E6552A" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="390" y="50" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#E6552A" text-anchor="middle" letter-spacing="1.5">AI · 11 PUBLIC SOURCES</text>
+
+        <!-- Scanner sweep line -->
+        <rect x="260" y="60" width="260" height="6" fill="url(#scannerGlow)">
+          <animate attributeName="y" values="60;274;60" dur="4s" repeatCount="indefinite"/>
+        </rect>
+
+        <!-- Field: Email check -->
+        <g>
+          <text x="280" y="92" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">EMAIL FORMAT</text>
+          <text x="280" y="108" font-family="Inter, sans-serif" font-size="10" font-style="italic" fill="#6F6F6F">
+            tom @meridian
+            <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.25;0.3;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+          <text x="280" y="108" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" opacity="0">
+            tom.coffee@meridian.com
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.25;0.3;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+          <text x="500" y="108" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#E6552A" text-anchor="end" opacity="0" letter-spacing="1">HUNTER
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.25;0.3;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+        </g>
+
+        <!-- Field: Phone lookup -->
+        <g>
+          <text x="280" y="140" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">PHONE LOOKUP</text>
+          <!-- Incomplete pill before -->
+          <g>
+            <rect x="280" y="146" width="70" height="14" rx="7" fill="#FBF4D8" stroke="#D9B63B" stroke-width="1">
+              <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.45;0.5;1" dur="10s" repeatCount="indefinite"/>
+            </rect>
+            <text x="315" y="156" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">
+              ⚠ INCOMPLETE
+              <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.45;0.5;1" dur="10s" repeatCount="indefinite"/>
+            </text>
+          </g>
+          <text x="280" y="156" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" opacity="0">+1 617 555 0142
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.45;0.5;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+          <text x="500" y="156" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#E6552A" text-anchor="end" opacity="0" letter-spacing="1">CLEARBIT
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.45;0.5;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+        </g>
+
+        <!-- Field: Company resolve -->
+        <g>
+          <text x="280" y="188" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">COMPANY RESOLVE</text>
+          <g>
+            <rect x="280" y="194" width="70" height="14" rx="7" fill="#FBF4D8" stroke="#D9B63B" stroke-width="1">
+              <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.65;0.7;1" dur="10s" repeatCount="indefinite"/>
+            </rect>
+            <text x="315" y="204" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#8B6B00" text-anchor="middle">
+              ⚠ INCOMPLETE
+              <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.65;0.7;1" dur="10s" repeatCount="indefinite"/>
+            </text>
+          </g>
+          <text x="280" y="204" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" opacity="0">Meridian Capital Group
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.65;0.7;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+          <text x="500" y="204" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#E6552A" text-anchor="end" opacity="0" letter-spacing="1">SEC EDGAR
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.65;0.7;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+        </g>
+
+        <!-- Field: Duplicate check -->
+        <g>
+          <text x="280" y="236" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">DUPLICATE CHECK</text>
+          <text x="280" y="252" font-family="Inter, sans-serif" font-size="10" font-style="italic" fill="#6F6F6F">
+            3 potential matches
+            <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.85;0.9;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+          <text x="280" y="252" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#1C1C1C" opacity="0">merged · no duplicate
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.85;0.9;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+          <text x="500" y="252" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#E6552A" text-anchor="end" opacity="0" letter-spacing="1">WIKIDATA
+            <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.85;0.9;1" dur="10s" repeatCount="indefinite"/>
+          </text>
+        </g>
+      </g>
+
+      <!-- ─── RIGHT: CLEAN OUTPUT CARD ─── -->
+      <g opacity="0.3">
+        <rect x="600" y="60" width="160" height="180" rx="8" fill="#FFFFFF" stroke="#1C1C1C" stroke-width="1.5"/>
+        <rect x="600" y="60" width="160" height="22" rx="8" fill="#1C1C1C"/>
+        <text x="680" y="75" font-family="Inter, sans-serif" font-size="9" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">COMPLETE</text>
+        <text x="612" y="98" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">NAME</text>
+        <text x="612" y="112" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#1C1C1C">Tom Coffee</text>
+        <text x="612" y="132" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">EMAIL <tspan fill="#E6552A">· HUNTER</tspan></text>
+        <text x="612" y="146" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#1C1C1C">tom.coffee@meridian.com</text>
+        <text x="612" y="166" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">PHONE <tspan fill="#E6552A">· CLEARBIT</tspan></text>
+        <text x="612" y="180" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#1C1C1C">+1 617 555 0142</text>
+        <text x="612" y="200" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#6F6F6F" letter-spacing="0.8">COMPANY <tspan fill="#E6552A">· SEC</tspan></text>
+        <text x="612" y="214" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#1C1C1C">Meridian Capital</text>
+        <text x="612" y="232" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="#E6552A" letter-spacing="0.8">ATTRIBUTED PER FIELD</text>
+        <animate attributeName="opacity" values="0.3;0.3;1;1;0.3" keyTimes="0;0.9;0.95;0.98;1" dur="10s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- Connecting arrows, all in Acme orange -->
+      <path d="M 180 150 L 255 150" stroke="#E6552A" stroke-width="1.5" fill="none" marker-end="url(#arrA1)"/>
+      <path d="M 525 150 L 595 150" stroke="#E6552A" stroke-width="1.5" fill="none" marker-end="url(#arrA1)"/>
+
+      <!-- Footer -->
+      <text x="390" y="310" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#6F6F6F" text-anchor="middle">Incomplete email formatted · missing phone populated · company resolved · duplicate merged</text>
+    </svg>
+    <div class="anim-cap">Incomplete record enters on the left. AI enriches each field against eleven public sources in real time. Complete record exits on the right — every field attributed to its source.</div>
+  </div>
+
+  <div class="section-meta"><strong>Placement in case study:</strong> Inside the <em>Research · Career Inquiry</em> section, right after the paragraph about dirty data being the problem at both orgs.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ANIMATION 2 — PROVIDER FAN-OUT                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="animation-slot">
+  <span class="slot-tag">Animation 2 · AI Layer section</span>
+  <h2 class="slot-title">Provider fan-out — the architecture, visualized</h2>
+  <p class="slot-note">A central query pulse radiates out to all eleven providers. Each returns a result back to center. Repeats every 5 seconds.</p>
+
+  <div class="anim-wrap">
+    <div class="anim-title">One query. Eleven sources. Live.</div>
+    <svg viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" aria-label="Query fanning out to eleven data providers and returning results" role="img">
+      <!-- Provider positions — evenly spaced, radius 170 from center (360, 220) -->
+      <!-- Angles: 360 / 11 = 32.727°, starting from top (-90°). -->
+      <!-- p1 angle: -90°      → (360, 50) -->
+      <!-- p2 angle: -57.27°   → (503.23, 128.08) -->
+      <!-- p3 angle: -24.55°   → (514.63, 284.61) — corrected below using trig -->
+      <!-- Precomputed with r=170, cx=360, cy=220:
+           p1  (-90°):  360,  50
+           p2  (-57.27°): 502.93, 76.88
+           p3  (-24.55°): 514.63, 149.40
+           p4   (8.18°): 528.86, 244.19
+           (kept below for readability; exact values used in coords) -->
+
+      <!-- Faint connecting ring behind providers -->
+      <circle cx="360" cy="220" r="170" fill="none" stroke="#DEDAD1" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.5"/>
+
+      <!-- Center node -->
+      <circle cx="360" cy="220" r="42" fill="#E6552A"/>
+      <text x="360" y="216" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">QUERY</text>
+      <text x="360" y="230" font-family="Inter, sans-serif" font-size="9" fill="#FFFFFF" text-anchor="middle" opacity="0.9">"Tom Coffee"</text>
+
+      <!-- Pulse ring -->
+      <circle cx="360" cy="220" r="42" fill="none" stroke="#E6552A" stroke-width="2" opacity="0.6">
+        <animate attributeName="r" values="42;170" dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0" dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+
+      <!-- 11 providers evenly spaced on 170-radius circle around (360, 220), starting at top (-90°) -->
+
+      <!-- Clearbit — top -->
+      <g><circle cx="360" cy="50" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="360" y="54" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">Clearbit</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" repeatCount="indefinite" path="M 360,50 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" repeatCount="indefinite"/></circle>
+
+      <!-- GitHub -->
+      <g><circle cx="452" cy="77" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="452" y="81" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">GitHub</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.1s" repeatCount="indefinite" path="M 452,77 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.1s" repeatCount="indefinite"/></circle>
+
+      <!-- Wikidata -->
+      <g><circle cx="515" cy="149" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="515" y="153" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">Wikidata</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.2s" repeatCount="indefinite" path="M 515,149 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.2s" repeatCount="indefinite"/></circle>
+
+      <!-- SEC -->
+      <g><circle cx="528" cy="244" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="528" y="248" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">SEC</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.3s" repeatCount="indefinite" path="M 528,244 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.3s" repeatCount="indefinite"/></circle>
+
+      <!-- GLEIF -->
+      <g><circle cx="488" cy="331" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="488" y="335" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">GLEIF</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.4s" repeatCount="indefinite" path="M 488,331 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.4s" repeatCount="indefinite"/></circle>
+
+      <!-- ORCID -->
+      <g><circle cx="408" cy="383" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="408" y="387" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">ORCID</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.5s" repeatCount="indefinite" path="M 408,383 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.5s" repeatCount="indefinite"/></circle>
+
+      <!-- Gravatar -->
+      <g><circle cx="312" cy="383" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="312" y="387" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#1C1C1C" text-anchor="middle">Gravatar</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.6s" repeatCount="indefinite" path="M 312,383 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.6s" repeatCount="indefinite"/></circle>
+
+      <!-- OpenCorp -->
+      <g><circle cx="232" cy="331" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="232" y="331" font-family="Inter, sans-serif" font-size="7" font-weight="700" fill="#1C1C1C" text-anchor="middle">Open</text><text x="232" y="341" font-family="Inter, sans-serif" font-size="7" font-weight="700" fill="#1C1C1C" text-anchor="middle">Corp</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.7s" repeatCount="indefinite" path="M 232,331 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.7s" repeatCount="indefinite"/></circle>
+
+      <!-- Companies House -->
+      <g><circle cx="192" cy="244" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="192" y="243" font-family="Inter, sans-serif" font-size="7" font-weight="700" fill="#1C1C1C" text-anchor="middle">Cos.</text><text x="192" y="253" font-family="Inter, sans-serif" font-size="7" font-weight="700" fill="#1C1C1C" text-anchor="middle">House</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.8s" repeatCount="indefinite" path="M 192,244 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.8s" repeatCount="indefinite"/></circle>
+
+      <!-- SAM -->
+      <g><circle cx="205" cy="149" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="205" y="153" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">SAM</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="0.9s" repeatCount="indefinite" path="M 205,149 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="0.9s" repeatCount="indefinite"/></circle>
+
+      <!-- Hunter -->
+      <g><circle cx="268" cy="77" r="26" fill="#FFFFFF" stroke="#DEDAD1"/><text x="268" y="81" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1C1C1C" text-anchor="middle">Hunter</text></g>
+      <circle r="5" fill="#E6552A"><animateMotion dur="5s" begin="1.0s" repeatCount="indefinite" path="M 268,77 L 360,220"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="5s" begin="1.0s" repeatCount="indefinite"/></circle>
+    </svg>
+    <div class="anim-cap">One query fans out to eleven free public sources in parallel. Each returns independently. Source attribution is captured per field.</div>
+  </div>
+
+  <div class="section-meta"><strong>Placement in case study:</strong> Replaces the static provider badge grid in the <em>AI Layer · Real APIs. Free tier. Nothing simulated.</em> section.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ANIMATION 3 — COUNT-UP HERO STATS                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="animation-slot">
+  <span class="slot-tag">Animation 3 · Hero section</span>
+  <h2 class="slot-title">Count-up stats — the polish move</h2>
+  <p class="slot-note">On page load, each stat number fades in and scales up, one after another. 0.25-second stagger between cards. Plays once.</p>
+
+  <div class="hero-stats">
+    <div class="stat"><div class="n">5 days</div><div class="l">Empty repo to<br>live working CRM</div></div>
+    <div class="stat"><div class="n">8 modules</div><div class="l">Shipped on<br>one domain</div></div>
+    <div class="stat"><div class="n">11 sources</div><div class="l">Free public data<br>providers, live</div></div>
+    <div class="stat"><div class="n">$0</div><div class="l">Infra cost<br>hosting · SSL · domain</div></div>
+  </div>
+
+  <div class="section-meta"><strong>Placement in case study:</strong> Already in the hero stats bar — this is a motion upgrade of what exists. Refresh this page to see the count-up replay.</div>
+</div>
+
+
+</div>
+</body>
+</html>

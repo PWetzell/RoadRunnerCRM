@@ -64,6 +64,14 @@ interface SalesStore {
 
   /** Convert a deal to closed-won AND tag the linked org as a Customer. */
   convertToCustomer: (dealId: string) => { ok: boolean; orgId?: string; orgName?: string };
+
+  /** Replace deals with the demo seed dataset. Called by AuthGate when a
+   *  demo-whitelist email signs in. See `lib/auth/demo-accounts.ts`. */
+  seedDemoData: () => void;
+  /** Wipe all deals back to empty. Called on real-account sign-in and on
+   *  sign-out so the next session never inherits the previous identity's
+   *  data (especially the demo's pre-seeded fake deals). */
+  clearAll: () => void;
 }
 
 const DEFAULT_COLUMN_ORDER = ['name', 'stage', 'priority', 'person', 'org', 'amount', 'lastComm', 'expectedCloseDate', 'source', 'owner', 'createdAt', 'lastUpdated', 'actions'];
@@ -71,7 +79,12 @@ const DEFAULT_COLUMN_ORDER = ['name', 'stage', 'priority', 'person', 'org', 'amo
 export const useSalesStore = create<SalesStore>()(
   persist(
     (set, get) => ({
-  deals: SEED_DEALS,
+  // Empty by default — only the demo account whitelist gets seeded with
+  // SEED_DEALS, and that happens via `seedDemoData()` invoked by AuthGate.
+  // Every real account starts with a blank pipeline (which is correct: a
+  // fresh CRM signup has no deals yet) and grows from manual entry or
+  // future cloud-backed sync.
+  deals: [],
   view: 'list',
   stageFilter: 'all',
   typeFilter: 'all',
@@ -186,6 +199,16 @@ export const useSalesStore = create<SalesStore>()(
 
     return { ok: true, orgId: orgId, orgName: org?.name };
   },
+
+  // Only seed when empty — once the user has any deals (created or
+  // edited), trust localStorage. Otherwise every page load wipes their
+  // pipeline back to SEED_DEALS. See list-store seedDemoData for the
+  // same rationale.
+  seedDemoData: () => set((s) => {
+    if (s.deals.length > 0) return s;
+    return { deals: SEED_DEALS };
+  }),
+  clearAll: () => set({ deals: [] }),
     }),
     {
       name: 'roadrunner-sales',

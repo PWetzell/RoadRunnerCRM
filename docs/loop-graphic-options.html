@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loop Graphic — Options A / B / C</title>
+<style>
+  :root {
+    --bg: #F1EFEA;
+    --surface: #FFFFFF;
+    --ink: #1C1C1C;
+    --ink-soft: #3A3A3A;
+    --ink-mute: #6F6F6F;
+    --hair: #DEDAD1;
+    --accent: #E6552A;
+    --old-bg: #F4E6DD;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 56px 22px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell { max-width: 820px; margin: 0 auto; }
+
+  .page-h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 8px;
+  }
+  .page-lede {
+    font-size: 14.5px; color: var(--ink-soft); margin: 0 0 36px; max-width: 640px;
+  }
+
+  .option-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 24px 0 12px; margin-top: 28px; border-top: 1px solid var(--hair);
+  }
+  .option-header:first-of-type { border-top: none; padding-top: 4px; }
+  .option-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  .option-title {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.008em; margin: 4px 0 2px;
+  }
+  .option-note {
+    font-size: 13px; color: var(--ink-mute); margin: 0 0 16px; max-width: 620px;
+  }
+  .pros-cons {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 22px;
+    font-size: 12.5px;
+  }
+  .pc-col { background: var(--surface); border: 1px solid var(--hair); border-radius: 6px; padding: 14px 16px; }
+  .pc-col .h {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .pc-col.pro .h { color: #3E7333; }
+  .pc-col.con .h { color: #8A4A2E; }
+  .pc-col ul { margin: 0; padding-left: 18px; color: var(--ink-soft); line-height: 1.55; }
+  .pc-col li { margin-bottom: 3px; }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* OPTION A — SAME TOKEN, TWO SURFACES                         */
+  /* ═══════════════════════════════════════════════════════════ */
+  .tp-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 30px 28px 26px;
+  }
+  .tp-title {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.008em;
+    text-align: center; margin-bottom: 22px; line-height: 1.3;
+  }
+  .tp-grid {
+    display: grid; grid-template-columns: 1fr 60px 1fr; gap: 10px;
+    align-items: stretch;
+  }
+  .tp-card { padding: 20px 22px; border-radius: 8px; border: 1px solid var(--hair); background: #FAF8F3; }
+  .tp-surface-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-mute); display: flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tp-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+  .tp-button {
+    display: inline-block; padding: 10px 18px; border-radius: 6px;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 700; letter-spacing: -0.005em;
+    margin-bottom: 16px;
+  }
+  .tp-meta { border-top: 1px solid var(--hair); padding-top: 10px; }
+  .tp-meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--ink-mute); margin: 5px 0;
+  }
+  .tp-meta-row span {
+    font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 9.5px;
+  }
+  .tp-meta-row code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 11px; color: var(--ink); background: var(--bg); padding: 2px 6px; border-radius: 3px;
+  }
+  .tp-bridge { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tp-bridge svg { width: 60px; height: 200px; }
+  .tp-bridge-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-top: 6px; line-height: 1.3;
+  }
+  .tp-caption {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 18px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* OPTION B — ANIMATED LOOP DIAGRAM (SVG only, no JS)          */
+  /* ═══════════════════════════════════════════════════════════ */
+  .loop-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 36px 28px 28px;
+  }
+  .loop-wrap .inner-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); text-align: center; margin-bottom: 14px;
+  }
+  .loop-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .loop-wrap .cap {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* OPTION C — VIDEO / GIF PLACEHOLDER                          */
+  /* ═══════════════════════════════════════════════════════════ */
+  .video-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 28px;
+  }
+  .video-placeholder {
+    aspect-ratio: 16 / 9;
+    background: #1C1C1C; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; text-align: center; padding: 30px;
+    position: relative; overflow: hidden;
+  }
+  .video-placeholder::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(135deg, transparent 0%, transparent 50%, rgba(230,85,42,0.12) 50%, rgba(230,85,42,0.12) 100%);
+  }
+  .vp-play {
+    width: 72px; height: 72px; border-radius: 999px; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px; position: relative; z-index: 1;
+    box-shadow: 0 0 0 10px rgba(230,85,42,0.16);
+  }
+  .vp-play svg { fill: #fff; }
+  .vp-cap {
+    font-size: 14px; font-weight: 700; letter-spacing: -0.005em; position: relative; z-index: 1;
+    max-width: 440px; line-height: 1.4;
+  }
+  .vp-cap small {
+    display: block; font-size: 11px; color: #A8A39A; font-weight: 400; margin-top: 8px; font-style: italic;
+  }
+  .video-storyboard {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px;
+  }
+  .vs-frame {
+    aspect-ratio: 16 / 10;
+    background: var(--old-bg); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; text-align: center; padding: 10px; color: var(--ink-soft); line-height: 1.35;
+    border: 1px solid var(--hair);
+  }
+  .vs-frame:nth-child(2) { background: #F0E4DA; }
+  .vs-frame:nth-child(3) { background: #DFEBF0; }
+  .vs-frame:nth-child(4) { background: #EFF6EB; }
+  .video-wrap .cap {
+    font-size: 13px; color: var(--ink-soft); line-height: 1.6; text-align: center;
+    margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto;
+    font-style: italic;
+  }
+
+  .recommendation {
+    background: #EFF6EB; border-left: 3px solid #5E9B4E;
+    padding: 16px 20px; border-radius: 4px; margin-top: 40px;
+    font-size: 13.5px; line-height: 1.6; color: var(--ink);
+  }
+  .recommendation strong { color: #3E7333; }
+
+  @media (max-width: 620px) {
+    .tp-grid { grid-template-columns: 1fr; }
+    .tp-bridge svg { width: 200px; height: 60px; transform: rotate(90deg); }
+    .pros-cons { grid-template-columns: 1fr; }
+    .video-storyboard { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<h1 class="page-h1">Loop graphic — three options to choose from</h1>
+<p class="page-lede">Same case-study section ("the design-to-code loop, made visible"), three ways to execute it. Pick one, copy-paste the HTML, drop it into Framer.</p>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- OPTION A                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="option-header">
+  <div>
+    <span class="option-tag">Option A · Static comparison</span>
+    <h2 class="option-title">Same token, two surfaces.</h2>
+  </div>
+</div>
+<p class="option-note">A side-by-side card layout showing the same button rendered in Figma and in code, with the token values visible underneath. The connecting bridge in the middle shows the token is one source of truth. No interaction, reads instantly.</p>
+
+<div class="tp-wrap">
+  <div class="tp-title">Same token. Two surfaces. Zero translation.</div>
+  <div class="tp-grid">
+    <div class="tp-card">
+      <div class="tp-surface-label"><span class="tp-dot" style="background:#0ACF83"></span>Figma</div>
+      <div class="tp-button">Save placement</div>
+      <div class="tp-meta">
+        <div class="tp-meta-row"><span>Variable</span><code>brand/primary</code></div>
+        <div class="tp-meta-row"><span>Resolves to</span><code>#E6552A</code></div>
+      </div>
+    </div>
+    <div class="tp-bridge">
+      <svg viewBox="0 0 60 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="30" cy="100" r="18" fill="#E6552A"/>
+        <text x="30" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#ffffff">TOKEN</text>
+        <path d="M 12 100 L 0 100" stroke="#E6552A" stroke-width="2"/>
+        <path d="M 48 100 L 60 100" stroke="#E6552A" stroke-width="2"/>
+      </svg>
+      <div class="tp-bridge-label">one source<br>of truth</div>
+    </div>
+    <div class="tp-card">
+      <div class="tp-surface-label"><span class="tp-dot" style="background:#2E75B6"></span>Code</div>
+      <div class="tp-button">Save placement</div>
+      <div class="tp-meta">
+        <div class="tp-meta-row"><span>CSS variable</span><code>--brand-primary</code></div>
+        <div class="tp-meta-row"><span>Resolves to</span><code>#E6552A</code></div>
+      </div>
+    </div>
+  </div>
+  <div class="tp-caption">The button on the left renders in Figma. The button on the right renders in React. Both reference the same Acme token. Change the token once — both surfaces update. No handoff, no drift, no translation.</div>
+</div>
+
+<div class="pros-cons">
+  <div class="pc-col pro">
+    <div class="h">Pros</div>
+    <ul>
+      <li>Reads instantly — no click required</li>
+      <li>Framer-safe (pure HTML / CSS)</li>
+      <li>Communicates thesis at a glance</li>
+      <li>Looks like a design artifact, not a widget</li>
+      <li>Great for quick scan (8-second rule)</li>
+    </ul>
+  </div>
+  <div class="pc-col con">
+    <div class="h">Cons</div>
+    <ul>
+      <li>Static — less "wow" than motion</li>
+      <li>Same visual pattern as many case studies</li>
+      <li>Doesn't show the loop in action</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- OPTION B                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="option-header">
+  <div>
+    <span class="option-tag">Option B · Animated loop</span>
+    <h2 class="option-title">The token flowing between Figma and code.</h2>
+  </div>
+</div>
+<p class="option-note">A subtle SVG animation — a small orange token travels from Figma to Acme to Code and back, on a 4-second loop. No JavaScript, just SVG native animation. Movement catches the eye as a reader scrolls past.</p>
+
+<div class="loop-wrap">
+  <div class="inner-title">The loop that finally closed</div>
+  <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" aria-label="Design-to-code closed loop animation" role="img">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#E6552A"/>
+      </marker>
+    </defs>
+
+    <!-- Figma node -->
+    <g>
+      <rect x="30" y="80" width="170" height="80" rx="10" fill="#FAF8F3" stroke="#1C1C1C" stroke-width="1.5"/>
+      <text x="115" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#1C1C1C" text-anchor="middle">FIGMA</text>
+      <text x="115" y="132" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">Variables · components</text>
+      <text x="115" y="148" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">via Figma MCP</text>
+    </g>
+
+    <!-- Token core -->
+    <g>
+      <circle cx="360" cy="120" r="55" fill="#E6552A"/>
+      <text x="360" y="114" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">ACME</text>
+      <text x="360" y="130" font-family="Inter, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" opacity="0.9">TOKENS</text>
+      <text x="360" y="146" font-family="Inter, sans-serif" font-size="9" fill="#FFFFFF" text-anchor="middle" opacity="0.85">one source</text>
+    </g>
+
+    <!-- Code node -->
+    <g>
+      <rect x="520" y="80" width="170" height="80" rx="10" fill="#FAF8F3" stroke="#1C1C1C" stroke-width="1.5"/>
+      <text x="605" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#1C1C1C" text-anchor="middle">CODE</text>
+      <text x="605" y="132" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">Tailwind CSS vars</text>
+      <text x="605" y="148" font-family="Inter, sans-serif" font-size="11" fill="#6F6F6F" text-anchor="middle">via Claude Code</text>
+    </g>
+
+    <!-- Arrows -->
+    <path d="M 200 105 Q 280 70 305 100" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M 305 140 Q 280 170 200 135" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M 415 100 Q 440 70 520 105" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M 520 135 Q 440 170 415 140" fill="none" stroke="#E6552A" stroke-width="2" marker-end="url(#arr)"/>
+
+    <!-- Traveling token -->
+    <circle r="9" fill="#E6552A" opacity="0.95">
+      <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
+        <mpath href="#loopPath"/>
+      </animateMotion>
+    </circle>
+    <circle r="9" fill="#E6552A" opacity="0.4">
+      <animateMotion dur="5s" repeatCount="indefinite" begin="-1s" rotate="auto">
+        <mpath href="#loopPath"/>
+      </animateMotion>
+    </circle>
+
+    <!-- Invisible motion path -->
+    <path id="loopPath" d="M 200 105 Q 280 70 305 100 L 305 140 Q 280 170 200 135 M 415 100 Q 440 70 520 105 L 520 135 Q 440 170 415 140" fill="none" stroke="none"/>
+
+    <!-- Labels -->
+    <text x="250" y="200" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#6F6F6F" text-anchor="middle" letter-spacing="1.5">READ · WRITE</text>
+    <text x="470" y="200" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#6F6F6F" text-anchor="middle" letter-spacing="1.5">READ · WRITE</text>
+  </svg>
+  <div class="cap">One token. Rendered in Figma. Rendered in code. The token moves between both surfaces in real time — no handoff, no drift, no translation.</div>
+</div>
+
+<div class="pros-cons">
+  <div class="pc-col pro">
+    <div class="h">Pros</div>
+    <ul>
+      <li>Motion catches the eye on scroll</li>
+      <li>Communicates "loop" visually</li>
+      <li>No JavaScript (SVG-native animation)</li>
+      <li>Framer-safe</li>
+      <li>Memorable — screenshot-worthy</li>
+    </ul>
+  </div>
+  <div class="pc-col con">
+    <div class="h">Cons</div>
+    <ul>
+      <li>Diagrammatic — abstract vs. concrete</li>
+      <li>Animation may be distracting for some</li>
+      <li>Doesn't show real Figma/code artifacts</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- OPTION C                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="option-header">
+  <div>
+    <span class="option-tag">Option C · Screen recording</span>
+    <h2 class="option-title">The actual thing, filmed.</h2>
+  </div>
+</div>
+<p class="option-note">A 4-second looping screen recording: Figma on left, deployed app on right — designer changes a token in Figma, and the app retints automatically. Highest impact because it's real footage, not a diagram. Below is a placeholder + storyboard showing what to record.</p>
+
+<div class="video-wrap">
+  <div class="video-placeholder">
+    <div class="vp-play">
+      <svg width="28" height="28" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </div>
+    <div class="vp-cap">
+      4-second loop · Figma variable update → live app retint
+      <small>Replace this placeholder with your recorded MP4 or animated GIF</small>
+    </div>
+  </div>
+
+  <div class="video-storyboard">
+    <div class="vs-frame"><strong>Frame 1</strong><br>Figma open · click brand.primary variable</div>
+    <div class="vs-frame"><strong>Frame 2</strong><br>Paste new hex · press enter</div>
+    <div class="vs-frame"><strong>Frame 3</strong><br>Wipe to app · Roadrunner dashboard</div>
+    <div class="vs-frame"><strong>Frame 4</strong><br>Every orange accent retinted · loop</div>
+  </div>
+
+  <div class="cap">What a hiring manager sees: the design-to-code loop, happening on screen. No explanation needed.</div>
+</div>
+
+<div class="pros-cons">
+  <div class="pc-col pro">
+    <div class="h">Pros</div>
+    <ul>
+      <li>Most visceral proof — it's real</li>
+      <li>Impossible to fake or misread</li>
+      <li>Screenshot-worthy for social shares</li>
+      <li>Shows both surfaces simultaneously</li>
+    </ul>
+  </div>
+  <div class="pc-col con">
+    <div class="h">Cons</div>
+    <ul>
+      <li>Requires recording (10-15 min)</li>
+      <li>Video/GIF file size can be large</li>
+      <li>Framer video embed needs testing</li>
+      <li>Autoplay restrictions on some browsers</li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="recommendation">
+  <strong>My recommendation:</strong> Option A for anyone skimming, Option B if you want motion and have the vertical space, Option C if you can spare the 15 minutes to record. You could also stack them — Option A in the hero as the thesis proof, Option B deeper in the case study where you explain the loop in detail. Mixing is allowed.
+</div>
+
+</div>
+</body>
+</html>

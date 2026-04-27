@@ -87,9 +87,106 @@ export const TOUR_STEPS: Record<string, TourStep[]> = {
       placement: 'bottom',
     },
   ],
+  /**
+   * Cross-page tour for creating a Person. Walks through the actual click
+   * flow a first-time user takes. IMPORTANT: clickTarget fires on step
+   * mount, so it MUST only be used when the click reveals something
+   * in-place (e.g. opens a slide panel or dropdown). It must NOT be used
+   * when the click navigates away — the spotlight unmounts before the
+   * bubble ever renders. Navigation between pages is done via
+   * `navigateTo` on the NEXT step (triggered on user's Next press).
+   */
+  '/contacts/new/person': [
+    {
+      content: 'Let\'s add a person. Every new contact in Roadrunner starts with the "+ New Contact" button on the Contacts page — we\'ll auto-open it for you. When you hit Next, pick Person from the chooser that appears on the right.',
+      target: 'new-contact-btn',
+      placement: 'left',
+      navigateTo: '/contacts',
+      // clickTarget opens the chooser SlidePanel in-place so step 2 can
+      // find `contact-type-person` inside it. The button itself does NOT
+      // navigate away, so the step-1 bubble stays put.
+      clickTarget: true,
+    },
+    {
+      content: 'The chooser has three choices: Person for an individual, Company for an org, or the Upload Resume card below to have AI extract fields from a PDF/DOCX and prefill the form. Hit Next to follow us into the Person flow.',
+      target: 'contact-type-person',
+      placement: 'left',
+      // NO clickTarget — clicking a type card NAVIGATES, which would
+      // unmount this bubble before the user can read it. Instead, the
+      // next step carries `navigateTo: '/contacts/new/person'` so
+      // pressing Next takes the user there.
+    },
+    {
+      content: 'Welcome to the Person creation flow. The breadcrumb shows which step you\'re on — the form has 3 steps: Basic Info → Organization → Relationship. Click any crumb to jump around after you\'ve touched a step.',
+      target: 'person-breadcrumb',
+      placement: 'bottom',
+      navigateTo: '/contacts/new/person',
+    },
+    {
+      content: 'Step 1 — Basic Info. Name (first/last required), prefix/suffix, email + type, phone + extension + type, and job title. Live validation runs as you type — no need to hit Save to see what\'s wrong.',
+      target: 'person-step-basic',
+      placement: 'right',
+    },
+    {
+      content: 'The AI sidebar runs alongside each step. On step 1 it\'s Duplicate Detection — as you type a name or email, it queries real public sources (GitHub, Wikidata, LinkedIn) for existing matches. Click a candidate to merge instead of creating a duplicate.',
+      target: 'person-ai-sidebar',
+      placement: 'left',
+    },
+    {
+      content: 'Step 2 (Organization) links the person to a company, sets department, reports-to, and role level. Step 3 (Relationship) classifies as Client / Prospect / Partner / etc. and flips the Private toggle if you don\'t want teammates to see the record. Hit Save on step 3 and the person lands in the grid.',
+      target: 'person-breadcrumb',
+      placement: 'bottom',
+    },
+  ],
+  /**
+   * Cross-page tour for creating a Company. Same entry-point flow as the
+   * Person tour — same clickTarget / navigateTo discipline.
+   */
+  '/contacts/new/company': [
+    {
+      content: 'Let\'s add a company. Same entry point as a person — the "+ New Contact" button on the Contacts page. We\'ll auto-open it for you; hit Next and pick Company from the chooser.',
+      target: 'new-contact-btn',
+      placement: 'left',
+      navigateTo: '/contacts',
+      clickTarget: true,
+    },
+    {
+      content: 'The chooser shows Person, Company, and Upload Resume. For an employer / client / vendor / any org record, pick Company. Hit Next to follow us into the Company flow.',
+      target: 'contact-type-company',
+      placement: 'left',
+      // NO clickTarget — see Person tour comment above. The next step
+      // carries `navigateTo: '/contacts/new/company'`.
+    },
+    {
+      content: 'Welcome to the Company creation flow. The breadcrumb shows 4 steps: Details → AI Enrichment → Relationships → Confirm.',
+      target: 'company-breadcrumb',
+      placement: 'bottom',
+      navigateTo: '/contacts/new/company',
+    },
+    {
+      content: 'Step 1 — Company Details. Name is required; website, industry, size, phone, founded year, HQ, and description are validated as you type. As you type a name, the AI sidebar searches Clearbit, Crunchbase, SEC EDGAR, and OpenCorporates for existing matches.',
+      target: 'company-step-details',
+      placement: 'right',
+    },
+    {
+      content: 'The AI Enrichment Preview sidebar shows what public data AI will pull in on the next step — industry, HQ, size, and social links sourced from real providers. Every row has a source badge so the data is traceable.',
+      target: 'company-ai-sidebar',
+      placement: 'left',
+    },
+    {
+      content: 'Step 2 (AI Enrichment) lets you accept or reject each suggested field one by one — nothing auto-saves. Step 3 (Relationships) links the new company to existing records. Step 4 (Confirm) is the final review before Save.',
+      target: 'company-breadcrumb',
+      placement: 'bottom',
+    },
+  ],
   '/contacts': [
     {
-      content: 'This is your contact list — everyone you do business with. Filter by All, Organizations, or People.',
+      content: 'Contacts are the foundation of Roadrunner CRM — Sales deals, Recruiting candidates, and Documents all link back to the records you create here. This page is where you browse them.',
+      target: 'contacts-filter-bar',
+      placement: 'bottom',
+    },
+    {
+      content: 'Filter by All, Organizations, or People. The type pills also filter the AI Insights bar below.',
       target: 'contacts-filter-bar',
       placement: 'bottom',
     },
@@ -319,6 +416,95 @@ export const TOUR_STEPS: Record<string, TourStep[]> = {
     {
       content: 'Data Management has tools for bulk import, export, deduplication, and cleanup. Use this to maintain data quality.',
       target: 'admin-data-mgmt',
+      placement: 'bottom',
+    },
+  ],
+  /**
+   * Route-agnostic tour — Saved Lists. Starts by navigating INTO an actual
+   * filtered list view so the user sees what a list looks like before we
+   * explain how to build one. Then walks through the sidebar pin manager,
+   * the bookmark-to-save flow on a record, and the Favorites star.
+   */
+  'lists': [
+    {
+      content: 'Saved Lists are how you group contacts, deals, and documents — like "Q2 High Priority" or "Portsmouth Branch". We\'ve loaded an example: the "Portsmouth" list filtered down to just the records in that list. This chip at the top tells you the grid is list-filtered — click the X on the chip to clear it and see the full grid again.',
+      target: 'list-filter-chip',
+      placement: 'bottom',
+      // Jump straight into a seed list so the user sees what a filtered
+      // list view actually looks like. list-contacts-portsmouth has 3
+      // members (org-1, org-4, per-1) and ships with the demo data.
+      navigateTo: '/contacts?list=list-contacts-portsmouth',
+    },
+    {
+      content: 'This is the grid, filtered to only the records in the list. Everything else (sort, search, column controls) still works — the list is just a filter layered on top. Clear the chip and you\'re back to the full contact list.',
+      target: 'contacts-grid',
+      placement: 'top',
+    },
+    {
+      content: 'Lists you\'ve pinned appear in the left sidebar under SAVED LISTS. One click jumps straight to the filtered grid for that list — the same view you\'re looking at now was reached that way.',
+      target: 'sidebar-pinned-lists',
+      placement: 'right',
+    },
+    {
+      content: 'The gear icon on the SAVED LISTS header opens the Pin Manager — a dropdown of every list you own where you check the ones you want pinned to the sidebar. Click it yourself after the tour to try it; we\'re not auto-opening it here because the dropdown would sit right where this bubble is.',
+      target: 'lists-pin-manager',
+      placement: 'right',
+      // NO clickTarget — the Pin Manager dropdown opens directly over
+      // where the bubble would sit. The user can open it themselves.
+    },
+    {
+      content: 'Now let\'s add a record to a list. We\'re taking you to Sarah Chen\'s contact page and opening the Save to List picker from the bookmark icon in her header — watch the right side of the screen.',
+      target: 'detail-save-to-list',
+      placement: 'left',
+      navigateTo: '/contacts/per-1',
+      // clickTarget fires in-place (opens the Save-to-list portal) so
+      // step 6 can spotlight the "Create new list" button inside it.
+      clickTarget: true,
+    },
+    {
+      content: '"Create new list" (at the top of the open picker) makes a new list tied to the record\'s type — contact, deal, or document — and drops the current record into it. You pick the name and visibility: Private (only you) or Public (sidebar-pinnable for the whole team).',
+      target: 'save-to-list-create',
+      placement: 'left',
+    },
+    {
+      content: 'Last stop: the Star icon next to the Bookmark. That\'s Favorites — a built-in list that already exists for every record type (contacts, deals, documents). One click toggles the record in or out. Good for the 5–10 records you touch most often.',
+      target: 'detail-favorite-star',
+      placement: 'bottom',
+    },
+  ],
+  /**
+   * Gmail integration tour — connection banner, manual sync, contact import.
+   * Launches with navigateTo /contacts because the GmailSyncBanner renders
+   * at the top of the contacts page, so every anchor is guaranteed visible.
+   * Copy is deliberately honest about the "synced 11h ago but Sync now
+   * fails" case: the banner shows stored state, the button does a live pull
+   * which can fail if the OAuth refresh token is missing.
+   */
+  'gmail': [
+    {
+      content: 'The Gmail integration pulls email activity into the CRM — inbound and outbound messages get matched to the right contact automatically. The banner at the top of Contacts is where you manage the connection.',
+      target: 'gmail-banner',
+      placement: 'bottom',
+      navigateTo: '/contacts',
+    },
+    {
+      content: 'The banner shows three things: the account you connected, how many messages Roadrunner has pulled so far, and when the last sync ran. "Synced 11h ago" is the timestamp of your last successful pull — it does not mean a sync is happening right now.',
+      target: 'gmail-banner',
+      placement: 'bottom',
+    },
+    {
+      content: 'Sync now triggers an on-demand pull of the newest inbox pages. If it fails with "no_gmail_connection", your stored auth row is missing a refresh token — usually because Google OAuth was partially completed. Reconnect from Settings to fix.',
+      target: 'gmail-sync-now',
+      placement: 'bottom',
+    },
+    {
+      content: 'Import contacts scans your most frequent senders, strips noise (no-reply, notifications, marketing), dedupes against contacts you already have, and offers what\'s left. Each one you import gets its past emails auto-linked to its contact timeline.',
+      target: 'gmail-import',
+      placement: 'bottom',
+    },
+    {
+      content: 'Two things worth knowing. First: contacts imported from Gmail look identical to manually-created ones — there is no "remove Gmail contacts" button, so delete them from the contacts grid if you want them gone. Second: new messages from senders already in your CRM attach silently in the background, no action needed.',
+      target: 'gmail-banner',
       placement: 'bottom',
     },
   ],

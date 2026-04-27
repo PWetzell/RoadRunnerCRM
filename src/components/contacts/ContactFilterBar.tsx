@@ -78,6 +78,7 @@ export default function ContactFilterBar({ onAddContact }: ContactFilterBarProps
       {/* New Contact */}
       {onAddContact && (
         <button
+          data-tour="new-contact-btn"
           onClick={onAddContact}
           className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--brand-primary)] text-white text-[12px] font-bold border-none cursor-pointer hover:opacity-90"
         >

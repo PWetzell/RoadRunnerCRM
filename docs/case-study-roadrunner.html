@@ -139,14 +139,14 @@
   .hero-figure img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hero-stats {
     background: #1C1C1C; color: #fff;
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid; grid-template-columns: repeat(6, 1fr);
     padding: 20px 0; border-radius: 0 0 6px 6px;
     margin-top: -6px; margin-bottom: 40px;
   }
   .hero-stats .stat { text-align: center; border-right: 1px solid #2E2E2E; padding: 0 10px; }
   .hero-stats .stat:last-child { border-right: 0; }
-  .hero-stats .n { font-size: 26px; font-weight: 800; color: var(--accent); line-height: 1; letter-spacing: -0.01em; }
-  .hero-stats .l { font-size: 9.5px; color: #C9C4BB; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; line-height: 1.3; }
+  .hero-stats .n { font-size: 22px; font-weight: 800; color: var(--accent); line-height: 1; letter-spacing: -0.01em; }
+  .hero-stats .l { font-size: 9px; color: #C9C4BB; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; line-height: 1.3; }
 
   /* Loop diagram — the wow graphic */
   .loop-graphic {
@@ -330,9 +330,11 @@
   }
   .hero-stats .n { animation: countPulse 0.9s ease-out forwards; }
   .hero-stats .stat:nth-child(1) .n { animation-delay: 0.1s; opacity: 0; }
-  .hero-stats .stat:nth-child(2) .n { animation-delay: 0.3s; opacity: 0; }
-  .hero-stats .stat:nth-child(3) .n { animation-delay: 0.5s; opacity: 0; }
-  .hero-stats .stat:nth-child(4) .n { animation-delay: 0.7s; opacity: 0; }
+  .hero-stats .stat:nth-child(2) .n { animation-delay: 0.25s; opacity: 0; }
+  .hero-stats .stat:nth-child(3) .n { animation-delay: 0.4s; opacity: 0; }
+  .hero-stats .stat:nth-child(4) .n { animation-delay: 0.55s; opacity: 0; }
+  .hero-stats .stat:nth-child(5) .n { animation-delay: 0.7s; opacity: 0; }
+  .hero-stats .stat:nth-child(6) .n { animation-delay: 0.85s; opacity: 0; }
 
   /* Body */
   h2.sec-head {
@@ -683,6 +685,7 @@
     <p class="lede-body">Problem one — design and code were always two languages pretending to speak to each other. Figma handed off, engineering rebuilt visually-close-enough, tokens drifted, four sprints in the two files stopped resembling each other.</p>
     <p class="lede-body">Problem two — the one every CRM I shipped fought chronically at Madison Resources recruiting and PayFactors compensation — was dirty data. Duplicate records. Stale contacts. Sources nobody could trace.</p>
     <p class="lede-body">On this build I closed the design-to-code loop with Acme and Figma MCP, and I wired real AI suggestions that prevent dirty data on entry — duplicate detection, auto-populate from live corporate registries, attribution per field. The company-intake surface is where this product earns its keep: a real company name fires SEC EDGAR, GLEIF, Companies House, OpenCorporates, and Wikidata in parallel and the matching record populates before the user finishes typing. Record creation went from minutes to seconds. This is not a Figma prototype with simulated AI states — it is a live working product, AI firing against real APIs, open for any hiring manager to click through and try to break.</p>
+    <p class="lede-body">Then the build kept going. Supabase replaced browser-local state with a real Postgres backend. Google OAuth plus Gmail sync pulled real inbox threads onto every contact timeline. Fourteen contextual tours wire every flow to a help-panel walkthrough. What started as a five-day portfolio sprint has kept landing features the industry charges for.</p>
   </div>
   <aside class="hero-right">
     <a class="live-link" href="https://roadrunner-crm.paulwentzellux.com" target="_blank" rel="noopener">
@@ -703,11 +706,11 @@
 
 <div class="meta">
   <div><strong>Client</strong>Self-initiated · Acme Design System portfolio proof</div>
-  <div><strong>Role</strong>Product design · front-end build · deploy</div>
-  <div><strong>Scope</strong>Working CRM · 8 modules · live</div>
-  <div><strong>Data + AI</strong>11 free public providers · free-tier AI · zero paid APIs</div>
-  <div><strong>Timeline</strong>3 days Acme · 5 days Roadrunner v1 · 1 day polish</div>
-  <div><strong>Stack</strong>Figma · Claude Code · Next.js 16 · TypeScript · Tailwind</div>
+  <div><strong>Role</strong>Product design · front-end build · backend · deploy</div>
+  <div><strong>Scope</strong>Working CRM · 8 modules · real backend · Gmail sync · live</div>
+  <div><strong>Data + AI</strong>11 public providers · Supabase Postgres · Gmail API · free-tier AI</div>
+  <div><strong>Timeline</strong>3 days Acme · 5 days v1 · 1 day polish · 1 day backend · 1 day Gmail</div>
+  <div><strong>Stack</strong>Figma · Claude Code · Next.js 16 · TypeScript · Tailwind · Supabase · Google OAuth</div>
 </div>
 
 
@@ -719,6 +722,8 @@
   <div class="stat"><div class="n">5 days</div><div class="l">Empty repo to<br>live working CRM</div></div>
   <div class="stat"><div class="n">8 modules</div><div class="l">Shipped on<br>one domain</div></div>
   <div class="stat"><div class="n">11 sources</div><div class="l">Free public data<br>providers, live</div></div>
+  <div class="stat"><div class="n">14 tours</div><div class="l">Contextual<br>walkthroughs</div></div>
+  <div class="stat"><div class="n">Gmail</div><div class="l">OAuth + sync<br>on every contact</div></div>
   <div class="stat"><div class="n">$0</div><div class="l">Infra cost<br>hosting · SSL · domain</div></div>
 </div>
 <div style="text-align:center; margin:-22px 0 40px;">
@@ -928,10 +933,14 @@
     <span class="stack-chip">Next.js 16</span>
     <span class="stack-chip">TypeScript</span>
     <span class="stack-chip">Tailwind</span>
+    <span class="stack-chip">Supabase</span>
+    <span class="stack-chip">Google OAuth</span>
+    <span class="stack-chip">Gmail API</span>
     <span class="stack-chip">Zustand</span>
     <span class="stack-chip">TanStack Table</span>
     <span class="stack-chip">@dnd-kit</span>
     <span class="stack-chip">pdf-parse</span>
+    <span class="stack-chip">mammoth</span>
     <span class="stack-chip">Phosphor Icons</span>
     <span class="stack-chip">Vercel</span>
   </div>
@@ -1044,6 +1053,19 @@
 </section>
 
 
+<!-- BACKEND + GMAIL -->
+<section class="block">
+  <span class="sec-label">The Backend Turn</span>
+  <h2 class="sec-head">The sandbox got a real database, then a real inbox. Portfolio demo stopped pretending.</h2>
+  <p class="body-p">For the first week Roadrunner stored everything in the browser — Zustand persist, per-visitor localStorage, reset-on-demand. That was honest for a portfolio sandbox. It was not honest for "real working CRM." The database turn made multi-session state durable: Supabase Postgres with Row Level Security, server-side migrations via a signed <code>exec_sql</code> installer, every table keyed to <code>auth.uid()</code>. Every contact, deal, list, and document now persists across sessions and browsers — and the seed data stays isolated in browser-local land so the demo still feels instant on first visit.</p>
+  <p class="body-p">Then the inbox turn. Google OAuth with refresh-token capture, a Gmail sync worker that resolves senders to contacts by email match, and a unified timeline on every contact Overview. The Activity card composer sends from the CRM and lands in Gmail Sent — same as HubSpot, Salesforce, Close, Attio, Folk. A top-sender import surface turns the first sync into onboarding: people you already email are already contacts, before you open the grid. This is the capture layer the four biggest CRMs build their paid tiers on.</p>
+  <div class="keyfinding-box">
+    <div class="sub">The competitive read</div>
+    <p>On email <strong>capture</strong> — OAuth connect, message-to-contact matching, send-from-CRM, top-sender import — Roadrunner is at parity with Attio and Folk, ahead of monday and basic Pipedrive. On email <strong>activation</strong> — templates, open/click tracking, sequences, bulk merge, meeting-scheduler in compose — it is behind every major, which is honest scope for an eight-day build with a real backend.</p>
+  </div>
+</section>
+
+
 <!-- SEE THE DEMO -->
 <section class="block">
   <span class="sec-label">See It Live</span>
@@ -1066,14 +1088,15 @@
   </div>
 
   <div class="try-list">
-    <div class="title">Six ways to experience the build</div>
+    <div class="title">Seven ways to experience the build</div>
     <div class="try-grid">
       <div class="try-item"><span class="idx">1</span><strong>Create a new company.</strong> Type a real company name — SEC EDGAR, GLEIF, Companies House, OpenCorporates, and Wikidata all fan out in parallel and the matching records populate the form with a source badge before you save.</div>
       <div class="try-item"><span class="idx">2</span><strong>Drop in a PDF or DOCX resume.</strong> The candidate intake parses it, prefills the form, and attaches the original to the contact's Documents tab.</div>
-      <div class="try-item"><span class="idx">3</span><strong>Customize a grid.</strong> Open the Columns dropdown, pin a column, change density, save a view. Refresh — everything stays exactly as you left it.</div>
-      <div class="try-item"><span class="idx">4</span><strong>Delete something and undo it.</strong> Every destructive action fires a toast with an Undo button. Click it and the record returns with every nested entry restored.</div>
-      <div class="try-item"><span class="idx">5</span><strong>Take a guided tour.</strong> Help → Tours → pick any section. Contextual walkthroughs teach the shared patterns every module uses.</div>
-      <div class="try-item"><span class="idx">6</span><strong>Flip to dark mode.</strong> Settings → Appearance. Every Acme token re-resolves instantly. Zero component rewrites — the loop handles it.</div>
+      <div class="try-item"><span class="idx">3</span><strong>Connect Gmail.</strong> OAuth once, then every sender that matches a contact stitches to their timeline. The top-sender surface turns your first sync into onboarding.</div>
+      <div class="try-item"><span class="idx">4</span><strong>Customize a grid.</strong> Open the Columns dropdown, pin a column, change density, save a view. Refresh — everything stays exactly as you left it.</div>
+      <div class="try-item"><span class="idx">5</span><strong>Delete something and undo it.</strong> Every destructive action fires a toast with an Undo button. Click it and the record returns with every nested entry restored.</div>
+      <div class="try-item"><span class="idx">6</span><strong>Take a guided tour.</strong> Help → Tours → pick any section. Fourteen contextual walkthroughs teach the shared patterns every module uses.</div>
+      <div class="try-item"><span class="idx">7</span><strong>Flip to dark mode.</strong> Settings → Appearance. Every Acme token re-resolves instantly. Zero component rewrites — the loop handles it.</div>
     </div>
   </div>
 
@@ -1084,7 +1107,7 @@
 <!-- DESIGN DECISIONS -->
 <section class="block">
   <span class="sec-label">Design Decisions</span>
-  <h2 class="sec-head">Eight decisions. Each one a direct response to something AI generated that experience had to correct — or something users have asked for in every product I've shipped.</h2>
+  <h2 class="sec-head">Ten decisions. Each one a direct response to something AI generated that experience had to correct — or something users have asked for in every product I've shipped.</h2>
 
   <div class="decision">
     <div class="num">Decision 01</div>
@@ -1177,7 +1200,7 @@
         Help is most useful when the user is already frustrated, not when they're fresh. Burning tours on install wastes them on the moment users need them least. This came from watching support-ticket patterns at PayFactors and Madison Resources — tickets spiked in week three, not week one.
       </div>
       <div class="pill design"><span class="pill-label">Design</span>
-        Nine contextual tours live permanently in the help panel, reachable from any page, filtered to the current surface first. Every tour can be re-run any time. No cutscenes, no dismiss-forever, no buried "restart tutorial" setting. The help icon is the entry point; the tour is always behind it.
+        Fourteen contextual tours live permanently in the help panel, reachable from any page, filtered to the current surface first. Every tour can be re-run any time. No cutscenes, no dismiss-forever, no buried "restart tutorial" setting. The help icon is the entry point; the tour is always behind it.
       </div>
     </div>
   </div>
@@ -1210,6 +1233,38 @@
       </div>
       <div class="pill design"><span class="pill-label">Design</span>
         Four-severity toast system. Snapshot-and-restore Undo on every contact, deal, and candidate delete. Caught the missed contact-delete case when I asked, "If I delete a contact will I see a toast?"
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 09</div>
+    <h3>Real Postgres backend, then real Gmail sync — stop pretending to be a sandbox.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        v1 stored every contact, deal, and list in browser-local Zustand. Open the app in a second browser and you got an empty CRM. Refresh on the wrong device and your session was gone. "Real working CRM" was stretching it.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        Durability is the line between portfolio prototype and product. And email is where a CRM earns its keep — HubSpot, Salesforce, Close, Attio, and Folk all built their paid tiers on inbox integration. A CRM that couldn't see a sender's email thread was missing the capture layer the whole category charges for.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Supabase Postgres with Row Level Security on every table. A signed <code>exec_sql</code> installer for migrations so schema pushes don't need a raw DB password in CI. Google OAuth with refresh-token capture. A Gmail sync worker that resolves senders to contacts and stitches threads onto every Overview timeline. A top-sender import surface that turns the first sync into onboarding. Everything AI-generated; every integration cited against how the majors do it.
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="num">Decision 10</div>
+    <h3>Tours must start at the action that triggers the flow — and the navigation effect has to outlive the help panel that launched it.</h3>
+    <div class="pill-row">
+      <div class="pill finding"><span class="pill-label">Finding</span>
+        First three tour rewrites all failed the same way. The Person-creation tour started on the form page, so step 1 had no "+ New Contact" button to highlight. The Lists tour never showed a list view. The Company tour flashed step 2 and vanished — <code>clickTarget</code> was firing on the card, which navigated the router before the spotlight rendered. Then, when I fixed those, steps 4–6 had nothing to highlight because the form page never loaded — the per-step <code>navigateTo</code> effect lived in the help panel, which auto-closes when a tour starts, killing every navigation after step 1.
+      </div>
+      <div class="pill insight"><span class="pill-label">Insight</span>
+        A guided tour is a sequence of promises: "click this, then this, then this." The component that owns the sequence must be the component that lives the whole sequence. The help panel is ephemeral; the tour overlay is persistent. Ownership had to move. And <code>clickTarget</code> is a contract about what happens when the spotlight mounts — safe for in-place actions (open a dropdown, a slide panel, a picker portal) but fatal when the click navigates, because the navigation kills the bubble.
+      </div>
+      <div class="pill design"><span class="pill-label">Design</span>
+        Rebuilt every tour to start at the entry-point action (<code>/contacts</code> spotlighting "+ New Contact," not the form page). Moved the <code>navigateTo</code> effect out of <code>HelpPanel.tsx</code> and into <code>ActiveTourOverlay.tsx</code>, which stays mounted for the whole tour. Added a URL-plus-querystring comparison because <code>usePathname()</code> drops the query and would have put the lists tour into an infinite navigation loop. Codified the <code>clickTarget</code> rule in code comments so the next person hitting this doesn't lose two hours to it. Four iterations, four rejections, one principle that will outlive this build: the overlay owns the navigation because the overlay is the only thing that lives as long as the tour.
       </div>
     </div>
   </div>
@@ -1315,14 +1370,16 @@
     <div class="stat-card"><div class="n">5</div><div class="l">Days to v1<br>empty repo → live</div></div>
     <div class="stat-card"><div class="n">8</div><div class="l">Modules live<br>one domain</div></div>
     <div class="stat-card"><div class="n">11</div><div class="l">Public providers<br>replacing fake data</div></div>
-    <div class="stat-card"><div class="n">13</div><div class="l">Polish decisions<br>each with precedent</div></div>
+    <div class="stat-card"><div class="n">14</div><div class="l">Contextual<br>tours shipped</div></div>
+    <div class="stat-card"><div class="n">Postgres</div><div class="l">Real backend<br>with RLS on every table</div></div>
+    <div class="stat-card"><div class="n">Gmail</div><div class="l">OAuth + sync<br>on every timeline</div></div>
     <div class="stat-card"><div class="n">$0</div><div class="l">Infra cost<br>hosting, SSL, domain</div></div>
   </div>
 
   <div class="outcome-cards">
     <div class="outcome-card y"><h4>The loop held.</h4>Figma tokens and Tailwind variables resolved to the same values. Zero handoff artifacts were written during the build.</div>
     <div class="outcome-card g"><h4>Every AI claim is inspectable.</h4>Provider badges render next to every suggested field. Any claim can be traced to a real public source in one click.</div>
-    <div class="outcome-card p"><h4>Polish was disciplined.</h4>13 UX decisions shipped in one day. Average rationale: two sentences per decision. No feature creep.</div>
+    <div class="outcome-card p"><h4>The sandbox grew a spine.</h4>Supabase Postgres replaced browser-local state. Gmail OAuth replaced "imagine an inbox here." Two turns that took a prototype to a product.</div>
     <div class="outcome-card b"><h4>Real AI, not a Figma prototype.</h4>The AI fires against real APIs. Custom subdomain, open-source repo. Anyone can click through and try to break it.</div>
   </div>
 </section>
@@ -1354,7 +1411,7 @@
 <!-- GALLERY -->
 <section class="block">
   <span class="sec-label">Project Gallery</span>
-  <h2 class="sec-head">Eight modules. Every screen is live.</h2>
+  <h2 class="sec-head">Eight modules, real backend, real inbox. Every screen is live.</h2>
   <div class="gallery">
     <div class="thumb">Dashboard · KPI widgets</div>
     <div class="thumb">Contacts · list view</div>
@@ -1365,6 +1422,11 @@
     <div class="thumb">Admin · configurable cards</div>
     <div class="thumb">Help tour · tabbed panel</div>
     <div class="thumb">Settings · AI master switch</div>
+    <div class="thumb">Gmail · sync banner + OAuth</div>
+    <div class="thumb">Gmail · top-sender import</div>
+    <div class="thumb">Overview · unified timeline</div>
+    <div class="thumb">Saved lists · pinned sidebar</div>
+    <div class="thumb">Supabase · RLS schema</div>
   </div>
 </section>
 
@@ -1374,7 +1436,7 @@
   <span class="sec-label">What I'd Do Differently</span>
   <div class="reflect-box">
     <h3>Honest, one paragraph.</h3>
-    <p>I'd wire the real providers from day one instead of letting the fake pool ship first — the rebuild was instructive but expensive. I'd put validation on every intake surface before writing a single AI feature, not after. The pattern that held best was pairing every Claude-generated decision with a cited precedent from my career; the pattern I'd drop was trusting first-pass toast wiring to be complete. I missed the contact-delete case until I asked the question out loud.</p>
+    <p>I'd wire the real providers from day one instead of letting the fake pool ship first — the rebuild was instructive but expensive. I'd put validation on every intake surface before writing a single AI feature, not after. I'd ship the Postgres backend alongside v1 instead of letting "browser-local only" be the story for a week; the sandbox framing was convenient for a portfolio sprint and wrong for a CRM. On tours, I'd write the first one by walking through the app as a new user instead of starting mid-flow — four rewrites taught the same lesson I could have gotten for free. The pattern that held best was pairing every Claude-generated decision with a cited precedent from my career. The pattern I'd drop was trusting first-pass toast wiring and first-pass tour wiring to be complete; both missed cases I caught only by running the flow cold.</p>
     <div class="sig">— Paul</div>
   </div>
 </section>

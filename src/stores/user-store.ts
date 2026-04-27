@@ -69,7 +69,7 @@ export const useUserStore = create<UserStore>()(
   persist(
     (set) => ({
       user: DEFAULT_USER,
-      isAuthenticated: true,
+      isAuthenticated: false,
       aiEnabled: true,
       notifications: {
         emailUpdates: true,
@@ -106,12 +106,64 @@ export const useUserStore = create<UserStore>()(
           isAuthenticated: true,
           user: userUpdates ? { ...s.user, ...userUpdates } : s.user,
         })),
-      signOut: () => set({ isAuthenticated: false }),
+      /**
+       * Full sign-out: flips the auth flag, wipes the cached identity, and
+       * clears the `roadrunner_visited` flag so AuthGate renders its
+       * first-visit experience (prominent "Continue with Google" CTA with
+       * the Gmail-import promise) on the next render.
+       *
+       * Why we don't keep the previous identity around for a "Welcome
+       * back" pre-fill: the user is *also* commonly using sign-out as a
+       * way to disconnect from the previous session entirely (e.g. they
+       * already disconnected Gmail in Settings and now want to start
+       * fresh). Pre-filling the form with `paul@navigatorcrm.com` (the
+       * demo seed) or the previous Google email made the welcome-back
+       * screen feel like the wrong UI for that path — Gmail-connect was
+       * buried behind a small "Sign in with Google" link instead of being
+       * the headline action. Industry pattern (Linear / Attio): sign-out
+       * resets to the unauthenticated marketing/import-focused screen,
+       * not a partially-remembered profile.
+       *
+       * Note: this does NOT call `supabase.auth.signOut()` itself — the
+       * caller (Topbar) is responsible for killing the Supabase session
+       * cookie before invoking this, otherwise AuthGate's `getUser()`
+       * listener will auto-rehydrate the session on the next render.
+       */
+      signOut: () => {
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('roadrunner_visited');
+            // Also clear the Gmail-banner "Ignore" dismissal so the next
+            // signed-in session sees the connect prompt again. Without
+            // this, a user who clicked Ignore in a previous session, then
+            // signed out and signed back in (or created a brand-new
+            // account on the same browser), would never see the banner —
+            // even though for the new identity it's the most relevant
+            // CTA on the page. Bit Paul on 2026-04-27 when a fresh signup
+            // landed on /contacts with no Gmail-connect prompt because a
+            // long-ago "Ignore" click was still cached.
+            localStorage.removeItem('roadrunner.gmailBanner.dismissed');
+          }
+        } catch {
+          // localStorage blocked — harmless, AuthGate falls back to
+          // first-visit mode by default when the flag is absent.
+        }
+        set({
+          isAuthenticated: false,
+          user: { name: '', email: '', role: 'Admin', avatarColor: '#1955A6' },
+        });
+      },
     }),
     {
       name: 'navigator-crm-user',
+      // Don't persist auth state — every fresh page load / server restart
+      // drops users back to the login screen. Preferences still stick.
+      partialize: (state) => {
+        const { isAuthenticated: _ignored, ...rest } = state as UserStore & { isAuthenticated: boolean };
+        return rest;
+      },
       merge: (persisted, current) => {
-        const state = { ...(current as UserStore), ...(persisted as Partial<UserStore>) };
+        const state = { ...(current as UserStore), ...(persisted as Partial<UserStore>), isAuthenticated: false };
         // Backfill new fields that don't exist in old persisted data
         if (!state.sidebarBadges) {
           state.sidebarBadges = { contacts: true, sales: true, recruiting: true, documents: false };

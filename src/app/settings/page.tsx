@@ -9,6 +9,7 @@ import { Sun, Moon, Bell, Warning, Sparkle, X as XIcon, Users, CurrencyDollar, U
 import { isEmail } from '@/lib/validation';
 import { DENSITY_LABELS, DENSITY_HINTS, GridDensity } from '@/lib/grid-density';
 import { toast } from '@/lib/toast';
+import GmailIntegrationSection from '@/components/gmail/GmailIntegrationSection';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -212,6 +213,10 @@ export default function SettingsPage() {
               }
             />
           </Section>
+
+          {/* Integrations — Gmail (own card so it can show live connection state
+              without forcing the surrounding <Section> shell to be data-aware). */}
+          <GmailIntegrationSection />
 
           {/* Appearance */}
           <Section tourId="settings-appearance" title="Appearance" description="How the CRM looks on your screen.">

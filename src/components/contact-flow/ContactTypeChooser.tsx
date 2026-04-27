@@ -18,7 +18,7 @@ import { ResumeUploadCard } from './ResumeUploadCard';
 export function ContactTypeChooser({ onCancel }: { onCancel?: () => void }) {
   const router = useRouter();
   return (
-    <div className="w-full max-w-[560px] mx-auto">
+    <div className="w-full max-w-[560px] mx-auto" data-tour="contact-type-chooser">
       <div className="mb-5">
         <h1 className="text-[18px] font-extrabold text-[var(--text-primary)]">Add New Contact</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">What type of contact would you like to add?</p>
@@ -29,7 +29,7 @@ export function ContactTypeChooser({ onCancel }: { onCancel?: () => void }) {
         <TypePickerCard type="company" onClick={() => router.push('/contacts/new/company')} />
       </div>
 
-      <div className="mt-5">
+      <div className="mt-5" data-tour="contact-type-resume">
         <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 text-center">
           Or start from a resume
         </div>

@@ -1,4 +1,5 @@
 import { CrmDocument } from '@/types/document';
+import { BULK_DOCUMENTS } from './seed-documents-bulk';
 
 /**
  * Seed documents for the demo. Every document has `textContent` so
@@ -6,7 +7,7 @@ import { CrmDocument } from '@/types/document';
  * come from a document-processing pipeline (Lambda + Sharp for images,
  * pdf.js for PDFs, LibreOffice for Office docs).
  */
-export const SEED_DOCUMENTS: CrmDocument[] = [
+const CORE_DOCUMENTS: CrmDocument[] = [
   {
     id: 'doc-1',
     name: 'Master Services Agreement — Vertex Analytics',
@@ -202,3 +203,5 @@ export const SEED_DOCUMENTS: CrmDocument[] = [
     textContent: 'Clearpath Advisors — Analyst Role Intake\nCall with Diana Reyes, Managing Director\nDate: April 9, 2026\n\nRole Overview\n• 3 Investment Analyst positions (contingent)\n• Team expansion following new fund launch\n• Target start: Q3 2026\n\nMust-Haves\n• 2-4 years buy-side or sell-side experience\n• Financial modeling proficiency (DCF, LBO, comps)\n• CFA Level I or II preferred\n• Mid-market M&A exposure\n\nCompensation Range\n• Base: $85,000 - $110,000\n• Bonus: 15-25%\n• Benefits: Standard + carried interest eligibility after Year 2\n\nInterview Process\n1. Phone screen with Diana (30 min)\n2. Case study + panel (on-site, 3 hours)\n3. Final round with Managing Partners\n\nNotes\n• Diana prefers candidates from boutique firms\n• Cultural fit is critical — small team environment\n• First slate due in 2 weeks',
   },
 ];
+
+export const SEED_DOCUMENTS: CrmDocument[] = [...CORE_DOCUMENTS, ...BULK_DOCUMENTS];

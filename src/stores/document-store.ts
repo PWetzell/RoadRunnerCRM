@@ -109,6 +109,30 @@ interface DocumentStore {
   updateDocument: (id: string, updates: Partial<CrmDocument>) => void;
   getDocument: (id: string) => CrmDocument | undefined;
 
+  /** Find an existing document whose fileName matches `fileName` under the
+   *  same contact (or the same deal, or — when neither is set — in the
+   *  library root). Returns undefined if no collision. Case-insensitive so
+   *  "Resume.pdf" and "resume.pdf" are treated as the same file.
+   *
+   *  HubSpot scopes this check to the record the user is uploading under,
+   *  not globally across the library. We do the same: two different
+   *  candidates can legitimately both have a "resume.pdf" attached, and
+   *  flagging those as collisions would produce useless prompts. */
+  findDuplicate: (args: { fileName: string; contactId?: string; dealId?: string }) => CrmDocument | undefined;
+
+  /** Swap the bytes of an existing document in place. Preserves id, name,
+   *  category, description, tags, favorites, and list memberships — only
+   *  the file bytes + size + mimeType + fileFamily + updatedAt change.
+   *
+   *  This is the HubSpot "Replace file" pattern. Returns a snapshot of the
+   *  pre-replace document so the caller can wire an Undo toast. */
+  replaceDocumentBytes: (id: string, file: File) => CrmDocument | undefined;
+
+  /** Produce a filename that doesn't collide with any existing doc in the
+   *  same scope. Strategy: "name.ext" → "name (2).ext" → "name (3).ext" …
+   *  Matches Dropbox/Finder behaviour. */
+  suggestUniqueFileName: (args: { fileName: string; contactId?: string; dealId?: string }) => string;
+
   /** Attach a local file from the user's hard drive. Creates a CrmDocument
    *  with an object URL for preview. */
   attachFile: (file: File, meta: {
@@ -117,6 +141,11 @@ interface DocumentStore {
     contactId?: string;
     dealId?: string;
     uploadedBy?: string;
+    /** Override the filename used on the resulting CrmDocument. Used by the
+     *  "Keep both" path of the replace dialog to save as "resume (2).pdf"
+     *  without mutating the user's original File object (which some file
+     *  pickers return as frozen). */
+    fileNameOverride?: string;
   }) => CrmDocument;
 
   /** Get filtered + sorted documents. */
@@ -126,6 +155,12 @@ interface DocumentStore {
   getDocumentsForContact: (contactId: string) => CrmDocument[];
   /** Get documents for a specific deal. */
   getDocumentsForDeal: (dealId: string) => CrmDocument[];
+
+  /** Replace documents with the demo seed dataset. */
+  seedDemoData: () => void;
+  /** Wipe documents. Called on real sign-in and sign-out so the demo
+   *  workspace's seeded files don't bleed into real accounts. */
+  clearAll: () => void;
 }
 
 function uid(prefix: string) {
@@ -135,7 +170,8 @@ function uid(prefix: string) {
 export const useDocumentStore = create<DocumentStore>()(
   persist(
     (set, get) => ({
-      documents: SEED_DOCUMENTS,
+      // Empty by default — demo whitelist gets seeded via AuthGate.
+      documents: [],
       view: 'grid',
       search: '',
       categoryFilter: 'all',
@@ -162,16 +198,116 @@ export const useDocumentStore = create<DocumentStore>()(
       })),
       getDocument: (id) => get().documents.find((d) => d.id === id),
 
+      findDuplicate: ({ fileName, contactId, dealId }) => {
+        const target = fileName.trim().toLowerCase();
+        return get().documents.find((d) =>
+          d.fileName.trim().toLowerCase() === target &&
+          (d.contactId ?? undefined) === (contactId ?? undefined) &&
+          (d.dealId ?? undefined) === (dealId ?? undefined),
+        );
+      },
+
+      suggestUniqueFileName: ({ fileName, contactId, dealId }) => {
+        const docs = get().documents.filter((d) =>
+          (d.contactId ?? undefined) === (contactId ?? undefined) &&
+          (d.dealId ?? undefined) === (dealId ?? undefined),
+        );
+        const taken = new Set(docs.map((d) => d.fileName.trim().toLowerCase()));
+        if (!taken.has(fileName.trim().toLowerCase())) return fileName;
+
+        // Split into "stem" and ".ext" so "resume.pdf" → "resume (2).pdf"
+        // and dotfiles like ".gitignore" don't get split at the wrong spot.
+        const dot = fileName.lastIndexOf('.');
+        const hasExt = dot > 0; // a leading dot isn't treated as extension
+        const stem = hasExt ? fileName.slice(0, dot) : fileName;
+        const ext = hasExt ? fileName.slice(dot) : '';
+
+        // Strip an existing " (N)" so "resume (2).pdf" doesn't become
+        // "resume (2) (2).pdf" on the third collision.
+        const stemBase = stem.replace(/\s\(\d+\)$/, '');
+
+        for (let i = 2; i < 1000; i++) {
+          const candidate = `${stemBase} (${i})${ext}`;
+          if (!taken.has(candidate.trim().toLowerCase())) return candidate;
+        }
+        // Extremely unlikely fallback — append a short unique tag.
+        return `${stemBase} (${Math.random().toString(36).slice(2, 6)})${ext}`;
+      },
+
+      replaceDocumentBytes: (id, file) => {
+        const existing = get().documents.find((d) => d.id === id);
+        if (!existing) return undefined;
+
+        const today = new Date().toISOString().split('T')[0];
+        const objectUrl = URL.createObjectURL(file);
+        const nextMime = file.type || existing.mimeType;
+        const nextFamily = getFileFamily(nextMime, file.name);
+
+        // Replace the bytes + byte-derived fields. Preserve everything the
+        // user curated: display name, category, description, tags, and the
+        // id itself (so favorites / list memberships stay attached).
+        set((s) => ({
+          documents: s.documents.map((d) =>
+            d.id === id
+              ? {
+                  ...d,
+                  fileName: file.name, // reflect the new on-disk name
+                  mimeType: nextMime,
+                  size: file.size,
+                  fileFamily: nextFamily,
+                  updatedAt: today,
+                  previewUrl: objectUrl,
+                  thumbnailUrl: nextMime.startsWith('image/') ? objectUrl : undefined,
+                  textContent: undefined, // invalidate stale extracted text
+                  _localFile: file,
+                }
+              : d
+          ),
+        }));
+
+        // Convert to a data URL so the replaced doc survives reload — same
+        // pattern as attachFile. Also re-extract textContent from the new
+        // bytes for the in-panel preview.
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          set((s) => ({
+            documents: s.documents.map((d) =>
+              d.id === id
+                ? { ...d, previewUrl: dataUrl, thumbnailUrl: nextMime.startsWith('image/') ? dataUrl : d.thumbnailUrl }
+                : d
+            ),
+          }));
+        };
+        reader.readAsDataURL(file);
+
+        extractTextContent(file).then((textContent) => {
+          if (textContent) {
+            set((s) => ({
+              documents: s.documents.map((d) =>
+                d.id === id ? { ...d, textContent } : d
+              ),
+            }));
+          }
+        });
+
+        return existing;
+      },
+
       attachFile: (file, meta) => {
         const today = new Date().toISOString().split('T')[0];
         const objectUrl = URL.createObjectURL(file);
+        // The "Keep both" branch of the replace dialog passes a suffixed
+        // name here ("resume (2).pdf") so the new record is distinct from
+        // the existing one without mutating the File object itself.
+        const effectiveFileName = meta.fileNameOverride || file.name;
         const doc: CrmDocument = {
           id: uid('doc'),
-          name: file.name.replace(/\.[^.]+$/, ''),
-          fileName: file.name,
+          name: effectiveFileName.replace(/\.[^.]+$/, ''),
+          fileName: effectiveFileName,
           mimeType: file.type || 'application/octet-stream',
           size: file.size,
-          fileFamily: getFileFamily(file.type || '', file.name),
+          fileFamily: getFileFamily(file.type || '', effectiveFileName),
           category: meta.category || 'other',
           description: meta.description,
           contactId: meta.contactId,
@@ -250,9 +386,20 @@ export const useDocumentStore = create<DocumentStore>()(
 
       getDocumentsForDeal: (dealId) =>
         get().documents.filter((d) => d.dealId === dealId),
+
+      // Only seed when empty — preserves user-uploaded documents across
+      // page loads. Wholesale replace was wiping uploads on refresh. Same
+      // rationale as list-store seedDemoData.
+      seedDemoData: () => set((s) => {
+        if (s.documents.length > 0) return s;
+        return { documents: SEED_DOCUMENTS };
+      }),
+      clearAll: () => set({ documents: [] }),
     }),
     {
-      name: 'roadrunner-documents',
+      // Bumped from v2 → v3 to invalidate stale localStorage copies still
+      // containing the seeded SEED_DOCUMENTS dataset.
+      name: 'roadrunner-documents-v3',
       partialize: (s) => ({
         // Persist user-uploaded documents (strip non-serializable _localFile)
         documents: s.documents.map(({ _localFile, ...rest }) => rest),

@@ -1,14 +1,29 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Sparkle, Warning, CheckCircle } from '@phosphor-icons/react';
 import { useContactStore } from '@/stores/contact-store';
 import { useUserStore } from '@/stores/user-store';
+import { isContactComplete } from '@/lib/contact-completeness';
 
 export default function AIInsightsBar() {
   const contacts = useContactStore((s) => s.contacts);
   const aiEnabled = useUserStore((s) => s.aiEnabled);
   const notifications = useUserStore((s) => s.notifications);
-  const staleCount = contacts.filter((c) => c.stale).length;
+  // Real completeness check (shared with the detail header so the two
+  // surfaces never disagree). The previous implementation counted
+  // `c.stale === true` and labeled the result "incomplete contacts",
+  // but `stale` is a hand-set "needs refresh" flag — completely
+  // unrelated to whether the contact's required fields are filled in.
+  // Result: a freshly-imported Gmail contact with only a name + email
+  // would render as "complete" in this bar while EVERY column in the
+  // grid below screamed "Incomplete" in red. Paul flagged the lie on
+  // 2026-04-27. Now we compute it for real, the same way the detail
+  // header pill does.
+  const incompleteCount = useMemo(
+    () => contacts.filter((c) => !isContactComplete(c)).length,
+    [contacts],
+  );
   const newAICount = contacts.filter((c) => c.aiStatus === 'new').length;
 
   // Master AI toggle — hide the entire AI Insights bar when disabled
@@ -30,9 +45,9 @@ export default function AIInsightsBar() {
         <span> · monitoring your contacts</span>
       </div>
       <div className="flex gap-1.5 flex-wrap ml-1">
-        {showStale && staleCount > 0 && (
+        {showStale && incompleteCount > 0 && (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] cursor-pointer">
-            <Warning size={12} /> {staleCount} incomplete contact{staleCount > 1 ? 's' : ''}
+            <Warning size={12} /> {incompleteCount} incomplete contact{incompleteCount > 1 ? 's' : ''}
           </span>
         )}
         {showAI && newAICount > 0 && (
@@ -40,7 +55,7 @@ export default function AIInsightsBar() {
             <Sparkle size={12} weight="duotone" /> {newAICount} AI-added today
           </span>
         )}
-        {showStale && staleCount === 0 && (
+        {showStale && incompleteCount === 0 && (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]">
             <CheckCircle size={12} weight="fill" /> All contacts complete
           </span>

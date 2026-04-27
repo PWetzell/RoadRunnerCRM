@@ -43,6 +43,11 @@ export default function ContactsPage() {
       </Topbar>
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="px-5 pt-5 pb-2 flex flex-col gap-3 items-start">
+          {/* SuggestionsCallout (the standalone "N senders ready to become
+              contacts" banner) was removed in favor of folding the count
+              directly into the global GmailSyncBanner's "Import contacts"
+              CTA — Folk/Attio pattern: one banner, one place, count
+              becomes the action label when > 0. */}
           {aiEnabled && insightsBars?.contacts && <AIInsightsBar />}
           <ContactFilterBar onAddContact={() => setChooserOpen(true)} />
           <div className="w-full">

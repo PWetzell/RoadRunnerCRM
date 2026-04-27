@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { Globe, LinkedinLogo, TwitterLogo, FacebookLogo, Star, Bookmark, Buildings, User, Warning, CheckCircle, Sparkle, EyeSlash, Plus, X as XIcon, MagnifyingGlass, Tag } from '@phosphor-icons/react';
 import ListMembershipPill from '@/components/lists/ListMembershipPill';
 import { ContactWithEntries, ContactTag } from '@/types/contact';
+import { computeMissingFields } from '@/lib/contact-completeness';
 import { useContactStore } from '@/stores/contact-store';
 import { useListStore, getListsForEntity } from '@/stores/list-store';
 import { initials, getAvatarColor, fmtDate } from '@/lib/utils';
 import SaveToListPicker from '@/components/lists/SaveToListPicker';
 import { useMemo } from 'react';
+import { toast } from '@/lib/toast';
 
 interface DetailHeaderProps {
   contact: ContactWithEntries;
@@ -66,16 +68,19 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
   const contactTags = c.tags || [];
 
   const toggleTag = (tag: ContactTag) => {
-    const updated = contactTags.includes(tag) ? contactTags.filter((t) => t !== tag) : [...contactTags, tag];
+    const wasTagged = contactTags.includes(tag);
+    const updated = wasTagged ? contactTags.filter((t) => t !== tag) : [...contactTags, tag];
     updateContact(c.id, { tags: updated });
+    toast.info(wasTagged ? `Removed tag “${tag}”` : `Added tag “${tag}”`);
   };
 
   const removeTag = (tag: ContactTag) => {
     updateContact(c.id, { tags: contactTags.filter((t) => t !== tag) });
+    toast.info(`Removed tag “${tag}”`);
   };
 
   return (
-    <div className="bg-[var(--surface-card)] border-b border-[var(--border)] px-6 pt-4 pb-3">
+    <div className="bg-[var(--surface-card)] border-b border-[var(--border)] px-6" style={{ paddingTop: 'var(--detail-header-py, 16px)', paddingBottom: 'calc(var(--detail-header-py, 16px) - 4px)' }}>
       {/* Breadcrumb */}
       <div className="text-[13px] text-[var(--text-tertiary)] mb-3">
         <button onClick={onBack} className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit">
@@ -156,15 +161,32 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
               {isOrg ? <Buildings size={12} /> : <User size={12} />}
               {isOrg ? 'Org' : 'Person'}
             </span>
-            {c.stale ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
-                <Warning size={12} /> Incomplete
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]">
-                <CheckCircle size={12} /> Complete
-              </span>
-            )}
+            {(() => {
+              // Completeness now derived from actual required-field
+              // presence (see computeMissingFields above), NOT from the
+              // hand-set `c.stale` flag which only tracks "this record
+              // hasn't been refreshed in a while" and was misleadingly
+              // labelling half-empty records as Complete.
+              const missing = computeMissingFields(c);
+              if (missing.length === 0) {
+                return (
+                  <span
+                    title="All required fields are filled in"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]"
+                  >
+                    <CheckCircle size={12} /> Complete
+                  </span>
+                );
+              }
+              return (
+                <span
+                  title={`Missing: ${missing.join(', ')}`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]"
+                >
+                  <Warning size={12} /> Incomplete · {missing.length} missing
+                </span>
+              );
+            })()}
             {c.aiStatus === 'new' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]">
                 <Sparkle size={12} weight="duotone" /> AI
@@ -285,6 +307,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
           )}
           {/* Favorite — standalone star toggle */}
           <button
+            data-tour="detail-favorite-star"
             onClick={() => toggleFavorite(c.id, 'contact')}
             title={isFav ? 'Remove from Favorites' : 'Add to Favorites'}
             aria-label={isFav ? 'Remove from Favorites' : 'Add to Favorites'}
@@ -298,7 +321,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
             />
           </button>
           {/* Save to list — standalone bookmark, in a relative wrapper so the picker anchors under it */}
-          <div className="relative">
+          <div className="relative" data-tour="detail-save-to-list">
             <button
               onClick={() => showPicker ? closePicker() : openPicker(c.id, 'contact')}
               title={isInAnyList ? `Save to list (in ${entityLists.length} list${entityLists.length === 1 ? '' : 's'})` : 'Save to list'}

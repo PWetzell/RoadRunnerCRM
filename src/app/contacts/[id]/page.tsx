@@ -1,8 +1,10 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useContactStore } from '@/stores/contact-store';
+import { useUserStore } from '@/stores/user-store';
+import { detailDensityStyle } from '@/lib/grid-density';
 import Topbar from '@/components/layout/Topbar';
 import DetailHeader from '@/components/detail/DetailHeader';
 import DetailTabs from '@/components/detail/DetailTabs';
@@ -13,12 +15,37 @@ import DocumentsTab from '@/components/detail/DocumentsTab';
 
 type TabId = 'overview' | 'details' | 'orgchart' | 'documents';
 
+const TAB_IDS: TabId[] = ['overview', 'details', 'orgchart', 'documents'];
+
 export default function ContactDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
   const contact = useContactStore((s) => s.getContact(id));
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const gridDensity = useUserStore((s) => s.gridDensity);
+
+  // Deep-link support: ?tab=documents&docId=doc-123 lets callers (e.g. the
+  // Location link in DocumentPreviewPanel) land users on a specific tab
+  // with a specific document's preview already open. We seed state from
+  // the URL once on mount, then strip the query so a manual tab switch
+  // later doesn't fight the URL.
+  const urlTab = searchParams.get('tab');
+  const urlDocId = searchParams.get('docId');
+  const initialTab: TabId = TAB_IDS.includes(urlTab as TabId) ? (urlTab as TabId) : 'overview';
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [scrollToCardId, setScrollToCardId] = useState<string | null>(null);
+  const [initialDocId, setInitialDocId] = useState<string | null>(urlDocId);
+
+  // Strip the deep-link params once consumed so a refresh doesn't re-open
+  // the preview and so manual tab switches don't get overridden.
+  useEffect(() => {
+    if (urlTab || urlDocId) {
+      router.replace(`/contacts/${id}`, { scroll: false });
+    }
+    // Only runs on mount; intentional single-shot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!contact) {
     return (
@@ -42,14 +69,34 @@ export default function ContactDetailPage() {
   return (
     <>
       <Topbar title="" />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden" style={detailDensityStyle(gridDensity)} data-detail-density={gridDensity}>
         <DetailHeader contact={contact} onBack={() => router.push('/contacts')} />
         <DetailTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="flex-1 overflow-y-auto p-5" style={{ minHeight: 0 }}>
-          {activeTab === 'overview' && <OverviewTab contact={contact} />}
-          {activeTab === 'details' && <DetailsTab contact={contact} />}
+        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0, paddingLeft: 'var(--detail-px)', paddingRight: 'var(--detail-px)', paddingTop: 'var(--detail-py)', paddingBottom: 'var(--detail-py)' }}>
+          {activeTab === 'overview' && (
+            <OverviewTab
+              contact={contact}
+              onNavigateToDetails={(cardId) => {
+                setActiveTab('details');
+                if (cardId) setScrollToCardId(cardId);
+              }}
+            />
+          )}
+          {activeTab === 'details' && (
+            <DetailsTab
+              contact={contact}
+              scrollToCardId={scrollToCardId}
+              onScrolled={() => setScrollToCardId(null)}
+            />
+          )}
           {activeTab === 'orgchart' && <OrgChartTab contact={contact} />}
-          {activeTab === 'documents' && <DocumentsTab contactId={contact.id} />}
+          {activeTab === 'documents' && (
+            <DocumentsTab
+              contactId={contact.id}
+              initialPreviewId={initialDocId ?? undefined}
+              onInitialPreviewConsumed={() => setInitialDocId(null)}
+            />
+          )}
         </div>
       </div>
     </>

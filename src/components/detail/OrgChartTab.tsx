@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Minus, ArrowsOut, TreeStructure, MagnifyingGlass } from '@phosphor-icons/react';
 import { ContactWithEntries } from '@/types/contact';
 import { useContactStore } from '@/stores/contact-store';
 import { initials, getAvatarColor } from '@/lib/utils';
+import SlidePanel from '@/components/ui/SlidePanel';
+import { ContactTypeChooser } from '@/components/contact-flow/ContactTypeChooser';
 
 interface OrgChartTabProps {
   contact: ContactWithEntries;
@@ -13,12 +16,19 @@ interface OrgChartTabProps {
 export default function OrgChartTab({ contact: c }: OrgChartTabProps) {
   const router = useRouter();
   const contacts = useContactStore((s) => s.contacts);
+  // Same add-contact affordance as /contacts grid: slide panel with the
+  // Person / Company / resume-upload chooser. Keeping a single entry point
+  // for creation means duplicate detection, enrichment, and validation
+  // paths all converge on the same full-page flow regardless of where the
+  // user kicks it off.
+  const [chooserOpen, setChooserOpen] = useState(false);
   const isOrg = c.type === 'org';
   const people = isOrg ? contacts.filter((p) => p.type === 'person' && 'orgId' in p && p.orgId === c.id) : [];
   const org = !isOrg && 'orgId' in c && c.orgId ? contacts.find((o) => o.id === c.orgId) : null;
   const orgPeople = org ? contacts.filter((p) => p.type === 'person' && 'orgId' in p && p.orgId === org.id) : [];
 
   return (
+    <>
     <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl min-h-[500px]">
       {/* Toolbar */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border)]">
@@ -33,7 +43,10 @@ export default function OrgChartTab({ contact: c }: OrgChartTabProps) {
           <button className="px-2 py-1 text-xs border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-secondary)] bg-transparent cursor-pointer"><Minus size={14} /></button>
           <button className="px-2 py-1 text-xs border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-secondary)] bg-transparent cursor-pointer"><ArrowsOut size={14} /></button>
           <button className="px-2 py-1 text-xs border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-secondary)] bg-transparent cursor-pointer"><Plus size={14} /></button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer">
+          <button
+            onClick={() => setChooserOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer hover:opacity-80"
+          >
             <span className="w-4 h-4 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
               <Plus size={10} weight="bold" className="text-white" />
             </span>
@@ -113,6 +126,22 @@ export default function OrgChartTab({ contact: c }: OrgChartTabProps) {
         </span>
       </div>
     </div>
+
+    {/* Add-contact slide panel — identical surface to the /contacts grid,
+         so the flow a user learns once works everywhere. The chooser
+         itself navigates to the dedicated full-page /contacts/new/* flow
+         on selection, which closes this panel implicitly on route change. */}
+    <SlidePanel
+      open={chooserOpen}
+      onClose={() => setChooserOpen(false)}
+      title="Add New Contact"
+      width={640}
+    >
+      <div className="p-6">
+        <ContactTypeChooser onCancel={() => setChooserOpen(false)} />
+      </div>
+    </SlidePanel>
+    </>
   );
 }
 

@@ -11,6 +11,7 @@ import { useCustomReportStore } from '@/stores/custom-report-store';
 import { useUserStore } from '@/stores/user-store';
 import { useSalesStore } from '@/stores/sales-store';
 import { useContactStore } from '@/stores/contact-store';
+import { useOnboardingStore } from '@/stores/onboarding-store';
 import { Sparkle, House, Envelope, X as XIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
@@ -28,12 +29,33 @@ export default function DashboardPage() {
   const views = useDashboardStore((s) => s.views);
   const activeViewId = useDashboardStore((s) => s.activeViewId);
   const setActiveViewId = useDashboardStore((s) => s.setActiveViewId);
+  const openImport = useOnboardingStore((s) => s.openImport);
 
   // Manual hydration — avoids SSR/client race with Zustand v5 persist.
   useEffect(() => {
     useDashboardStore.persist.rehydrate();
     useCustomReportStore.persist.rehydrate();
   }, []);
+
+  // Auto-open curated import wizard on first Gmail sign-in if the user has
+  // unmatched senders to pull in. Gated on a localStorage flag so we don't
+  // re-prompt after the user has skipped or completed it.
+  useEffect(() => {
+    const doneAt = localStorage.getItem('roadrunner-onboarding-v1-done');
+    if (doneAt) return;
+    let cancelled = false;
+    fetch('/api/gmail/suggestions?limit=5')
+      .then((r) => r.json())
+      .then((body) => {
+        if (cancelled) return;
+        if (body.reason === 'unauthenticated') return;
+        if (Array.isArray(body.suggestions) && body.suggestions.length > 0) {
+          openImport();
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [openImport]);
 
   // One-time: if the user's role matches a preset and the current active view
   // is still the default, swap to the role-appropriate preset.
@@ -91,7 +113,9 @@ function WeeklyEmailBanner() {
   if (!emailUpdates || dismissed) return null;
   return (
     <div className="w-full bg-[var(--brand-bg)] border border-[var(--brand-primary)] rounded-lg px-3.5 py-2 flex items-center gap-2.5">
-      <Envelope size={14} weight="duotone" className="text-[var(--brand-primary)] flex-shrink-0" />
+      <div className="w-7 h-7 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
+        <Envelope size={14} weight="fill" className="text-white" />
+      </div>
       <div className="text-[12px] text-[var(--text-secondary)] flex-1">
         Weekly summary is on — next digest will be sent to <strong className="font-bold text-[var(--text-primary)]">{userEmail}</strong> on Monday morning.
       </div>

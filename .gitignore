@@ -36,6 +36,10 @@ yarn-error.log*
 !.env.local.example
 !.env.example
 
+# private credentials / notes — kept local, never committed
+*.local.md
+/_private/
+
 # vercel
 .vercel
 

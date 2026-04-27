@@ -1,6 +1,6 @@
 'use client';
 
-import { DotsSixVertical, PencilSimple, X, Info, PushPin } from '@phosphor-icons/react';
+import { DotsSixVertical, PencilSimple, X, Info, PushPin, EyeSlash } from '@phosphor-icons/react';
 
 /**
  * Shared editable card container used by the Contact and Sales detail pages.
@@ -26,6 +26,8 @@ export default function SectionCard({
   cardId,
   isPinned,
   onTogglePin,
+  onHide,
+  hidden = false,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -38,7 +40,17 @@ export default function SectionCard({
   cardId?: string;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  /** Turn this card OFF for the current contact. Shown as an eye-slash
+   *  icon in the header; hidden cards disappear from Details and from
+   *  Overview (even if pinned), and can be restored from the "Hidden
+   *  cards" bar at the top of the Details tab. */
+  onHide?: () => void;
+  /** When true the card is turned off for this contact and we return
+   *  null — caller can pass this directly instead of wrapping every
+   *  card in a conditional. */
+  hidden?: boolean;
 }) {
+  if (hidden) return null;
   return (
     <div
       className={`bg-[var(--surface-card)] border rounded-xl overflow-visible transition-all duration-300 section-card ${
@@ -95,8 +107,9 @@ export default function SectionCard({
           {onTogglePin && (
             <button
               onClick={onTogglePin}
-              aria-label={isPinned ? 'Unpin' : 'Pin'}
-              className={`w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center transition-all duration-150 ${
+              aria-label={isPinned ? 'Unpin from Overview' : 'Pin to Overview'}
+              title={isPinned ? 'Unpin from Overview' : 'Pin to Overview'}
+              className={`w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center transition-all duration-150 bg-transparent border-none cursor-pointer ${
                 isPinned
                   ? 'text-[var(--brand-primary)] bg-[var(--brand-bg)]'
                   : 'text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--brand-primary)]'
@@ -105,10 +118,21 @@ export default function SectionCard({
               <PushPin size={14} weight={isPinned ? 'fill' : 'regular'} />
             </button>
           )}
+          {onHide && (
+            <button
+              onClick={onHide}
+              aria-label="Hide card"
+              title="Hide card"
+              className="w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center transition-all duration-150 bg-transparent border-none cursor-pointer text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--danger)]"
+            >
+              <EyeSlash size={14} />
+            </button>
+          )}
           {editable && (
             <button
               onClick={isEditing ? onCancel : onEdit}
-              aria-label={isEditing ? 'Cancel edit' : 'Edit'}
+              aria-label={isEditing ? 'Cancel edit' : `Edit ${title}`}
+              title={isEditing ? 'Cancel edit' : `Edit ${title}`}
               className={`w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center transition-all duration-300 ${
                 isEditing ? 'text-[var(--danger)] hover:bg-[var(--danger-bg)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--brand-primary)]'
               }`}

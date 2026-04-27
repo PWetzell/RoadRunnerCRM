@@ -6,6 +6,7 @@ import { useContactStore } from '@/stores/contact-store';
 import { Relationship, RelationshipKind, RELATIONSHIP_META, bidirectionalKindsFor } from '@/types/relationship';
 import { ContactWithEntries } from '@/types/contact';
 import { initials, getAvatarColor, uid } from '@/lib/utils';
+import { toast } from '@/lib/toast';
 
 interface Props {
   open: boolean;
@@ -170,6 +171,7 @@ export function AddRelationshipDialog({ open, fromContact, restrictToType, onClo
       createdBy: 'Paul Wentzell',
     };
     addRelationship(rel);
+    toast.success(`Linked ${selected.name} as ${RELATIONSHIP_META[kindChoice.kind]?.label || kindChoice.kind}`);
     handleClose();
   };
 

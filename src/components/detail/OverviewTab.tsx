@@ -2,19 +2,25 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Buildings, MapPin, MapTrifold, Factory, Plus, MagnifyingGlass, PushPin, Note as NoteIcon, CalendarBlank, Phone, ChatCircle, CaretDown, CaretRight, DotsThree, PencilSimple, Trash, X as XIcon, CheckCircle, IdentificationBadge, Hash, Globe, Briefcase, EnvelopeSimple, ShieldCheck, Funnel, Tag, UserCircle, Voicemail, ChatDots, Lightning, Storefront, FlagBanner, Handshake, MegaphoneSimple, Warning } from '@phosphor-icons/react';
+import { Buildings, MapPin, MapTrifold, Factory, Plus, MagnifyingGlass, PushPin, Note as NoteIcon, CalendarBlank, Phone, ChatCircle, CaretDown, CaretRight, DotsThree, DotsSix, PencilSimple, Trash, X as XIcon, CheckCircle, IdentificationBadge, Hash, Globe, Briefcase, EnvelopeSimple, ShieldCheck, Funnel, Tag, UserCircle, Voicemail, ChatDots, Lightning, Storefront, FlagBanner, Handshake, MegaphoneSimple, Warning } from '@phosphor-icons/react';
 import { ContactWithEntries } from '@/types/contact';
 import { Note, NoteType } from '@/types/note';
 import { useContactStore } from '@/stores/contact-store';
 import { initials, getAvatarColor, fmtDate, uid } from '@/lib/utils';
 import InlineNoteEditor from '@/components/activity/InlineNoteEditor';
 import ActivityLog, { getLogAuthors, getLogFields } from '@/components/activity/ActivityLog';
+import EmailsPanel from '@/components/activity/EmailsPanel';
+import { useUnreadCountForContact } from '@/hooks/use-unread-emails';
+import TasksPanel from '@/components/activity/TasksPanel';
 import { AddRelationshipDialog } from '@/components/contact-flow/AddRelationshipDialog';
 import { RELATIONSHIP_META, RelationshipKind, bidirectionalKindsFor } from '@/types/relationship';
 import { ArrowSquareOut, LinkSimple } from '@phosphor-icons/react';
 import { ActivityLogCategory } from '@/types/activity-log';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useGeocode } from '@/lib/geocoding/useGeocode';
+import { toast } from '@/lib/toast';
+import { getEntrySuggestions } from '@/lib/data/mock-ai/entry-suggestions';
+import InlineAISuggestion, { INLINE_AI_THRESHOLD } from '@/components/ai/InlineAISuggestion';
 
 const LOG_CATEGORIES: { id: ActivityLogCategory; label: string }[] = [
   { id: 'field', label: 'Field Changes' },
@@ -22,13 +28,30 @@ const LOG_CATEGORIES: { id: ActivityLogCategory; label: string }[] = [
   { id: 'relationship', label: 'Relationships' },
   { id: 'status', label: 'Status' },
   { id: 'note', label: 'Notes' },
+  { id: 'email', label: 'Emails' },
 ];
 
 interface OverviewTabProps {
   contact: ContactWithEntries;
+  onNavigateToDetails?: (cardId?: string) => void;
 }
 
-export default function OverviewTab({ contact: c }: OverviewTabProps) {
+const PINNED_META: Record<string, { icon: React.ReactNode; title: string; cardId: string }> = {
+  'identity': { icon: <IdentificationBadge size={16} />, title: 'Identity', cardId: 'card-identity' },
+  'visibility': { icon: <ShieldCheck size={16} />, title: 'Visibility & Access', cardId: 'card-visibility' },
+  'names': { icon: <UserCircle size={16} />, title: 'Names', cardId: 'card-names' },
+  'jobtitle': { icon: <Briefcase size={16} />, title: 'Job Title', cardId: 'card-jobtitle' },
+  'skills': { icon: <Lightning size={16} />, title: 'Skills', cardId: 'card-skills' },
+  'addresses': { icon: <MapPin size={16} />, title: 'Addresses', cardId: 'card-addresses' },
+  'emails': { icon: <EnvelopeSimple size={16} />, title: 'Emails', cardId: 'card-emails' },
+  'phones': { icon: <Phone size={16} />, title: 'Phone', cardId: 'card-phones' },
+  'websites': { icon: <Globe size={16} />, title: 'Websites', cardId: 'card-websites' },
+  'general': { icon: <Hash size={16} />, title: 'General Information', cardId: 'card-general' },
+  'industries': { icon: <Factory size={16} />, title: 'Industries', cardId: 'card-industries' },
+  'identifiers': { icon: <ShieldCheck size={16} />, title: 'Identification', cardId: 'card-identification' },
+};
+
+export default function OverviewTab({ contact: c, onNavigateToDetails }: OverviewTabProps) {
   const router = useRouter();
   const contacts = useContactStore((s) => s.contacts);
   const notes = useContactStore((s) => s.notes);
@@ -40,6 +63,11 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
   const deleteNote = useContactStore((s) => s.deleteNote);
   const togglePinNote = useContactStore((s) => s.togglePinNote);
   const updateContact = useContactStore((s) => s.updateContact);
+
+  // Reactive unread count — subscribes to the store's read-override set
+  // so opening an email in EmailsPanel immediately clears the tab-trigger
+  // badge (and stays cleared across navigation + reload).
+  const unreadEmailCount = useUnreadCountForContact(c.id);
 
   // Relationships state
   const [showAddRelationship, setShowAddRelationship] = useState(false);
@@ -57,9 +85,94 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
       ? { street: primaryAddr.value, city: primaryAddr.city, state: primaryAddr.state, zip: primaryAddr.zip }
       : null
   );
+
+  // Inline AI suggestions for the empty-address case. Same engine + same
+  // dismiss list as the Details tab. We surface ALL above-threshold
+  // candidates (e.g. Digital Prospectors' Exeter HQ + Boston Branch)
+  // so the user can pick which location to set as Holly's primary
+  // address with one click, rather than having to bounce to Details
+  // and pick from the AI tab.
+  const dismissedSuggestions = c.dismissedSuggestions || [];
+  const addressSuggestions = useMemo(() => {
+    if (primaryAddr) return [];
+    const suggestions = getEntrySuggestions('addresses', c, contacts);
+    const dismissed = new Set(dismissedSuggestions);
+    return suggestions
+      .filter((s) => s.confidence >= INLINE_AI_THRESHOLD && !dismissed.has(s.id))
+      .slice(0, 3);
+  }, [primaryAddr, c, contacts, dismissedSuggestions]);
+
+  const acceptAddressSuggestion = (data: Record<string, string>) => {
+    const newEntry = {
+      id: uid('add'),
+      type: data.type || 'Worksite',
+      value: data.value || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip: data.zip || '',
+      primary: true,
+    };
+    updateContact(c.id, {
+      entries: { ...c.entries, addresses: [...c.entries.addresses, newEntry] },
+    } as Partial<ContactWithEntries>);
+    toast.success('Address added');
+  };
+
+  const dismissAddressSuggestion = (suggestionId: string) => {
+    if (dismissedSuggestions.includes(suggestionId)) return;
+    const next = [...dismissedSuggestions, suggestionId];
+    updateContact(c.id, { dismissedSuggestions: next } as Partial<ContactWithEntries>);
+    toast.info('Dismissed address suggestion', {
+      action: {
+        label: 'Undo',
+        onClick: () =>
+          updateContact(c.id, {
+            dismissedSuggestions,
+          } as Partial<ContactWithEntries>),
+      },
+    });
+  };
   const primaryIndustry = isOrg && 'entries' in c
     ? c.entries.industries.find((i) => i.primary) || c.entries.industries[0] || null
     : null;
+
+  // Pinned cards that are ALSO turned off on Details are excluded — hiding
+  // a card is an unambiguous "turn it off everywhere" signal, so it trumps
+  // the pin. HubSpot behaves the same: a hidden section won't show up on
+  // the record page even if it was pinned to the sidebar.
+  const hiddenCardIds = new Set(c.hiddenCards || []);
+  const pinnedCards = (c.overviewCards || [])
+    .map((id) => ({ id, meta: PINNED_META[id] }))
+    .filter((p): p is { id: string; meta: typeof PINNED_META[keyof typeof PINNED_META] } => Boolean(p.meta))
+    .filter((p) => !hiddenCardIds.has(p.meta.cardId));
+
+  // Built-in default cards — summary + address are always present (can be
+  // reordered but not hidden). Industries shows only for org contacts.
+  const defaultLeftIds: string[] = ['summary', 'address', ...(isOrg ? ['industries'] : [])];
+  const pinnedIds = pinnedCards.map((p) => p.id);
+  const allLeftIds = [...defaultLeftIds, ...pinnedIds];
+  const storedOrder = c.overviewLeftOrder || [];
+  const orderedLeftIds: string[] = [
+    ...storedOrder.filter((id) => allLeftIds.includes(id)),
+    ...allLeftIds.filter((id) => !storedOrder.includes(id)),
+  ];
+
+  const [dragCardId, setDragCardId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const handleCardDrop = (targetId: string) => {
+    if (!dragCardId || dragCardId === targetId) { setDragCardId(null); setDragOverId(null); return; }
+    const current = orderedLeftIds;
+    const srcIdx = current.indexOf(dragCardId);
+    const dstIdx = current.indexOf(targetId);
+    if (srcIdx < 0 || dstIdx < 0) { setDragCardId(null); setDragOverId(null); return; }
+    const next = [...current];
+    next.splice(srcIdx, 1);
+    next.splice(dstIdx, 0, dragCardId);
+    updateContact(c.id, { overviewLeftOrder: next });
+    setDragCardId(null);
+    setDragOverId(null);
+  };
 
   // Relationships involving this contact (resolved with the other contact + inverse flag)
   const resolvedRels = useMemo(() => {
@@ -132,7 +245,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
     return notes.filter((n) => allIds.includes(n.contactId));
   }, [notes, c.id, relatedIds]);
 
-  const [activityTab, setActivityTab] = useState<'notes' | 'log'>('notes');
+  const [activityTab, setActivityTab] = useState<'notes' | 'emails' | 'tasks' | 'log'>('notes');
   const [noteSearch, setNoteSearch] = useState('');
   const [noteEditor, setNoteEditor] = useState<{ open: boolean; mode: 'add' | 'edit'; note?: Note }>({ open: false, mode: 'add' });
   const [deleteTarget, setDeleteTarget] = useState<Note | null>(null);
@@ -302,29 +415,33 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
         tags: [],
         createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }),
       });
+      toast.success('Note added');
     } else if (noteEditor.note) {
       updateNote(noteEditor.note.id, { body: html });
+      toast.success('Note updated');
     }
     setNoteEditor({ open: false, mode: 'add' });
   };
 
-  return (
-    <div className="grid grid-cols-2 gap-4 items-start">
-      {/* LEFT COLUMN */}
-      <div className="flex flex-col gap-4">
-        {/* Org Summary — includes hierarchy + all relationships */}
-        <Card icon={<Buildings size={16} />} title="Org Summary" action={
-          <button
-            onClick={() => setShowAddRelationship(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
-          >
-            <span className="w-4 h-4 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
-              <Plus size={10} weight="bold" className="text-white" />
-            </span>
-            Add Relationship
-          </button>
-        }>
-          {/* Current contact node with root caret to collapse the entire tree */}
+  const renderLeftCard = (id: string): React.ReactNode => {
+    if (id === 'summary') {
+      return (
+        <Card
+          icon={<Buildings size={16} />}
+          title="Org Summary"
+          dragHandle
+          action={
+            <button
+              onClick={() => setShowAddRelationship(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
+            >
+              <span className="w-4 h-4 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
+                <Plus size={10} weight="bold" className="text-white" />
+              </span>
+              Add Relationship
+            </button>
+          }
+        >
           <OrgNode
             name={c.name}
             role={isOrg ? 'industry' in c && c.industry ? c.industry : 'Company' : 'title' in c && c.title ? c.title : 'Contact'}
@@ -335,8 +452,6 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
             isCollapsed={rootCollapsed}
             onToggleCaret={relationshipTree.length > 0 ? () => setRootCollapsed(!rootCollapsed) : undefined}
           />
-
-          {/* Relationships as a tree — orgs with children indented, caret to expand/collapse */}
           {!rootCollapsed && (
             <div className="ml-5">
               {relationshipTree.map((node) => (
@@ -347,7 +462,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
                   collapsed={collapsedOrgs}
                   onToggleCollapsed={toggleOrgCollapsed}
                   openMenuId={openRelMenuId}
-                  onToggleMenu={(id) => setOpenRelMenuId(openRelMenuId === id ? null : id)}
+                  onToggleMenu={(nodeId) => setOpenRelMenuId(openRelMenuId === nodeId ? null : nodeId)}
                   onOpen={(otherId) => { router.push(`/contacts/${otherId}`); setOpenRelMenuId(null); }}
                   onRemove={(relId) => { setConfirmDeleteRel(relId); setOpenRelMenuId(null); }}
                   onEdit={(relId) => {
@@ -364,67 +479,54 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
             </div>
           )}
         </Card>
+      );
+    }
 
-        {/* Add Relationship Dialog */}
-        <AddRelationshipDialog
-          open={showAddRelationship}
-          fromContact={c}
-          onClose={() => setShowAddRelationship(false)}
-        />
-
-        {/* Confirm remove relationship */}
-        <ConfirmDialog
-          open={!!confirmDeleteRel}
-          title="Remove Relationship"
-          message={<>Remove this relationship? This won&apos;t delete either contact, just the link between them.</>}
-          confirmLabel="Remove"
-          confirmVariant="danger"
-          onConfirm={() => { if (confirmDeleteRel) { deleteRelationship(confirmDeleteRel); setConfirmDeleteRel(null); } }}
-          onCancel={() => setConfirmDeleteRel(null)}
-        />
-
-        {/* Edit relationship type */}
-        {editingRel && (
-          <EditRelationshipTypeDialog
-            currentContact={c}
-            otherContact={editingRel.otherContact}
-            currentKind={editingRel.currentKind}
-            onCancel={() => setEditingRel(null)}
-            onSave={(newKind, flipDirection) => {
-              const updates: { kind: RelationshipKind; fromContactId?: string; toContactId?: string } = { kind: newKind };
-              if (flipDirection) {
-                updates.fromContactId = editingRel.otherContact.id;
-                updates.toContactId = c.id;
-              } else {
-                updates.fromContactId = c.id;
-                updates.toContactId = editingRel.otherContact.id;
-              }
-              updateRelationship(editingRel.relId, updates);
-              setEditingRel(null);
-            }}
-          />
-        )}
-
-        {/* Address */}
-        <Card icon={<MapPin size={16} />} title="Address" incomplete={!primaryAddr}>
+    if (id === 'address') {
+      return (
+        <Card icon={<MapPin size={16} />} title="Address" dragHandle incomplete={!primaryAddr}>
           {primaryAddr ? (
             <>
               <p className="text-[11px] text-[var(--text-tertiary)] mb-1">{primaryAddr.type || 'Mailing'}</p>
-              <p className="text-[13px] text-[var(--text-primary)] leading-relaxed">
+              <p className="text-[13px] text-[var(--text-primary)] leading-relaxed mb-3">
                 {primaryAddr.value}<br />
                 {primaryAddr.city}, {primaryAddr.state} {primaryAddr.zip}
               </p>
             </>
-          ) : (
-            <p className="text-[12px] text-[var(--text-tertiary)] italic">No address on file</p>
+          ) : null}
+          {/* Inline AI chips: empty-state-only, mirrors the Details tab.
+              When the user clicks "+ Add", we update the contact (which
+              persists via Zustand) and the map below this row pops in
+              automatically once useGeocode resolves the new primaryAddr.
+              Multiple chips render when the company's website lists
+              multiple locations (HQ + Branch) — Paul: "I see two
+              addresses on the company website. show both options". */}
+          {!primaryAddr && addressSuggestions.length > 0 && (
+            <div className="mb-3 flex flex-col gap-1.5">
+              {addressSuggestions.map((s) => (
+                <InlineAISuggestion
+                  key={s.id}
+                  suggestion={s}
+                  label="Address"
+                  onAccept={() => acceptAddressSuggestion(s.fieldValues)}
+                  onEdit={() => onNavigateToDetails?.('card-addresses')}
+                  onIgnore={() => dismissAddressSuggestion(s.id)}
+                />
+              ))}
+            </div>
           )}
-        </Card>
-
-        {/* Map */}
-        <Card icon={<MapTrifold size={16} />} title="Map" incomplete={!primaryAddr}>
           <div className="h-[180px] rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] bg-[var(--surface-raised)] flex items-center justify-center">
             {!primaryAddr && (
-              <span className="text-[11px] text-[var(--text-tertiary)]">Add an address to show a map</span>
+              <button
+                type="button"
+                onClick={() => onNavigateToDetails?.('card-addresses')}
+                className="flex flex-col items-center gap-2 bg-transparent border-0 cursor-pointer text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors p-2"
+              >
+                <MapPin size={32} weight="duotone" />
+                <span className="text-[11px] font-bold underline">
+                  {addressSuggestions.length > 0 ? 'Or add a different address manually' : 'Add an address to show a map'}
+                </span>
+              </button>
             )}
             {primaryAddr && coords === undefined && (
               <span className="text-[11px] text-[var(--text-tertiary)]">Locating…</span>
@@ -458,17 +560,150 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
             </div>
           )}
         </Card>
+      );
+    }
 
-        {isOrg && (
-          <Card icon={<Factory size={16} />} title="Industries" incomplete={!primaryIndustry}>
-            {primaryIndustry ? (
-              <p className="text-[13px] text-[var(--text-secondary)]">
-                <strong className="text-[var(--text-primary)]">{primaryIndustry.code}</strong> · {primaryIndustry.name}
-              </p>
-            ) : (
-              <p className="text-[12px] text-[var(--text-tertiary)] italic">No industry set</p>
-            )}
-          </Card>
+    if (id === 'industries') {
+      if (!isOrg) return null;
+      return (
+        <Card icon={<Factory size={16} />} title="Industries" dragHandle incomplete={!primaryIndustry}>
+          {primaryIndustry ? (
+            <p className="text-[13px] text-[var(--text-secondary)]">
+              <strong className="text-[var(--text-primary)]">{primaryIndustry.code}</strong> · {primaryIndustry.name}
+            </p>
+          ) : null}
+        </Card>
+      );
+    }
+
+    const meta = PINNED_META[id];
+    if (!meta) return null;
+    return (
+      <Card
+        icon={meta.icon}
+        title={meta.title}
+        dragHandle
+        incomplete={isPinnedCardIncomplete(id, c)}
+        action={
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onNavigateToDetails?.(meta.cardId)}
+              className="text-[11px] font-bold text-[var(--brand-primary)] bg-transparent border-0 cursor-pointer hover:underline px-1.5"
+              title="Open in Details"
+            >
+              View
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const current = c.overviewCards || [];
+                const updated = current.filter((cid) => cid !== id);
+                updateContact(c.id, { overviewCards: updated });
+                toast.info(`Unpinned “${meta.title}” from Overview`, {
+                  action: {
+                    label: 'Undo',
+                    onClick: () => updateContact(c.id, { overviewCards: current }),
+                  },
+                });
+              }}
+              aria-label={`Unpin ${meta.title} from Overview`}
+              title="Unpin from Overview"
+              className="w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center text-[var(--brand-primary)] bg-[var(--brand-bg)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-tertiary)] transition-all duration-150"
+            >
+              <PushPin size={14} weight="fill" />
+            </button>
+          </div>
+        }
+      >
+        <PinnedCardBody cardId={id} c={c} />
+      </Card>
+    );
+  };
+
+  return (
+    <div className="grid grid-cols-2 items-start" style={{ gap: 'var(--detail-section-gap, 16px)' }}>
+      {/* LEFT COLUMN — drag any card to reorder. Summary + Address are
+          always present (cannot be hidden); pinned cards can be unpinned. */}
+      <div className="flex flex-col" style={{ gap: 'var(--detail-stack-gap, 16px)' }}>
+        {orderedLeftIds.map((id) => {
+          const cardNode = renderLeftCard(id);
+          if (!cardNode) return null;
+          return (
+            <div
+              key={id}
+              draggable
+              onDragStart={(e) => {
+                setDragCardId(id);
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverId !== id) setDragOverId(id);
+              }}
+              onDragLeave={() => setDragOverId((prev) => (prev === id ? null : prev))}
+              onDrop={(e) => { e.preventDefault(); handleCardDrop(id); }}
+              onDragEnd={() => { setDragCardId(null); setDragOverId(null); }}
+              className={`rounded-xl transition-all ${
+                dragCardId === id ? 'opacity-40' : ''
+              } ${
+                dragOverId === id && dragCardId !== id ? 'ring-2 ring-[var(--brand-primary)]' : ''
+              }`}
+            >
+              {cardNode}
+            </div>
+          );
+        })}
+
+        {/* Add Relationship Dialog */}
+        <AddRelationshipDialog
+          open={showAddRelationship}
+          fromContact={c}
+          onClose={() => setShowAddRelationship(false)}
+        />
+
+        {/* Confirm remove relationship */}
+        <ConfirmDialog
+          open={!!confirmDeleteRel}
+          title="Remove Relationship"
+          message={<>Remove this relationship? This won&apos;t delete either contact, just the link between them.</>}
+          confirmLabel="Remove"
+          confirmVariant="danger"
+          onConfirm={() => {
+            if (confirmDeleteRel) {
+              const relSnapshot = allRelationships.find((r) => r.id === confirmDeleteRel);
+              deleteRelationship(confirmDeleteRel);
+              setConfirmDeleteRel(null);
+              toast.success('Relationship removed', relSnapshot ? {
+                action: { label: 'Undo', onClick: () => useContactStore.getState().addRelationship(relSnapshot) },
+              } : undefined);
+            }
+          }}
+          onCancel={() => setConfirmDeleteRel(null)}
+        />
+
+        {/* Edit relationship type */}
+        {editingRel && (
+          <EditRelationshipTypeDialog
+            currentContact={c}
+            otherContact={editingRel.otherContact}
+            currentKind={editingRel.currentKind}
+            onCancel={() => setEditingRel(null)}
+            onSave={(newKind, flipDirection) => {
+              const updates: { kind: RelationshipKind; fromContactId?: string; toContactId?: string } = { kind: newKind };
+              if (flipDirection) {
+                updates.fromContactId = editingRel.otherContact.id;
+                updates.toContactId = c.id;
+              } else {
+                updates.fromContactId = c.id;
+                updates.toContactId = editingRel.otherContact.id;
+              }
+              updateRelationship(editingRel.relId, updates);
+              setEditingRel(null);
+              toast.success('Relationship updated');
+            }}
+          />
         )}
       </div>
 
@@ -488,6 +723,41 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
                   : 'text-[var(--text-tertiary)] border-b-2 border-transparent'
               }`}
             >Notes</button>
+            <button
+              onClick={() => setActivityTab('emails')}
+              className={`text-[13px] font-bold pb-1 bg-transparent border-x-0 border-t-0 cursor-pointer inline-flex items-center gap-1.5 ${
+                activityTab === 'emails'
+                  ? 'text-[var(--brand-primary)] border-b-2 border-[var(--brand-primary)]'
+                  : 'text-[var(--text-tertiary)] border-b-2 border-transparent'
+              }`}
+            >
+              Emails
+              {/*
+                Unread count badge on the tab trigger itself — so Paul can
+                see pressure without clicking in. Matches EmailsPanel's
+                header-chip styling (brand-bg filled pill with leading
+                dot) to keep the two surfaces visually linked. Count comes
+                from the same seed helper that powers the in-panel chip,
+                so they never disagree.
+              */}
+              {unreadEmailCount > 0 && (
+                <span
+                  aria-label={`${unreadEmailCount} unread email${unreadEmailCount === 1 ? '' : 's'}`}
+                  className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold leading-none"
+                >
+                  <span className="w-1 h-1 rounded-full bg-white" />
+                  {unreadEmailCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActivityTab('tasks')}
+              className={`text-[13px] font-bold pb-1 bg-transparent border-x-0 border-t-0 cursor-pointer ${
+                activityTab === 'tasks'
+                  ? 'text-[var(--brand-primary)] border-b-2 border-[var(--brand-primary)]'
+                  : 'text-[var(--text-tertiary)] border-b-2 border-transparent'
+              }`}
+            >Tasks</button>
             <button
               onClick={() => setActivityTab('log')}
               className={`text-[13px] font-bold pb-1 bg-transparent border-x-0 border-t-0 cursor-pointer ${
@@ -752,7 +1022,11 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
         </div>
 
         {/* Tab Content */}
-        {activityTab === 'notes' ? (
+        {activityTab === 'emails' ? (
+          <EmailsPanel contact={c} />
+        ) : activityTab === 'tasks' ? (
+          <TasksPanel contact={c} />
+        ) : activityTab === 'notes' ? (
         <div className="flex-1 overflow-y-auto">
         {/* Inline Note Editor */}
         {noteEditor.open && (
@@ -780,7 +1054,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
                 onToggleMenu={() => setOpenMenuId(openMenuId === n.id ? null : n.id)}
                 onEdit={() => { setNoteEditor({ open: true, mode: 'edit', note: n }); setOpenMenuId(null); }}
                 onDelete={() => { setDeleteTarget(n); setOpenMenuId(null); }}
-                onTogglePin={() => { togglePinNote(n.id); setOpenMenuId(null); }}
+                onTogglePin={() => { togglePinNote(n.id); setOpenMenuId(null); toast.info(n.pinned ? 'Note unpinned' : 'Note pinned'); }}
                 searchQuery={noteSearch}
               />
             ))}
@@ -799,7 +1073,7 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
                 onToggleMenu={() => setOpenMenuId(openMenuId === n.id ? null : n.id)}
                 onEdit={() => { setNoteEditor({ open: true, mode: 'edit', note: n }); setOpenMenuId(null); }}
                 onDelete={() => { setDeleteTarget(n); setOpenMenuId(null); }}
-                onTogglePin={() => { togglePinNote(n.id); setOpenMenuId(null); }}
+                onTogglePin={() => { togglePinNote(n.id); setOpenMenuId(null); toast.info(n.pinned ? 'Note unpinned' : 'Note pinned'); }}
                 searchQuery={noteSearch}
               />
             ))}
@@ -842,7 +1116,16 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
         title="Delete Note"
         message={deleteTarget ? <>Are you sure you want to delete this note by <strong>{deleteTarget.author}</strong>?</> : ''}
         confirmLabel="Delete Note"
-        onConfirm={() => { if (deleteTarget) { deleteNote(deleteTarget.id); setDeleteTarget(null); } }}
+        onConfirm={() => {
+          if (deleteTarget) {
+            const snapshot = deleteTarget;
+            deleteNote(snapshot.id);
+            setDeleteTarget(null);
+            toast.success('Note deleted', {
+              action: { label: 'Undo', onClick: () => addNote(snapshot) },
+            });
+          }
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
@@ -851,11 +1134,210 @@ export default function OverviewTab({ contact: c }: OverviewTabProps) {
 
 // ── Helper Components ──
 
-function Card({ icon, title, action, incomplete, children }: { icon: React.ReactNode; title: string; action?: React.ReactNode; incomplete?: boolean; children: React.ReactNode }) {
+export function isPinnedCardIncomplete(cardId: string, c: ContactWithEntries): boolean {
+  const isOrg = c.type === 'org';
+  switch (cardId) {
+    case 'identity':
+    case 'visibility':
+    case 'card-sysids':
+      return false;
+    case 'names':
+      return c.entries.names.length === 0;
+    case 'jobtitle': {
+      if (isOrg) return true;
+      const p = c as Extract<ContactWithEntries, { type: 'person' }>;
+      return !p.title && !p.department;
+    }
+    case 'skills': {
+      if (isOrg) return true;
+      const p = c as Extract<ContactWithEntries, { type: 'person' }>;
+      return !p.skills?.length;
+    }
+    case 'addresses': return c.entries.addresses.length === 0;
+    case 'emails': return c.entries.emails.length === 0;
+    case 'phones': return c.entries.phones.length === 0;
+    case 'websites': return c.entries.websites.length === 0;
+    case 'general': {
+      if (!isOrg) return true;
+      const o = c as Extract<ContactWithEntries, { type: 'org' }>;
+      return !o.hq && !o.website && !o.employees && !o.structure && !o.category && !o.description;
+    }
+    case 'industries': return c.entries.industries.length === 0;
+    case 'identifiers': return c.entries.identifiers.length === 0;
+    default: return false;
+  }
+}
+
+function PinnedCardBody({ cardId, c }: { cardId: string; c: ContactWithEntries }) {
+  const isOrg = c.type === 'org';
+  const empty = null;
+
+  switch (cardId) {
+    case 'identity':
+      return (
+        <div className="flex items-center gap-2 text-[13px] text-[var(--text-primary)]">
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--surface-raised)] border border-[var(--border)]">
+            {isOrg ? 'Organization' : 'Person'}
+          </span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${c.status === 'active' ? 'text-[var(--success)] border-[var(--success)] bg-[var(--success-bg)]' : 'text-[var(--text-tertiary)] border-[var(--border)] bg-[var(--surface-raised)]'}`}>
+            {c.status === 'active' ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+      );
+    case 'visibility':
+      return (
+        <div className="text-[13px] text-[var(--text-primary)] space-y-1.5">
+          <div><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">Privacy</span>{c.isPrivate ? 'Private' : 'Public'}</div>
+          {c.assignedTo && <div><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">Owner</span>{c.assignedTo}</div>}
+        </div>
+      );
+    case 'names':
+      if (c.entries.names.length === 0) return empty;
+      return (
+        <ul className="space-y-1">
+          {c.entries.names.map((n) => (
+            <li key={n.id} className="text-[13px] text-[var(--text-primary)]">
+              {n.value} {n.primary && <span className="ml-1 text-[10px] font-bold text-[var(--brand-primary)]">PRIMARY</span>}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'jobtitle': {
+      if (isOrg) return empty;
+      const p = c as Extract<ContactWithEntries, { type: 'person' }>;
+      if (!p.title && !p.department) return empty;
+      return (
+        <div className="text-[13px] text-[var(--text-primary)] space-y-1">
+          {p.title && <div><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">Title</span>{p.title}</div>}
+          {p.department && <div><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">Dept</span>{p.department}</div>}
+        </div>
+      );
+    }
+    case 'skills': {
+      if (isOrg) return empty;
+      const p = c as Extract<ContactWithEntries, { type: 'person' }>;
+      if (!p.skills?.length) return empty;
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {p.skills.map((s) => (
+            <span key={s} className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--brand-bg)] text-[var(--brand-primary)] border border-[var(--brand-primary)]">{s}</span>
+          ))}
+        </div>
+      );
+    }
+    case 'addresses':
+      if (c.entries.addresses.length === 0) return empty;
+      return (
+        <ul className="space-y-1.5">
+          {c.entries.addresses.map((a) => (
+            <li key={a.id} className="text-[13px] text-[var(--text-primary)] leading-relaxed">
+              {a.value}{a.city ? `, ${a.city}` : ''}{a.state ? `, ${a.state}` : ''} {a.zip}
+              {a.primary && <span className="ml-1 text-[10px] font-bold text-[var(--brand-primary)]">PRIMARY</span>}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'emails':
+      if (c.entries.emails.length === 0) return empty;
+      return (
+        <ul className="space-y-1">
+          {c.entries.emails.map((e) => (
+            <li key={e.id} className="text-[13px] text-[var(--text-primary)]">
+              <a href={`mailto:${e.value}`} className="text-[var(--brand-primary)] hover:underline">{e.value}</a>
+              {e.primary && <span className="ml-1 text-[10px] font-bold text-[var(--brand-primary)]">PRIMARY</span>}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'phones':
+      if (c.entries.phones.length === 0) return empty;
+      return (
+        <ul className="space-y-1">
+          {c.entries.phones.map((p) => (
+            <li key={p.id} className="text-[13px] text-[var(--text-primary)]">
+              {p.value}{p.extension ? ` x${p.extension}` : ''}
+              {p.primary && <span className="ml-1 text-[10px] font-bold text-[var(--brand-primary)]">PRIMARY</span>}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'websites':
+      if (c.entries.websites.length === 0) return empty;
+      return (
+        <ul className="space-y-1">
+          {c.entries.websites.map((w) => (
+            <li key={w.id} className="text-[13px]">
+              <a href={w.value} target="_blank" rel="noreferrer" className="text-[var(--brand-primary)] hover:underline">{w.value}</a>
+            </li>
+          ))}
+        </ul>
+      );
+    case 'general': {
+      if (!isOrg) return empty;
+      const o = c as Extract<ContactWithEntries, { type: 'org' }>;
+      const fields: [string, string | undefined][] = [['HQ', o.hq], ['Website', o.website], ['Employees', o.employees], ['Structure', o.structure], ['Category', o.category]];
+      const shown = fields.filter(([, v]) => v);
+      if (shown.length === 0 && !o.description) return empty;
+      return (
+        <div className="text-[13px] text-[var(--text-primary)] space-y-1.5">
+          {shown.map(([k, v]) => (
+            <div key={k}><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">{k}</span>{v}</div>
+          ))}
+          {o.description && <p className="text-[12px] text-[var(--text-secondary)] pt-1">{o.description}</p>}
+        </div>
+      );
+    }
+    case 'industries':
+      if (c.entries.industries.length === 0) return empty;
+      return (
+        <ul className="space-y-1">
+          {c.entries.industries.map((i) => (
+            <li key={i.id} className="text-[13px] text-[var(--text-primary)]">
+              <strong>{i.code}</strong> · {i.name}
+              {i.primary && <span className="ml-1 text-[10px] font-bold text-[var(--brand-primary)]">PRIMARY</span>}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'identifiers':
+      if (c.entries.identifiers.length === 0) return empty;
+      return (
+        <ul className="space-y-1">
+          {c.entries.identifiers.map((id) => (
+            <li key={id.id} className="text-[13px] text-[var(--text-primary)]">
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">{id.authority}</span>{id.value}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'card-sysids':
+      return (
+        <div className="text-[13px] text-[var(--text-primary)] space-y-1">
+          <div><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">ID</span><code className="text-xs">{c.id}</code></div>
+          {c.createdBy && <div><span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-2">Created By</span>{c.createdBy}</div>}
+        </div>
+      );
+    default:
+      return empty;
+  }
+}
+
+function Card({ icon, title, action, incomplete, dragHandle, children }: { icon: React.ReactNode; title: string; action?: React.ReactNode; incomplete?: boolean; dragHandle?: boolean; children: React.ReactNode }) {
+  const hasBody = children !== null && children !== undefined && children !== false;
+  const padStyle = { paddingLeft: 'var(--detail-card-px, 16px)', paddingRight: 'var(--detail-card-px, 16px)', paddingTop: 'var(--detail-card-py, 12px)', paddingBottom: 'var(--detail-card-py, 12px)' };
   return (
     <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl">
-      <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)]">
+      <div className={`flex items-center justify-between ${hasBody ? 'border-b border-[var(--border-subtle)]' : ''}`} style={padStyle}>
         <span className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+          {dragHandle && (
+            <span
+              className="drag-handle -ml-1 mr-0.5 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] cursor-grab active:cursor-grabbing"
+              title="Drag to reorder"
+              aria-label="Drag to reorder"
+            >
+              <DotsSix size={16} weight="bold" />
+            </span>
+          )}
           {icon} {title}
           {incomplete && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
@@ -865,7 +1347,7 @@ function Card({ icon, title, action, incomplete, children }: { icon: React.React
         </span>
         {action}
       </div>
-      <div className="px-4 py-3">{children}</div>
+      {hasBody && <div style={padStyle}>{children}</div>}
     </div>
   );
 }

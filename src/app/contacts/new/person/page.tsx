@@ -152,7 +152,7 @@ export default function NewPersonPage() {
 
   const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errs: Record<string, string> = {};
     if (!firstName.trim()) errs.firstName = 'First name is required';
     if (!lastName.trim()) errs.lastName = 'Last name is required';
@@ -161,10 +161,39 @@ export default function NewPersonPage() {
     setSaveErrors(errs);
     if (Object.values(errs).some(Boolean)) return;
 
-    const id = uid('per');
-    const today = new Date().toISOString().split('T')[0];
+    // Persist to the DB FIRST so we use the server-allocated UUID as the
+    // contact id everywhere — Zustand state, the saved-redirect URL, and
+    // any subsequent PATCH calls. Falling back to a client-side `uid()`
+    // would mean the row could never be edited or deleted via the API
+    // (the server would 404 because the demo prefix isn't a UUID).
+    let id: string;
     const fullName = [prefix, firstName, middleName, lastName, suffix].filter(Boolean).join(' ');
     const selectedOrg = orgs.find((o) => o.id === companyId);
+    try {
+      const r = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          type: 'person',
+          email: email || null,
+          phone: phone || null,
+          orgName: selectedOrg?.name || companyName || null,
+          title: jobTitle || null,
+        }),
+      });
+      const body = await r.json().catch(() => ({} as { error?: string; contact?: { id: string } }));
+      if (!r.ok || !body.contact?.id) {
+        throw new Error(body.error || `save failed (${r.status})`);
+      }
+      id = body.contact.id;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Save failed';
+      toast.error('Couldn\u2019t save contact', { description: msg });
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
 
     // Build a websites[] from any resume-extracted URLs so they render as
     // proper website entries on the contact detail page.
@@ -267,7 +296,7 @@ export default function NewPersonPage() {
     <>
       <Topbar title="Contacts" />
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 pt-4 text-[13px]">
+        <div className="px-6 pt-4 text-[13px]" data-tour="person-breadcrumb">
           <button
             onClick={() => router.push('/contacts')}
             className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit font-semibold"
@@ -288,7 +317,7 @@ export default function NewPersonPage() {
         <div className="px-6 py-6">
           <div className="grid grid-cols-[1fr_380px] gap-4 items-start">
             {/* Main form */}
-            <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6 relative">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-6 relative" data-tour={`person-step-${currentStep}`}>
               {/* Prominent close button — mirrors the X pattern users already
                   know from the right-pane SlidePanel and from every dialog
                   on the web. Also responds to the ESC key. */}
@@ -399,7 +428,7 @@ export default function NewPersonPage() {
             </div>
 
             {/* Right sidebar — AI panels per step (gated by Settings → AI suggestions) */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3" data-tour="person-ai-sidebar">
               {currentStep === 'basic' && aiSuggestionsOn && (
                 <AIDuplicateDetection
                   firstName={firstName}

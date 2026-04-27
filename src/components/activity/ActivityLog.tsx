@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   PencilSimple, Plus, Trash, Link as LinkIcon,
   Tag, Warning, Phone, EnvelopeSimple, MapPin, Globe,
@@ -9,6 +9,8 @@ import {
 } from '@phosphor-icons/react';
 import { ActivityLogEntry, ActivityLogCategory } from '@/types/activity-log';
 import { SEED_ACTIVITY_LOG } from '@/lib/data/seed-activity-log';
+import { getSeedEmailsForContact } from '@/lib/data/seed-emails';
+import { useGmailStatusStore } from '@/stores/gmail-status-store';
 
 interface ActivityLogProps {
   contactId: string;
@@ -23,6 +25,7 @@ interface ActivityLogProps {
 
 function getEventIcon(entry: ActivityLogEntry) {
   const s = 18;
+  if (entry.category === 'email') return <EnvelopeSimple size={s} />;
   if (entry.field === 'Phone Number') return <Phone size={s} />;
   if (entry.field === 'Email') return <EnvelopeSimple size={s} />;
   if (entry.field === 'Address') return <MapPin size={s} />;
@@ -89,13 +92,138 @@ export function getLogAuthors(contactId: string, relatedIds: string[] = []) {
   return Array.from(map.values());
 }
 
+interface EmailEventSource {
+  id: string;
+  subject: string | null;
+  snippet: string | null;
+  fromEmail: string | null;
+  fromName: string | null;
+  toEmails: string[];
+  receivedAt: string;
+  direction: 'from' | 'to' | 'cc' | 'bcc';
+  openCount?: number;
+  lastOpenedAt?: string | null;
+  clickCount?: number;
+  lastClickedAt?: string | null;
+  archivedAt?: string | null;
+}
+
+function emailsToLogEntries(emails: EmailEventSource[], contactId: string): ActivityLogEntry[] {
+  const entries: ActivityLogEntry[] = [];
+  for (const e of emails) {
+    const incoming = e.direction === 'from';
+    const author = incoming ? (e.fromName || e.fromEmail || 'Unknown') : 'You';
+    const authorInitials = (author[0] || 'U').toUpperCase();
+    const ts = new Date(e.receivedAt).getTime();
+    entries.push({
+      id: `email-${e.id}`,
+      contactId,
+      eventType: incoming ? 'email_received' : 'email_sent',
+      category: 'email',
+      field: 'Email',
+      action: incoming ? 'received' : 'sent',
+      newValue: e.subject || '(no subject)',
+      snippet: e.snippet || undefined,
+      author,
+      authorInitials,
+      authorColor: incoming ? 'var(--brand-primary)' : 'var(--text-secondary)',
+      createdAt: new Date(e.receivedAt).toLocaleString(),
+      timestamp: ts,
+      archived: !!e.archivedAt,
+    });
+    if (!incoming && (e.openCount ?? 0) > 0 && e.lastOpenedAt) {
+      entries.push({
+        id: `email-open-${e.id}`,
+        contactId,
+        eventType: 'email_opened',
+        category: 'email',
+        field: 'Email',
+        action: 'opened',
+        newValue: `${e.subject || '(no subject)'} · ${e.openCount}×`,
+        author: e.toEmails[0] || 'Recipient',
+        authorInitials: (e.toEmails[0]?.[0] || 'R').toUpperCase(),
+        authorColor: 'var(--success,#1f7a3a)',
+        createdAt: new Date(e.lastOpenedAt).toLocaleString(),
+        timestamp: new Date(e.lastOpenedAt).getTime(),
+      });
+    }
+    if (!incoming && (e.clickCount ?? 0) > 0 && e.lastClickedAt) {
+      entries.push({
+        id: `email-click-${e.id}`,
+        contactId,
+        eventType: 'email_clicked',
+        category: 'email',
+        field: 'Email',
+        action: 'clicked',
+        newValue: `${e.subject || '(no subject)'} · ${e.clickCount}×`,
+        author: e.toEmails[0] || 'Recipient',
+        authorInitials: (e.toEmails[0]?.[0] || 'R').toUpperCase(),
+        authorColor: 'var(--brand-primary)',
+        createdAt: new Date(e.lastClickedAt).toLocaleString(),
+        timestamp: new Date(e.lastClickedAt).getTime(),
+      });
+    }
+  }
+  return entries;
+}
+
 export default function ActivityLog({ contactId, relatedIds = [], search, categoryFilter, fieldFilter, authorFilter, dateFrom, dateTo }: ActivityLogProps) {
   const allIds = [contactId, ...relatedIds];
 
+  const [emailEntries, setEmailEntries] = useState<ActivityLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  // Refetch when Gmail sync completes (matches the EmailsPanel pattern):
+  // banner-driven `Sync now` advances `last_sync_at`, the store picks it
+  // up, every subscribed component re-renders, and we add it as a dep
+  // below so this effect fires and pulls the freshly-matched messages
+  // into the timeline without the user having to leave and come back.
+  const lastSyncAt = useGmailStatusStore((s) => s.status?.lastSyncAt);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    // Demo fallback mirror of EmailsPanel: when the API returns no rows
+    // for this contact (unauthenticated demo / no Gmail sync / seeded
+    // contact id), substitute the client-side seed so the activity log
+    // still surfaces email events. Converted through the same
+    // emailsToLogEntries path so the icon + author + open/click synth
+    // matches production behavior exactly.
+    const seededSources: EmailEventSource[] = getSeedEmailsForContact(contactId).map((e) => ({
+      id: e.id,
+      subject: e.subject,
+      snippet: e.snippet,
+      fromEmail: e.fromEmail,
+      fromName: e.fromName,
+      toEmails: e.toEmails,
+      receivedAt: e.receivedAt,
+      direction: e.direction,
+      openCount: e.openCount,
+      lastOpenedAt: e.lastOpenedAt,
+      clickCount: e.clickCount,
+      lastClickedAt: e.lastClickedAt,
+      archivedAt: e.archivedAt,
+    }));
+    fetch(`/api/contacts/${contactId}/emails?includeArchived=1`)
+      .then((r) => r.json())
+      .then((body) => {
+        if (cancelled) return;
+        const live: EmailEventSource[] = Array.isArray(body.emails) ? body.emails : [];
+        const source = live.length > 0 ? live : seededSources;
+        setEmailEntries(emailsToLogEntries(source, contactId));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setEmailEntries(emailsToLogEntries(seededSources, contactId));
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [contactId, lastSyncAt]);
+
   const logs = useMemo(() => {
-    let result = SEED_ACTIVITY_LOG
-      .filter((l) => allIds.includes(l.contactId))
-      .sort((a, b) => b.timestamp - a.timestamp);
+    const merged: ActivityLogEntry[] = [
+      ...SEED_ACTIVITY_LOG.filter((l) => allIds.includes(l.contactId)),
+      ...emailEntries,
+    ];
+    let result = merged.sort((a, b) => b.timestamp - a.timestamp);
 
     if (categoryFilter.length > 0) {
       result = result.filter((l) => categoryFilter.includes(l.category));
@@ -134,7 +262,7 @@ export default function ActivityLog({ contactId, relatedIds = [], search, catego
     }
 
     return result;
-  }, [contactId, relatedIds, categoryFilter, authorFilter, dateFrom, dateTo, search]);
+  }, [allIds, emailEntries, categoryFilter, fieldFilter, authorFilter, dateFrom, dateTo, search]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -158,6 +286,8 @@ export default function ActivityLog({ contactId, relatedIds = [], search, catego
 
   return (
     <div>
+      {loading && logs.length === 0 && <ActivityLogSkeleton />}
+
       {grouped.map((group) => (
         <div key={group.label}>
           <div className="px-4 py-2 bg-[var(--surface-sunken)] border-y border-[var(--border-subtle)]">
@@ -171,7 +301,7 @@ export default function ActivityLog({ contactId, relatedIds = [], search, catego
         </div>
       ))}
 
-      {logs.length === 0 && (
+      {!loading && logs.length === 0 && (
         <div className="p-10 text-center text-[var(--text-tertiary)]">
           <NoteBlank size={32} className="mx-auto mb-2" />
           <p className="font-semibold text-sm">{hasFilters ? 'No matching activity' : 'No activity logged'}</p>
@@ -179,6 +309,66 @@ export default function ActivityLog({ contactId, relatedIds = [], search, catego
       )}
     </div>
   );
+}
+
+/**
+ * Skeleton loader for the activity log. Mirrors the real LogRow layout
+ * (icon, title line, snippet line, timestamp + author) so the layout
+ * doesn't shift when the emails fetch resolves.
+ *
+ * WCAG 2.1 SC 1.4.11: animated highlight uses --surface-raised on
+ * --surface-card which is tuned to 3:1. Respects prefers-reduced-motion
+ * via motion-reduce:hidden on the shimmer layer.
+ */
+function ActivityLogSkeleton() {
+  return (
+    <div role="status" aria-live="polite" aria-label="Loading activity">
+      <div className="px-4 py-2 bg-[var(--surface-sunken)] border-y border-[var(--border-subtle)]">
+        <SkeletonBlock className="w-20 h-2.5 rounded-sm" />
+      </div>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="relative overflow-hidden px-4 py-3 border-b border-[var(--border-subtle)] flex items-start gap-3"
+        >
+          <SkeletonBlock className="w-[18px] h-[18px] rounded-sm flex-shrink-0 mt-1" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <SkeletonBlock className="w-14 h-2.5 rounded-sm" />
+              <SkeletonBlock className="w-10 h-2.5 rounded-sm" />
+            </div>
+            <SkeletonBlock className="w-3/5 h-3 rounded-sm mb-1.5" />
+            <SkeletonBlock className="w-4/5 h-2 rounded-sm" />
+          </div>
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <SkeletonBlock className="w-10 h-2 rounded-sm" />
+            <SkeletonBlock className="w-14 h-2 rounded-sm" />
+          </div>
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none motion-reduce:hidden"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent 0%, var(--surface-raised, rgba(0,0,0,0.06)) 50%, transparent 100%)',
+              backgroundSize: '220% 100%',
+              animation: `roadrunner-shimmer 1.4s linear ${i * 0.15}s infinite`,
+            }}
+          />
+        </div>
+      ))}
+      <style>{`
+        @keyframes roadrunner-shimmer {
+          0% { background-position: 220% 0; }
+          100% { background-position: -20% 0; }
+        }
+      `}</style>
+      <span className="sr-only">Loading activity, please wait…</span>
+    </div>
+  );
+}
+
+function SkeletonBlock({ className = '' }: { className?: string }) {
+  return <div className={`bg-[var(--surface-raised)] ${className}`} aria-hidden="true" />;
 }
 
 function LogRow({ entry }: { entry: ActivityLogEntry }) {
@@ -193,9 +383,14 @@ function LogRow({ entry }: { entry: ActivityLogEntry }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[13px] text-[var(--text-primary)]">
-          <span className="font-bold">{entry.field}</span>{' '}
+        <div className="text-[13px] text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap">
+          <span className="font-bold">{entry.field}</span>
           <span className="font-semibold" style={{ color: actionColor }}>{entry.action}</span>
+          {entry.archived && (
+            <span className="inline-flex items-center px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--surface-raised)] text-[var(--text-tertiary)] border border-[var(--border)]">
+              Archived
+            </span>
+          )}
         </div>
         <div className="mt-0.5 text-[12px]">
           {entry.oldValue && entry.newValue && (
@@ -211,6 +406,11 @@ function LogRow({ entry }: { entry: ActivityLogEntry }) {
             <span className="text-[var(--text-tertiary)] line-through">{entry.oldValue}</span>
           )}
         </div>
+        {entry.snippet && (
+          <div className="mt-0.5 text-[11.5px] text-[var(--text-tertiary)] line-clamp-2">
+            {entry.snippet}
+          </div>
+        )}
       </div>
 
       <div className="text-right flex-shrink-0">

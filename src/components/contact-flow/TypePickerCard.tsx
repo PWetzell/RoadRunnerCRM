@@ -13,6 +13,7 @@ export function TypePickerCard({ type, onClick }: {
   return (
     <button
       onClick={onClick}
+      data-tour={isPerson ? 'contact-type-person' : 'contact-type-company'}
       className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 bg-[var(--surface-card)] cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 text-center min-h-[200px]"
       style={{ borderColor: color, boxShadow: `0 0 0 4px ${bg}` }}
     >

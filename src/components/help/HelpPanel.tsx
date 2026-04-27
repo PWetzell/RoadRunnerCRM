@@ -6,6 +6,7 @@ import {
   X, BookOpen, Compass, Play, Question, Sparkle, House, Users, CurrencyDollar,
   UsersFour, Files, ChartPieSlice, UserCircleGear, Keyboard, ChatCircle, Lifebuoy,
   ArrowRight, GraduationCap, Lightning, Flag, BellRinging, Gear, GridFour,
+  UserPlus, Buildings, Bookmark, Envelope,
 } from '@phosphor-icons/react';
 // TourSpotlight rendering moved to ActiveTourOverlay (independent of panel open/close)
 import { TOUR_STEPS, getTourForPath, TourStep } from '@/lib/tour-steps';
@@ -181,6 +182,83 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'Notifications fine-tunes weekly emails, stale-contact alerts, and AI suggestion bubbles.',
     ],
   },
+  '/contacts/new/person': {
+    title: 'Create a Person',
+    icon: <UserPlus size={14} weight="duotone" />,
+    tips: [
+      'Name is required; every other field has live validation as you type.',
+      'The AI sidebar searches real public sources (GitHub, Wikidata, LinkedIn) for duplicates while you type a name or email.',
+      'On step 2, the sidebar suggests a reports-to based on the title you entered.',
+      'Step 3 classifies the person — Client, Prospect, Partner, Vendor, Investor, or Personal — and sets a Private flag if needed.',
+      'Tip: drop a resume PDF on the chooser page instead and the AI will fill this whole form for you.',
+    ],
+    walkthrough: [
+      'Creating a Person is a 3-step flow — Basic Info, Organization, Relationship — with an AI sidebar that runs alongside each step.',
+      'Step 1 captures the essentials: name, prefix/suffix, email + type, phone + ext + type, and title. Live validation runs as you type.',
+      'The AI sidebar is Duplicate Detection on step 1. It queries public sources for existing matches so you merge instead of creating duplicates.',
+      'Step 2 links the person to a company, adds department, reports-to, and role level. The AI sidebar switches to Org Hierarchy suggestions.',
+      'Step 3 classifies the relationship and lets you mark the contact Private so the rest of the team can\'t see them.',
+      'You can also start the whole flow from a resume — drop a PDF on the chooser and the AI extracts everything into this form.',
+    ],
+  },
+  '/contacts/new/company': {
+    title: 'Create a Company',
+    icon: <Buildings size={14} weight="duotone" />,
+    tips: [
+      'Name is required; website, industry, size, HQ, and founded year all live-validate.',
+      'Typing a company name searches Clearbit, Crunchbase, SEC EDGAR, and OpenCorporates in real time for existing matches.',
+      'Step 2 is AI Enrichment — every suggested field has a source badge and you accept or reject one by one.',
+      'Step 3 links parents, subsidiaries, partners, vendors, and customer people so the org graph stays connected.',
+      'Step 4 is a full summary review before saving — nothing is persisted until you confirm.',
+    ],
+    walkthrough: [
+      'Creating a Company is a 4-step flow — Details, AI Enrichment, Relationships, Confirm — with an AI sidebar that previews public data as you type.',
+      'Step 1 takes the basics: name, website, industry, size, phone, founded year, HQ, and description. All live-validated.',
+      'The AI Enrichment sidebar shows what public data the AI will pull on the next step. Every row is traceable to its source.',
+      'Step 2 is the enrichment review. Nothing lands on the record without your explicit accept.',
+      'Step 3 creates graph links to existing contacts — parents, subsidiaries, partners, vendors, customer people.',
+      'Step 4 shows the full summary. Saving creates the org and all pending relationships in one go.',
+    ],
+  },
+  'lists': {
+    title: 'Saved Lists',
+    icon: <Bookmark size={14} weight="duotone" />,
+    tips: [
+      'Saved lists group contacts, deals, or documents — they work everywhere that record type shows up.',
+      'Pin a list from the Pin Manager (gear on the SAVED LISTS sidebar header) to put it one click away.',
+      'Click the Bookmark icon on any contact / deal / document header to add it to one or more lists.',
+      'Make a list Private (only you) or Public (everyone can pin it to their sidebar).',
+      'The Star icon is the Favorites shortcut — a built-in list per record type, no setup needed.',
+      'When a grid is filtered by a list (via ?list=…), a chip at the top lets you clear the filter without deleting the list.',
+    ],
+    walkthrough: [
+      'Saved Lists are how you group records for quick access — "Q2 High Priority", "Portsmouth Branch", "Client Contracts", anything you want.',
+      'Pinned lists show in the sidebar under SAVED LISTS. The gear opens the Pin Manager to choose which show.',
+      'Click the Bookmark on any record\'s detail header to open the Save-to-list menu. Add to existing lists or create new ones inline.',
+      'New lists are tied to the record type you created them from — a contact list won\'t appear when you bookmark a deal.',
+      'The list-filter chip at the top of a filtered grid clears the filter only — the list itself is untouched.',
+      'The Star next to the Bookmark is the one-click Favorites shortcut — handy for records you touch often.',
+    ],
+  },
+  'gmail': {
+    title: 'Gmail Integration',
+    icon: <Envelope size={14} weight="duotone" />,
+    tips: [
+      '"Synced 11h ago" is the stored timestamp of the last successful pull — it\'s NOT live status.',
+      'If Sync now fails with "no_gmail_connection", your auth row is missing a refresh token — reconnect from Settings.',
+      'Import contacts ranks senders by frequency, strips noise (no-reply, notifications, marketing), and dedupes against your CRM.',
+      'Emails from senders already in your CRM attach to their timeline silently — no action required.',
+      'There is no "remove Gmail-imported contacts" action — Gmail contacts look identical to manually-created ones, so delete them from the contacts grid.',
+      'If the suggestions modal is empty, it could mean a quiet inbox, fully-imported senders, OR a sync that hasn\'t actually run yet.',
+    ],
+    walkthrough: [
+      'The Gmail integration pulls email activity into the CRM — every inbound and outbound message gets matched to the right contact automatically.',
+      'The banner on Contacts shows your connected account, messages tracked, and last sync time. That time is stored, not live.',
+      'Sync now does an on-demand pull. If it errors "no_gmail_connection", OAuth was only partially completed and you need to reconnect from Settings.',
+      'Import contacts runs the suggestions algorithm: frequency-rank senders, drop noise, dedupe against existing contacts. What\'s left is what you import.',
+      'Gmail-imported contacts don\'t carry a "source" tag — they look identical to manual contacts. Delete them from the contacts grid if you need to prune.',
+    ],
+  },
   'grids': {
     title: 'Grids',
     icon: <GridFour size={14} weight="duotone" />,
@@ -256,12 +334,10 @@ export default function HelpPanel({ onClose }: Props) {
     return () => document.removeEventListener('mousedown', onClick);
   }, [onClose, activeWalkthrough, tourSteps.length]);
 
-  // Handle navigation for cross-page tour steps
-  useEffect(() => {
-    if (currentTourStep?.navigateTo && pathname !== currentTourStep.navigateTo) {
-      router.push(currentTourStep.navigateTo);
-    }
-  }, [currentTourStep, pathname, router]);
+  // Per-step navigateTo handling lives in ActiveTourOverlay (which stays
+  // mounted for the entire tour). It used to live here, but HelpPanel
+  // auto-closes on tour start, which meant only step 1's navigateTo ever
+  // fired — every subsequent step was stuck on the wrong page.
 
   const walkthrough = activeWalkthrough ? SECTION_HELP[activeWalkthrough]?.walkthrough : null;
 
@@ -430,7 +506,9 @@ export default function HelpPanel({ onClose }: Props) {
                     Object.keys(SECTION_HELP).find((k) => k !== 'grids' && pathname.startsWith(k))
                     || '/dashboard';
                   const recommended = entries.find(([k]) => k === recommendedKey);
-                  const rest = entries.filter(([k]) => k !== recommendedKey);
+                  const rest = entries
+                    .filter(([k]) => k !== recommendedKey)
+                    .sort(([, a], [, b]) => a.title.localeCompare(b.title));
                   return (
                     <>
                       {recommended && (
@@ -548,12 +626,30 @@ function TourRow({
   const stepCount = hasTour ? TOUR_STEPS[key].length : s.walkthrough.length;
   const GRID_PAGES = ['/contacts', '/sales', '/recruiting', '/documents'];
   const isGridTour = key === 'grids';
+  // Route-agnostic tour keys — either not valid URLs (grids/lists/gmail),
+  // or the tour deliberately starts somewhere other than its own key
+  // (the contact-creation tours start on `/contacts` so the user sees the
+  // "+ New Contact" entry point before being taken into the form). Each
+  // of these tours seeds its own landing page via `navigateTo` on step 1,
+  // so TourRow must NOT pre-navigate based on the key.
+  const ROUTE_AGNOSTIC_KEYS = new Set([
+    'grids',
+    'lists',
+    'gmail',
+    '/contacts/new/person',
+    '/contacts/new/company',
+  ]);
   return (
     <button
       onClick={() => {
         if (isGridTour) {
           if (!GRID_PAGES.some((p) => pathname.startsWith(p))) router.push('/contacts');
-        } else if (pathname !== key && key !== '/' && key !== '/notifications' && key !== 'grids') {
+        } else if (
+          pathname !== key
+          && key !== '/'
+          && key !== '/notifications'
+          && !ROUTE_AGNOSTIC_KEYS.has(key)
+        ) {
           router.push(key);
         }
         startTour(key);

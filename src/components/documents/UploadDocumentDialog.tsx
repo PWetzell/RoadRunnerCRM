@@ -3,9 +3,10 @@
 import { useState, useRef } from 'react';
 import { UploadSimple, X, File as FileIcon } from '@phosphor-icons/react';
 import { useDocumentStore } from '@/stores/document-store';
-import { DOCUMENT_CATEGORIES, DocumentCategory, formatFileSize } from '@/types/document';
+import { CrmDocument, DOCUMENT_CATEGORIES, DocumentCategory, formatFileSize } from '@/types/document';
 import { useUserStore } from '@/stores/user-store';
 import { toast } from '@/lib/toast';
+import ReplaceFileDialog from './ReplaceFileDialog';
 
 interface Props {
   open: boolean;
@@ -23,6 +24,12 @@ interface Props {
  */
 export default function UploadDocumentDialog({ open, onClose, defaultContactId, defaultDealId }: Props) {
   const attachFile = useDocumentStore((s) => s.attachFile);
+  const findDuplicate = useDocumentStore((s) => s.findDuplicate);
+  const replaceDocumentBytes = useDocumentStore((s) => s.replaceDocumentBytes);
+  const suggestUniqueFileName = useDocumentStore((s) => s.suggestUniqueFileName);
+  const updateDocument = useDocumentStore((s) => s.updateDocument);
+  const removeDocument = useDocumentStore((s) => s.removeDocument);
+  const addDocument = useDocumentStore((s) => s.addDocument);
   const user = useUserStore((s) => s.user);
 
   const [file, setFile] = useState<File | null>(null);
@@ -31,7 +38,22 @@ export default function UploadDocumentDialog({ open, onClose, defaultContactId, 
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Collision dialog state — populated after handleUpload detects that a
+  // file with the same name is already attached to this scope (contact/deal).
+  const [collision, setCollision] = useState<{
+    existing: CrmDocument;
+    incoming: File;
+    suggestedAlternateName: string;
+  } | null>(null);
+
   if (!open) return null;
+
+  const resetForm = () => {
+    setFile(null);
+    setDescription('');
+    setCategory('other');
+    setCollision(null);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -42,7 +64,30 @@ export default function UploadDocumentDialog({ open, onClose, defaultContactId, 
 
   const handleUpload = () => {
     if (!file) return;
-    const name = file.name;
+
+    // HubSpot-style collision check: scope is (contactId, dealId). Two
+    // different candidates can legitimately both have a "resume.pdf"; the
+    // same contact with two "resume.pdf" entries is what we flag.
+    const existing = findDuplicate({
+      fileName: file.name,
+      contactId: defaultContactId,
+      dealId: defaultDealId,
+    });
+
+    if (existing) {
+      setCollision({
+        existing,
+        incoming: file,
+        suggestedAlternateName: suggestUniqueFileName({
+          fileName: file.name,
+          contactId: defaultContactId,
+          dealId: defaultDealId,
+        }),
+      });
+      return; // Await user's choice in the ReplaceFileDialog.
+    }
+
+    // No collision — straight-through create.
     attachFile(file, {
       category,
       description: description.trim() || undefined,
@@ -50,14 +95,82 @@ export default function UploadDocumentDialog({ open, onClose, defaultContactId, 
       dealId: defaultDealId,
       uploadedBy: user.name,
     });
-    toast.success('Document uploaded', { description: name });
-    setFile(null);
-    setDescription('');
-    setCategory('other');
+    toast.success('Document uploaded', { description: file.name });
+    resetForm();
     onClose();
   };
 
+  // ── Collision resolution handlers ────────────────────────────────
+  //
+  // Three branches, all three produce undoable toasts. The undo handlers
+  // capture the pre-change snapshot so we can revert precisely — including
+  // the case where Replace wipes previewUrl (we restore the old doc object
+  // wholesale, not just the bytes, so tags/category/description survive
+  // the round trip).
+
+  const handleReplace = () => {
+    if (!collision) return;
+    const { existing, incoming } = collision;
+    // Snapshot BEFORE the mutation so Undo can restore the exact prior
+    // state. replaceDocumentBytes also returns this, but capturing here
+    // keeps the undo closure self-contained.
+    const snapshot = { ...existing };
+    replaceDocumentBytes(existing.id, incoming);
+    // If the user edited category/description in the upload form before
+    // hitting Upload, honour those edits on the replaced doc too — matches
+    // what they'd expect from having filled the form out.
+    const patch: Partial<CrmDocument> = {};
+    if (category !== 'other' && category !== existing.category) patch.category = category;
+    const trimmedDesc = description.trim();
+    if (trimmedDesc && trimmedDesc !== existing.description) patch.description = trimmedDesc;
+    if (Object.keys(patch).length > 0) updateDocument(existing.id, patch);
+
+    toast.success('Replaced existing file', {
+      description: incoming.name,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          // Remove the replaced record and restore the old doc wholesale.
+          // We use removeDocument + addDocument rather than updateDocument
+          // because the snapshot includes a previewUrl that's an object URL
+          // from the prior session — replacing in-place via updateDocument
+          // would work, but this is unambiguous and symmetric with the
+          // Keep-both undo below.
+          removeDocument(existing.id);
+          addDocument(snapshot);
+        },
+      },
+    });
+    resetForm();
+    onClose();
+  };
+
+  const handleKeepBoth = () => {
+    if (!collision) return;
+    const { incoming, suggestedAlternateName } = collision;
+    const created = attachFile(incoming, {
+      category,
+      description: description.trim() || undefined,
+      contactId: defaultContactId,
+      dealId: defaultDealId,
+      uploadedBy: user.name,
+      fileNameOverride: suggestedAlternateName,
+    });
+    toast.success('Uploaded new copy', {
+      description: suggestedAlternateName,
+      action: {
+        label: 'Undo',
+        onClick: () => removeDocument(created.id),
+      },
+    });
+    resetForm();
+    onClose();
+  };
+
+  const handleCancelCollision = () => setCollision(null);
+
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       <div
@@ -175,5 +288,22 @@ export default function UploadDocumentDialog({ open, onClose, defaultContactId, 
         </div>
       </div>
     </div>
+
+    {/* Collision prompt — renders on top of the upload modal when the
+         picked file's name already exists in this scope. HubSpot pattern:
+         Replace / Keep both / Cancel. Portaled to document.body internally. */}
+    {collision && (
+      <ReplaceFileDialog
+        existing={collision.existing}
+        incoming={collision.incoming}
+        suggestedAlternateName={collision.suggestedAlternateName}
+        onChoose={(choice) => {
+          if (choice === 'replace') handleReplace();
+          else if (choice === 'keep-both') handleKeepBoth();
+          else handleCancelCollision();
+        }}
+      />
+    )}
+    </>
   );
 }
