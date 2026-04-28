@@ -171,16 +171,16 @@ export default function GmailSyncBanner() {
     return (
       <div
         data-tour="gmail-banner"
-        className="w-full bg-[var(--warning-bg,#fff7ed)] border border-[var(--warning,#d97706)] rounded-lg px-3.5 py-2.5 flex items-center gap-2.5"
+        className="w-full bg-[var(--warning-bg,#fff7ed)] border border-[var(--warning,#d97706)] rounded-lg px-2.5 py-1.5 flex items-center gap-2"
       >
-        <div className="w-7 h-7 rounded-full bg-[var(--warning,#d97706)] flex items-center justify-center flex-shrink-0">
-          <Warning size={15} weight="fill" className="text-white" />
+        <div className="w-5 h-5 rounded-full bg-[var(--warning,#d97706)] flex items-center justify-center flex-shrink-0">
+          <Warning size={12} weight="fill" className="text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[12.5px] font-bold text-[var(--text-primary)]">
+          <div className="text-[10.5px] font-bold text-[var(--text-primary)]">
             Connect Gmail to start tracking email activity
           </div>
-          <div className="text-[11.5px] text-[var(--text-secondary)]">
+          <div className="text-[9.5px] text-[var(--text-secondary)]">
             Sync your inbox to match messages to contacts and enable AI drafting.
           </div>
         </div>
@@ -188,17 +188,17 @@ export default function GmailSyncBanner() {
           data-tour="gmail-connect-btn"
           onClick={handleConnectGmail}
           disabled={connecting}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md bg-[var(--brand-primary)] text-white border-none hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-md bg-[var(--brand-primary)] text-white border-none hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
         >
-          <GoogleLogo size={13} weight="bold" />
+          <GoogleLogo size={11} weight="bold" />
           {connecting ? 'Redirecting…' : 'Connect Gmail'}
         </button>
         <button
           onClick={handleDismiss}
           title="Hide this banner. You can reconnect anytime from Settings."
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md bg-white text-[var(--text-primary)] hover:bg-[var(--surface-2)] border border-[var(--text-primary)] cursor-pointer flex-shrink-0"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-md bg-white text-[var(--text-primary)] hover:bg-[var(--surface-2)] border border-[var(--text-primary)] cursor-pointer flex-shrink-0"
         >
-          <XIcon size={12} weight="bold" />
+          <XIcon size={10} weight="bold" />
           Ignore
         </button>
       </div>

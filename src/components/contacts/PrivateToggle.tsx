@@ -29,13 +29,13 @@ export default function PrivateToggle() {
       onClick={toggle}
       title={active ? 'Show all contacts' : 'Show private contacts only'}
       aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold cursor-pointer border transition-colors ${
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold cursor-pointer border transition-colors ${
         active
           ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)] hover:brightness-110'
           : 'bg-[var(--surface-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
       }`}
     >
-      <EyeSlash size={12} weight={active ? 'fill' : 'regular'} />
+      <EyeSlash size={10} weight={active ? 'fill' : 'regular'} />
       Private
     </button>
   );

@@ -408,7 +408,7 @@ function NavGroup({
               <Link
                 key={child.href}
                 href={child.href}
-                className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] no-underline transition-all duration-150"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-[var(--radius-md)] no-underline transition-all duration-150"
                 style={childIsActive
                   ? { background: '#1955A6', color: '#FFFFFF' }
                   : { color: 'var(--sidebar-text)' }
@@ -426,8 +426,8 @@ function NavGroup({
                   }
                 }}
               >
-                <ChildIcon size={16} weight={childIsActive ? 'fill' : 'regular'} className="flex-shrink-0" />
-                <span className="text-[12.5px] font-semibold">{child.label}</span>
+                <ChildIcon size={13} weight={childIsActive ? 'fill' : 'regular'} className="flex-shrink-0" />
+                <span className="text-[10px] font-semibold">{child.label}</span>
               </Link>
             );
           })}
