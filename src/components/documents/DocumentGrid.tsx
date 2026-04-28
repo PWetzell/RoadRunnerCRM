@@ -57,9 +57,8 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       cell: ({ row }) => {
         const doc = row.original;
         return (
-          <div className="min-w-0">
-            <div className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate">{doc.name}</div>
-            <div className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate">{doc.fileName}</div>
+          <div className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate min-w-0">
+            {doc.name}
           </div>
         );
       },
