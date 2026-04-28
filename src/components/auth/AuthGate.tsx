@@ -767,7 +767,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             >
               Contact creation,
               <br />
-              reimagined with intelligent AI.
+              reimagined with intelligent AI
             </h1>
             <p className="text-white/70 text-[15px] leading-relaxed font-medium">
               The modern CRM for teams that move fast. Auto-enriched profiles, smart duplicate detection, and a pipeline that thinks ahead.
