@@ -49,6 +49,13 @@
   --danger:      #DC2626;  --danger-bg:  #FEF2F2;
   --info:        #1FA4B6;  --info-bg:    #E0F5F8;
 
+  /* Lavender — used for "raw count" stat cards (Recipients on /bulk,
+     Replied on /sequences). Distinct from brand-blue / info-teal /
+     success-green so the four cards in the Performance row each read
+     as their own category. */
+  --lavender:    #4F46E5;  --lavender-bg: #EEF2FF;
+  --lavender-fg: #3730A3;
+
   --ai:          #1FA4B6;  --ai-bg:      #E0F5F8;
   --ai-border:   #7DD4DF;  --ai-dark:    #137585;
 
@@ -115,6 +122,11 @@
   --warning:     #F59E0B;  --warning-bg: #2D1F00;
   --danger:      #F87171;  --danger-bg:  #2D1216;
   --info:        #1FA4B6;  --info-bg:    #0A3A42;
+
+  /* Lavender — dark mode pair. Mirror the other tones' light/dark
+     pattern: bright accent on a deeply tinted bg. */
+  --lavender:    #A5B4FC;  --lavender-bg: #1A1F4D;
+  --lavender-fg: #C7D2FE;
 
   --ai:          #1FA4B6;  --ai-bg:      #0A3A42;
   --ai-border:   #137585;  --ai-dark:    #7DD4DF;

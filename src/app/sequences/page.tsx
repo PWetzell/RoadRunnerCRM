@@ -1379,9 +1379,10 @@ function SeqStatCard({
     // palette across every tone. If we tweak /bulk later we should mirror
     // it here.
     neutral: { bg: 'var(--surface-card)', text: 'var(--text-primary)', iconColor: 'var(--text-tertiary)' },
-    // Lavender — same hex Bulk uses, ensures Replied + Recipients
-    // share a visual identity across pages.
-    warm: { bg: '#EEF2FF', text: '#3730A3', iconColor: '#4F46E5' },
+    // Lavender — same CSS vars as /bulk's Recipients card, so Replied
+    // and Recipients share visual identity across pages AND adapt to
+    // dark mode (vars are defined in globals.css with light + dark).
+    warm: { bg: 'var(--lavender-bg)', text: 'var(--lavender-fg)', iconColor: 'var(--lavender)' },
     danger: { bg: 'var(--danger-bg, #FEE2E2)', text: 'var(--danger, #B91C1C)', iconColor: 'var(--danger, #B91C1C)' },
   };
   const s = toneStyles[tone];

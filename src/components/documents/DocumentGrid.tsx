@@ -50,22 +50,16 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       accessorKey: 'name',
       header: 'Name',
       size: 420,
+      // Name cell — file-type icon removed (it duplicated the dedicated
+      // Type column's PDF/DOCX/etc pill). Cleaner row, single source of
+      // truth for "what type of file is this." Applies in light + dark
+      // mode, demo + personal accounts since the renderer is shared.
       cell: ({ row }) => {
         const doc = row.original;
-        const Icon = FAMILY_ICON[doc.fileFamily];
-        const color = getExtColor(doc.fileName, doc.fileFamily, isDark);
         return (
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0"
-              style={{ background: isDark ? getExtBgColor(doc.fileName, doc.fileFamily) : `color-mix(in srgb, ${color} 12%, transparent)` }}
-            >
-              <Icon size={18} weight="duotone" style={{ color }} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">{doc.name}</div>
-              <div className="text-[10px] text-[var(--text-tertiary)] truncate">{doc.fileName}</div>
-            </div>
+          <div className="min-w-0">
+            <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">{doc.name}</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] truncate">{doc.fileName}</div>
           </div>
         );
       },

@@ -372,13 +372,12 @@ function StatCard({
     success: { bg: 'var(--success-bg)', text: 'var(--success)', iconColor: 'var(--success)' },
     info: { bg: 'var(--info-bg)', text: 'var(--info)', iconColor: 'var(--info)' },
     neutral: { bg: 'var(--surface-card)', text: 'var(--text-primary)', iconColor: 'var(--text-tertiary)' },
-    // Soft lavender for raw-count metrics. The earlier amber pulled
-    // the eye too hard; pure slate read as "disabled". Indigo-50 bg
-    // with indigo-800 text gives a fourth distinct hue (cooler than
-    // brand-blue, warmer than info-teal) that doesn't compete with
-    // the performance metrics next to it. Contrast: #3730A3 on
-    // #EEF2FF = 9.4:1, well above WCAG AA's 4.5:1 for normal text.
-    warm: { bg: '#EEF2FF', text: '#3730A3', iconColor: '#4F46E5' },
+    // Soft lavender for raw-count metrics. Uses --lavender-* CSS vars
+    // (defined in globals.css) so the card adapts to dark mode along
+    // with the other tones. Light: indigo-50 bg + indigo-800 text.
+    // Dark: deep indigo bg + indigo-200 text. Contrast meets WCAG AA
+    // in both themes.
+    warm: { bg: 'var(--lavender-bg)', text: 'var(--lavender-fg)', iconColor: 'var(--lavender)' },
     danger: { bg: 'var(--danger-bg, #FEE2E2)', text: 'var(--danger, #B91C1C)', iconColor: 'var(--danger, #B91C1C)' },
   };
   const s = styles[tone];
