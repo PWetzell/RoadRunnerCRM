@@ -668,7 +668,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 z-[200] bg-[var(--surface-bg)] flex overflow-auto">
       {/* ═══ LEFT — BRAND HERO ═══ */}
       <div
-        className="hidden md:flex relative flex-1 min-h-screen flex-col justify-between px-12 py-20 overflow-hidden"
+        className="hidden md:flex relative flex-1 min-h-screen flex-col justify-between px-12 py-12 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #0A2540 0%, #1955A6 55%, #2E7BD6 100%)',
         }}
@@ -763,18 +763,19 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
           {/* mt-6 (24px) — half of the prior mt-12 — restores moderate
                breathing room between the paragraph and the bullets
-               without overshooting. */}
-          <div className="flex flex-col gap-3 max-w-md mt-6 mb-12">
+               without overshooting. mb-4 keeps modest separation from
+               the copyright but leaves the footer in view. */}
+          <div className="flex flex-col gap-3 max-w-md mt-6 mb-4">
             <FeatureLine icon={<Sparkle size={16} weight="fill" />} label="AI-assisted contact enrichment" />
             <FeatureLine icon={<Lightning size={16} weight="fill" />} label="Real-time pipeline insights" />
             <FeatureLine icon={<ShieldCheck size={16} weight="fill" />} label="Smart duplicate detection" />
           </div>
         </div>
 
-        {/* Footer — extra top margin so the feature stack above doesn't
-             collide with the copyright on shorter viewports. The
-             `justify-between` parent was packing them flush. */}
-        <div className="relative z-10 mt-8 flex items-center gap-4 text-white/50 text-[11px] font-semibold">
+        {/* Footer — small top margin to avoid colliding with the
+             feature stack while keeping the copyright in view at
+             standard viewport heights. */}
+        <div className="relative z-10 mt-2 flex items-center gap-4 text-white/50 text-[11px] font-semibold">
           <span>© Roadrunner {new Date().getFullYear()}</span>
           <span className="w-1 h-1 rounded-full bg-white/30" />
           <span>AI-assisted contact intelligence</span>
