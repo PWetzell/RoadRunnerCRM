@@ -119,9 +119,13 @@ export async function POST(request: Request) {
       match_type: 'from' | 'to' | 'cc' | 'bcc';
       email_messages: { subject: string | null; snippet: string | null; received_at: string } | null;
     }
+    // Explicit `unknown` annotation on `m` — Supabase's generic
+    // `select()` return type doesn't narrow to a known shape here, so
+    // strict TS (used by Vercel's production `next build`) flags it
+    // as implicit `any`. Cast happens on the next line anyway.
     recent = (recentEmails.data ?? [])
-      .map((m) => {
-        const row = m as unknown as MatchRow;
+      .map((m: unknown) => {
+        const row = m as MatchRow;
         if (!row.email_messages) return null;
         return {
           direction: row.match_type === 'from' ? ('incoming' as const) : ('outgoing' as const),
@@ -130,7 +134,7 @@ export async function POST(request: Request) {
           receivedAt: row.email_messages.received_at,
         };
       })
-      .filter((e): e is NonNullable<typeof e> => e !== null);
+      .filter((e: { direction: 'incoming' | 'outgoing'; subject: string | null; snippet: string | null; receivedAt: string } | null): e is NonNullable<typeof e> => e !== null);
   }
 
   const ctx: DraftContext = {
