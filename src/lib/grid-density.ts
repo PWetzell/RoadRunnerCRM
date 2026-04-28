@@ -88,7 +88,7 @@ export const DENSITY_LABELS: Record<GridDensity, string> = {
 };
 
 export const DENSITY_HINTS: Record<GridDensity, string> = {
-  compact: 'Tightest rows — scan 30+ at a glance',
+  compact: 'Tightest rows',
   comfortable: 'Balanced rows — everyday default',
   spacious: 'Relaxed rows — reduced eye strain',
 };

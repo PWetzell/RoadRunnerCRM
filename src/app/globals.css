@@ -848,11 +848,26 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   padding-right: 4px !important;
 }
 
-/* Tighten min-width on counter badges (e.g. unread email count) so
-   they don't reserve a full 18px when the number is single-digit. */
-[data-density="compact"] td .rounded-full[class*="min-w"] {
-  min-width: 12px !important;
-  height: 12px !important;
+/* Counter badges (paperclip count, unread email count, +N overflow)
+   are sized to match the `Person`/`Tag` pill height so the row reads
+   as one consistent strip rather than a mix of bigger circles next
+   to smaller rectangles. After the chip-padding override above, pills
+   land at ~10px tall (8px text + 1px border each side); badges align
+   to that. Targets BOTH td (body) and th (column header counters
+   like the "60" total-attachments badge in the paperclip column). */
+[data-density="compact"] td .rounded-full[class*="min-w"],
+[data-density="compact"] th .rounded-full[class*="min-w"] {
+  min-width: 10px !important;
+  height: 10px !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+
+/* Cover the badge variant that uses h-[18px] without min-w- (e.g. the
+   email-count chip on some renderers). Same height target as above. */
+[data-density="compact"] td .rounded-full[class*="h-["],
+[data-density="compact"] th .rounded-full[class*="h-["] {
+  height: 10px !important;
 }
 
 /* Force line-height: 1 on every row descendant — kills the residual
@@ -870,19 +885,17 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   line-height: 1 !important;
 }
 
-/* Hard cap row height — eliminates the residual ~6-8px that came from
-   stacked-content cells (the contact name column renders name + a
-   secondary "orgName" subline beneath it on Person rows; in compact
-   mode that 2-row stack is the row's height limiter). With max-height
-   + overflow-hidden, the subline is clipped if it would push past
-   the cap. Aggressive but matches Excel / Airtable's compact density
-   where every row is exactly the same vertical pixel. */
+/* Hard cap row height at 12px — the absolute floor before the avatar
+   becomes the limiter (10px circle + 1px border each side = 12px).
+   Pills, badges, text, and icons all clip to this height. Matches
+   Airtable's "Short" row + Excel's compact view. Below 12px we'd
+   need to remove the avatar entirely. */
 [data-density="compact"] tbody tr {
-  height: 16px;
+  height: 12px;
 }
 [data-density="compact"] tbody td {
-  max-height: 16px;
-  height: 16px;
+  max-height: 12px;
+  height: 12px;
 }
 
 /* Hide the secondary subline under contact names in compact (orgName
