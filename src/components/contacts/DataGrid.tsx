@@ -403,10 +403,13 @@ function buildColumns(
         return (
           <div className="flex items-center gap-2.5">
             <div
-              className="flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0"
+              className="flex items-center justify-center font-extrabold text-white flex-shrink-0 leading-none"
               style={{
                 width: 'var(--grid-avatar, 32px)',
                 height: 'var(--grid-avatar, 32px)',
+                // Initials font scales with avatar size — at compact's
+                // 12px avatar, 11px text would overflow the circle.
+                fontSize: 'var(--grid-avatar-font, 11px)',
                 background: getAvatarColor(c.id, c.avatarColor),
                 borderRadius: isOrg ? '6px' : '50%',
               }}

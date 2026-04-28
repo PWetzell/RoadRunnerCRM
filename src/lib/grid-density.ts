@@ -29,6 +29,10 @@ export interface DensityConfig {
   headerFont: number;
   /** Avatar / initials chip size (px) — used by cell renderers that display people/org avatars */
   avatar: number;
+  /** Initials font inside the avatar circle (px). Scales with avatar
+   *  size — at 12px avatars, 11px text would overflow the circle, so
+   *  we drop the initials font proportionally. */
+  avatarFont: number;
   /** Chip / pill font size (px) — used by status/type pills inside cells */
   chipFont: number;
 }
@@ -42,10 +46,13 @@ export interface DensityConfig {
 // 12px target is approximated — the smallest chip pill renders at ~14px
 // regardless of density, which pins the floor. Visible compact rows
 // land around 14–16px in practice.
+// Targets ~8 / 24 / 36 px row heights. Compact is now spreadsheet-tight:
+// 8px font, 12px avatars with 6.5px initials that actually fit, near-zero
+// padding. Comfortable + Spacious unchanged from prior calibration.
 export const DENSITY: Record<GridDensity, DensityConfig> = {
-  compact:     { rowPy: 1,  rowPx: 4,  headerPy: 2, font: 10, lineHeight: 1.0, headerFont: 9,    avatar: 14, chipFont: 8   },
-  comfortable: { rowPy: 4,  rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2, headerFont: 10,   avatar: 20, chipFont: 9   },
-  spacious:    { rowPy: 8,  rowPx: 12, headerPy: 8, font: 13, lineHeight: 1.4, headerFont: 11,   avatar: 28, chipFont: 10  },
+  compact:     { rowPy: 0, rowPx: 4,  headerPy: 1, font: 8,  lineHeight: 1.0, headerFont: 8,  avatar: 12, avatarFont: 6.5, chipFont: 7   },
+  comfortable: { rowPy: 4, rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2, headerFont: 10, avatar: 20, avatarFont: 10,  chipFont: 9   },
+  spacious:    { rowPy: 8, rowPx: 12, headerPy: 8, font: 13, lineHeight: 1.4, headerFont: 11, avatar: 28, avatarFont: 12,  chipFont: 10  },
 };
 
 /**
@@ -63,6 +70,7 @@ export function densityStyle(density: GridDensity): React.CSSProperties {
     ['--grid-line-height' as string]: `${d.lineHeight}`,
     ['--grid-header-font' as string]: `${d.headerFont}px`,
     ['--grid-avatar' as string]: `${d.avatar}px`,
+    ['--grid-avatar-font' as string]: `${d.avatarFont}px`,
     ['--grid-chip-font' as string]: `${d.chipFont}px`,
   } as React.CSSProperties;
 }
