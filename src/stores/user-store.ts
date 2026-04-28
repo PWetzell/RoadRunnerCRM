@@ -156,14 +156,15 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       name: 'navigator-crm-user',
-      // Don't persist auth state — every fresh page load / server restart
-      // drops users back to the login screen. Preferences still stick.
-      partialize: (state) => {
-        const { isAuthenticated: _ignored, ...rest } = state as UserStore & { isAuthenticated: boolean };
-        return rest;
-      },
+      // Persist auth state along with preferences so a browser refresh
+      // doesn't kick the user back to the login screen. Paul reported on
+      // 2026-04-28 that hitting refresh dumped him to the login page —
+      // root cause was that `isAuthenticated` was explicitly stripped
+      // here. Industry CRMs (HubSpot, Salesforce, Pipedrive) all keep
+      // the user signed in across refresh.
+      partialize: (state) => state,
       merge: (persisted, current) => {
-        const state = { ...(current as UserStore), ...(persisted as Partial<UserStore>), isAuthenticated: false };
+        const state = { ...(current as UserStore), ...(persisted as Partial<UserStore>) };
         // Backfill new fields that don't exist in old persisted data
         if (!state.sidebarBadges) {
           state.sidebarBadges = { contacts: true, sales: true, recruiting: true, documents: false };

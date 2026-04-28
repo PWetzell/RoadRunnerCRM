@@ -376,40 +376,85 @@ export default function SharedDataGrid<T>({
 
   const currentColumnIds = useMemo(() => columns.map((c) => c.id!), [columns]);
 
-  const [sorting, setSorting] = useState<SortingState>(defaultSorting ?? []);
-  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(currentColumnIds);
-
-  // Sync column order when columns change (e.g. group expand/collapse)
-  useEffect(() => {
-    setColumnOrder((prev) => {
-      const newIds = new Set(currentColumnIds);
-      const result: string[] = [];
-      const placed = new Set<string>();
-
-      for (const id of prev) {
-        if (newIds.has(id)) {
-          result.push(id);
-          placed.add(id);
-        }
-      }
-
-      // Any remaining new columns not yet placed (safety net)
-      for (const id of currentColumnIds) {
-        if (!placed.has(id)) result.push(id);
-      }
-
-      return result;
-    });
-  }, [currentColumnIds]);
-
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  // ──────────────────────────────────────────────────────────────────
+  // Persisted grid state — column order, visibility, sorting, saved views,
+  // active view, widths, and pinning all live in useGridLayoutStore so
+  // user customizations survive a browser refresh (Paul reported on
+  // 2026-04-28 that reordering columns kept resetting on reload — root
+  // cause was that columnOrder lived in local React useState and was
+  // never written to the persisted store).
+  // ──────────────────────────────────────────────────────────────────
   const gridLayoutRaw = useGridLayoutStore((s) => s.grids[gridId]);
   const columnWidths = gridLayoutRaw?.columnWidths ?? EMPTY_WIDTHS;
-
-  // Column pinning — hydrated from the persisted store so pins survive refreshes.
   const persistedPinning = gridLayoutRaw?.columnPinning ?? { left: [], right: [] };
+  const persistedOrder = gridLayoutRaw?.columnOrder ?? [];
+  const persistedVisibility = gridLayoutRaw?.columnVisibility ?? null;
+  const persistedSorting = gridLayoutRaw?.sorting ?? null;
+  const persistedViews = gridLayoutRaw?.savedViews ?? [];
+  const persistedActiveViewId = gridLayoutRaw?.activeViewId ?? null;
+
+  const setStoreColumnOrder = useGridLayoutStore((s) => s.setColumnOrder);
+  const setStoreColumnVisibility = useGridLayoutStore((s) => s.setColumnVisibility);
   const setStoreColumnPinning = useGridLayoutStore((s) => s.setColumnPinning);
+  const setStoreSorting = useGridLayoutStore((s) => s.setSorting);
+  const setStoreSavedViews = useGridLayoutStore((s) => s.setSavedViews);
+  const setStoreActiveViewId = useGridLayoutStore((s) => s.setActiveViewId);
+
+  // Column order: derived from the persisted order with new/missing ids
+  // reconciled. If nothing's persisted yet, fall back to the natural order
+  // from the columns prop.
+  const columnOrder: ColumnOrderState = useMemo(() => {
+    if (persistedOrder.length === 0) return currentColumnIds;
+    const known = new Set(persistedOrder);
+    const validIds = new Set(currentColumnIds);
+    const result = persistedOrder.filter((id) => validIds.has(id));
+    for (const id of currentColumnIds) {
+      if (!known.has(id)) result.push(id);
+    }
+    return result;
+  }, [persistedOrder, currentColumnIds]);
+
+  const setColumnOrder = useCallback((updater: ColumnOrderState | ((prev: ColumnOrderState) => ColumnOrderState)) => {
+    const current = (() => {
+      const stored = useGridLayoutStore.getState().grids[gridId]?.columnOrder ?? [];
+      if (stored.length === 0) return currentColumnIds;
+      const validIds = new Set(currentColumnIds);
+      const known = new Set(stored);
+      const merged = stored.filter((id) => validIds.has(id));
+      for (const id of currentColumnIds) {
+        if (!known.has(id)) merged.push(id);
+      }
+      return merged;
+    })();
+    const next = typeof updater === 'function' ? (updater as (p: ColumnOrderState) => ColumnOrderState)(current) : updater;
+    setStoreColumnOrder(gridId, next);
+  }, [setStoreColumnOrder, gridId, currentColumnIds]);
+
+  // Column visibility: derived from store, defaults to {} (all visible).
+  const columnVisibility: VisibilityState = persistedVisibility ?? {};
+  const setColumnVisibility = useCallback((updater: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => {
+    const current = useGridLayoutStore.getState().grids[gridId]?.columnVisibility ?? {};
+    const next = typeof updater === 'function' ? (updater as (p: VisibilityState) => VisibilityState)(current) : updater;
+    setStoreColumnVisibility(gridId, next);
+  }, [setStoreColumnVisibility, gridId]);
+
+  // Sorting: derived from store, defaults to the grid's `defaultSorting` prop
+  // when no user-applied sort has been persisted yet.
+  const sorting: SortingState = persistedSorting && persistedSorting.length > 0
+    ? persistedSorting
+    : (defaultSorting ?? []);
+  const setSorting = useCallback((updater: SortingState | ((prev: SortingState) => SortingState)) => {
+    const current = useGridLayoutStore.getState().grids[gridId]?.sorting;
+    const effectiveCurrent = current && current.length > 0 ? current : (defaultSorting ?? []);
+    const next = typeof updater === 'function' ? (updater as (p: SortingState) => SortingState)(effectiveCurrent) : updater;
+    setStoreSorting(gridId, next);
+  }, [setStoreSorting, gridId, defaultSorting]);
+
+  // Filters stay in local state (per-session) on purpose — refreshing to
+  // a clean unfiltered view is the expected industry behavior.
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Column pinning — already persisted, kept as-is.
   const columnPinning: ColumnPinningState = persistedPinning;
   const setColumnPinning = useCallback((updater: ColumnPinningState | ((prev: ColumnPinningState) => ColumnPinningState)) => {
     // Read the latest value from the store (not the closure) so batched updates don't stomp each other.
@@ -424,9 +469,17 @@ export default function SharedDataGrid<T>({
   const setGridDensity = useUserStore((s) => s.setGridDensity);
   const setGridZebra = useUserStore((s) => s.setGridZebra);
 
-  // Saved views
-  const [views, setViews] = useState<GridView[]>([]);
-  const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  // Saved views — persisted in useGridLayoutStore so they survive a refresh.
+  const views: GridView[] = persistedViews as GridView[];
+  const activeViewId = persistedActiveViewId;
+  const setViews = useCallback((updater: GridView[] | ((prev: GridView[]) => GridView[])) => {
+    const current = (useGridLayoutStore.getState().grids[gridId]?.savedViews ?? []) as GridView[];
+    const next = typeof updater === 'function' ? (updater as (p: GridView[]) => GridView[])(current) : updater;
+    setStoreSavedViews(gridId, next);
+  }, [setStoreSavedViews, gridId]);
+  const setActiveViewId = useCallback((id: string | null) => {
+    setStoreActiveViewId(gridId, id);
+  }, [setStoreActiveViewId, gridId]);
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [showDensityMenu, setShowDensityMenu] = useState(false);
@@ -508,7 +561,8 @@ export default function SharedDataGrid<T>({
     updateGridColWidth(gridId, colId, width);
   }, [updateGridColWidth, gridId]);
 
-  // Save view
+  // Save view — snapshots current column/sort state into a named view that
+  // is persisted to the layout store so it survives refresh + sign-in/out.
   const saveView = (name: string) => {
     const view: GridView = {
       id: `view-${Date.now()}`,
@@ -518,7 +572,7 @@ export default function SharedDataGrid<T>({
       columnVisibility,
       sorting,
     };
-    setViews((prev) => [...prev, view]);
+    setViews([...views, view]);
     setActiveViewId(view.id);
     setShowViewMenu(false);
   };
