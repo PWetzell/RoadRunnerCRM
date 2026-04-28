@@ -709,7 +709,7 @@ export default function OverviewTab({ contact: c, onNavigateToDetails }: Overvie
 
       {/* RIGHT COLUMN — Activity */}
       <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl min-h-[400px] sticky top-0 flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-        <div className="p-4 border-b border-[var(--border)] flex-shrink-0 bg-[var(--surface-card)] rounded-t-xl z-10">
+        <div className="border-b border-[var(--border)] flex-shrink-0 bg-[var(--surface-card)] rounded-t-xl z-10" style={{ padding: 'var(--detail-card-py, 16px) var(--detail-card-px, 16px)' }}>
           <div className="flex items-center gap-2 mb-3">
             <CalendarBlank size={18} className="text-[var(--text-primary)]" />
             <span className="text-[15px] font-bold text-[var(--text-primary)]">Activity</span>
@@ -1045,7 +1045,7 @@ export default function OverviewTab({ contact: c, onNavigateToDetails }: Overvie
 
         {pinnedNotes.length > 0 && (
           <>
-            <div className="px-4 pt-2">
+            <div className="pt-2" style={{ paddingLeft: 'var(--detail-card-px, 16px)', paddingRight: 'var(--detail-card-px, 16px)' }}>
               <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1"><PushPin size={14} /> Pinned</span>
             </div>
             {pinnedNotes.map((n) => (
@@ -1064,7 +1064,7 @@ export default function OverviewTab({ contact: c, onNavigateToDetails }: Overvie
         {/* Regular Notes */}
         {regularNotes.length > 0 && (
           <>
-            <div className="px-4 pt-2">
+            <div className="pt-2" style={{ paddingLeft: 'var(--detail-card-px, 16px)', paddingRight: 'var(--detail-card-px, 16px)' }}>
               <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1"><NoteIcon size={14} /> Notes</span>
             </div>
             {regularNotes.map((n) => (
@@ -1880,7 +1880,7 @@ function NoteCard({ note: n, menuOpen, onToggleMenu, onEdit, onDelete, onToggleP
   };
 
   return (
-    <div className="px-4 py-3 border-b border-[var(--border-subtle)] hover:bg-[var(--surface-raised)] transition-colors group relative">
+    <div className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-raised)] transition-colors group relative" style={{ padding: 'var(--detail-card-py, 12px) var(--detail-card-px, 16px)' }}>
       <div className="flex items-center gap-2.5 mb-1">
         <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0" style={{ background: n.authorColor }}>
           {n.authorInitials}
