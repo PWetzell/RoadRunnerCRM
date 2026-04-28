@@ -699,7 +699,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
-        <div className="relative z-10 flex flex-col gap-0 max-w-[760px]" style={{ transform: 'translateY(-20px)' }}>
+        <div className="relative z-10 flex flex-col gap-0 max-w-full lg:max-w-[760px]" style={{ transform: 'translateY(-20px)' }}>
           {/* translate(-20px) shifts the bird's visual position up 20px
                WITHOUT changing its layout box — siblings below (the
                headline, paragraph, bullets) stay put. Margin would
@@ -753,7 +753,18 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                visual gap between the graphic and the copy without
                cropping the bird. */}
           <div className="flex flex-col gap-4 -mt-12">
-            <h1 className="text-white text-[44px] font-black leading-[1.05] tracking-[-0.02em] whitespace-nowrap">
+            {/* Fluid title — scales with viewport so it never overflows
+                 the panel. clamp() reads: never smaller than 28px,
+                 grows at 3.4vw, never larger than 44px. At wide
+                 desktops you get the big 44px hero; at narrow widths
+                 the text shrinks gracefully so "reimagined with
+                 intelligent AI." still fits on one line.
+                 The <br /> stays so the headline always lays out as
+                 two visual lines regardless of font size. */}
+            <h1
+              className="text-white font-black leading-[1.05] tracking-[-0.02em]"
+              style={{ fontSize: 'clamp(28px, 3.4vw, 44px)' }}
+            >
               Contact creation,
               <br />
               reimagined with intelligent AI.
