@@ -934,13 +934,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             <>
               {/* Button group — Log in / Create account share an inner
                   edge with a single visible divider, brand-fill on the
-                  active half. Compact width (max-w-[200px]) — half of
-                  the panel's max-width — so the toggle reads as a
-                  utility control, not the page's primary action. */}
+                  active half. Full panel width to align with the
+                  Launch Demo and "Log in to your account" buttons
+                  below — keeps the right-column elements uniform. */}
               <div
                 role="tablist"
                 aria-label="Authentication"
-                className="flex border border-[var(--border)] rounded-lg overflow-hidden mb-2 max-w-[200px]"
+                className="flex border border-[var(--border)] rounded-lg overflow-hidden mb-2"
               >
                 <ButtonGroupTab
                   active={mode === 'login'}
