@@ -78,7 +78,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
         return (
           <span
             title={ext}
-            className="px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0 inline-flex"
+            className="px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold inline-flex items-center justify-center"
             style={{ background: isDark ? getExtBgColor(doc.fileName, doc.fileFamily) : `color-mix(in srgb, ${color} 12%, white)`, color, border: `1px solid ${color}` }}
           >
             {ext}
