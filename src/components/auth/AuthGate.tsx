@@ -705,8 +705,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             <div
               className="absolute left-1/2 top-1/2 w-[340px] h-[340px] rounded-full pointer-events-none"
               style={{
+                // Pure white spotlight — no warm tint. Center is the
+                // brightest, fades to fully transparent at the edge.
                 background:
-                  'radial-gradient(circle, rgba(255,243,180,0.55) 0%, rgba(255,235,140,0.32) 28%, rgba(184,218,255,0.18) 55%, rgba(184,218,255,0) 75%)',
+                  'radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.35) 28%, rgba(255,255,255,0.18) 55%, rgba(255,255,255,0) 75%)',
                 filter: 'blur(4px)',
                 animation:
                   'roadrunner-spotlight 1.4s cubic-bezier(.2,.7,.3,1) both, roadrunner-spotlight-pulse 3.2s ease-in-out 1.6s infinite',
