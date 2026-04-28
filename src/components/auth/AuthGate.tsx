@@ -689,8 +689,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        <div className="relative flex items-center gap-3 z-10">
-          <img src="/roadrunner-logo-white.svg" alt="Roadrunner" className="w-9 h-9" />
+        {/* Brand strip — wordmark only. The big bird animation below is
+             the hero; a duplicate logo here just diluted it. */}
+        <div className="relative z-10">
           <span className="text-white text-[15px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
