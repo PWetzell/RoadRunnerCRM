@@ -971,8 +971,8 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                       the brand-primary fill (vs. the previous outlined
                       tertiary look) since it's the headline action. */}
                   <div className="flex flex-col gap-1">
-                    <h2 className="text-[24px] font-black text-[var(--text-primary)] tracking-tight leading-tight">
-                      Take a look around.
+                    <h2 className="text-[18px] font-black text-[var(--text-primary)] tracking-tight leading-tight">
+                      Take a look around
                     </h2>
                     <p className="text-[13px] text-[var(--text-tertiary)]">
                       Jump straight into the demo — no signup, no email.
@@ -1004,7 +1004,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                       "owner" is explicit. */}
                   <div className="flex flex-col gap-1">
                     <h2 className="text-[18px] font-black text-[var(--text-primary)] tracking-tight leading-tight">
-                      Welcome back.
+                      Welcome back
                     </h2>
                     <p className="text-[12.5px] text-[var(--text-tertiary)]">
                       Log in to pick up where you left off.
