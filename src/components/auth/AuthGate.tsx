@@ -752,7 +752,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                cropping the bird. */}
           <div className="flex flex-col gap-4 -mt-12">
             <h1 className="text-white text-[44px] font-black leading-[1.05] tracking-[-0.02em]">
-              Contact intelligence,
+              Contact creation,
               <br />
               <span className="bg-gradient-to-r from-white via-white to-[#B8DAFF] bg-clip-text text-transparent">
                 reimagined with AI.
