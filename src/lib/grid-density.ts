@@ -46,19 +46,17 @@ export interface DensityConfig {
 // 12px target is approximated — the smallest chip pill renders at ~14px
 // regardless of density, which pins the floor. Visible compact rows
 // land around 14–16px in practice.
-// Targets ~8 / 24 / 36 px row heights. Compact is spreadsheet-tight:
-// 8px font, 10px avatars with 5.5px initials, zero cell padding, plus
-// chip-padding overrides + line-height: 1 forced on all descendants
-// via globals.css [data-density="compact"] rules.
-//
-// Visible compact row floor is ~12-13px in practice (avatar circle is
-// the limiter; chips collapse to ~10-11px after the !important padding
-// halving). That's 50% denser than the previous baseline and on par
-// with Excel/Airtable's compact density.
+// Targets ~20 / 24 / 28 px row heights:
+//   • Compact — spreadsheet-tight (CSS row cap at 20px in globals.css)
+//   • Comfortable — half-step between compact and spacious (~24px)
+//   • Spacious — values from the prior comfortable preset (~28px)
+// Per Paul 2026-04-28: the old comfortable was the "right" everyday
+// density, so it became the new spacious; comfortable now lives
+// between compact and that, giving users a real middle option.
 export const DENSITY: Record<GridDensity, DensityConfig> = {
-  compact:     { rowPy: 1, rowPx: 4,  headerPy: 1, font: 9,  lineHeight: 1.1, headerFont: 9,  avatar: 14, avatarFont: 7,   chipFont: 8   },
-  comfortable: { rowPy: 4, rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2, headerFont: 10, avatar: 20, avatarFont: 10,  chipFont: 9   },
-  spacious:    { rowPy: 8, rowPx: 12, headerPy: 8, font: 13, lineHeight: 1.4, headerFont: 11, avatar: 28, avatarFont: 12,  chipFont: 10  },
+  compact:     { rowPy: 1, rowPx: 4,  headerPy: 1, font: 9,  lineHeight: 1.1,  headerFont: 9,    avatar: 14, avatarFont: 7,   chipFont: 8   },
+  comfortable: { rowPy: 2, rowPx: 6,  headerPy: 3, font: 10, lineHeight: 1.15, headerFont: 9.5,  avatar: 17, avatarFont: 8.5, chipFont: 8.5 },
+  spacious:    { rowPy: 4, rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2,  headerFont: 10,   avatar: 20, avatarFont: 10,  chipFont: 9   },
 };
 
 /**
@@ -89,8 +87,8 @@ export const DENSITY_LABELS: Record<GridDensity, string> = {
 
 export const DENSITY_HINTS: Record<GridDensity, string> = {
   compact: 'Tightest rows',
-  comfortable: 'Balanced rows — everyday default',
-  spacious: 'Relaxed rows — reduced eye strain',
+  comfortable: 'Balanced rows — middle ground',
+  spacious: 'Relaxed rows — everyday default',
 };
 
 /**
@@ -116,10 +114,13 @@ export interface CardDensityConfig {
   minCardWidth: number;
 }
 
+// Same shift as DENSITY: the previous "comfortable" became the new
+// "spacious" (the everyday default), and "comfortable" is now a proper
+// middle-ground between compact and that.
 export const CARD_DENSITY: Record<GridDensity, CardDensityConfig> = {
-  compact:     { padding: 8,  avatar: 36, nameFont: 12, subFont: 10, chipFont: 8,  gap: 6,  minCardWidth: 180 },
-  comfortable: { padding: 12, avatar: 48, nameFont: 14, subFont: 11, chipFont: 9,  gap: 12, minCardWidth: 240 },
-  spacious:    { padding: 16, avatar: 56, nameFont: 15, subFont: 12, chipFont: 10, gap: 16, minCardWidth: 288 },
+  compact:     { padding: 8,  avatar: 36, nameFont: 12, subFont: 10,   chipFont: 8,   gap: 6,  minCardWidth: 180 },
+  comfortable: { padding: 10, avatar: 42, nameFont: 13, subFont: 10.5, chipFont: 8.5, gap: 9,  minCardWidth: 210 },
+  spacious:    { padding: 12, avatar: 48, nameFont: 14, subFont: 11,   chipFont: 9,   gap: 12, minCardWidth: 240 },
 };
 
 export function cardDensityStyle(density: GridDensity): React.CSSProperties {
@@ -158,10 +159,13 @@ export interface DetailDensityConfig {
   headerPy: number;
 }
 
+// Same shift: previous "comfortable" became the new "spacious"
+// (the everyday default for detail-page reading), and "comfortable"
+// is now a true middle-ground.
 export const DETAIL_DENSITY: Record<GridDensity, DetailDensityConfig> = {
-  compact:     { pagePx: 160, pagePy: 10, sectionGap: 10, stackGap: 8,  cardPx: 12, cardPy: 8,  headerPy: 8 },
-  comfortable: { pagePx: 64, pagePy: 20, sectionGap: 16, stackGap: 16, cardPx: 16, cardPy: 12, headerPy: 12 },
-  spacious:    { pagePx: 32, pagePy: 32, sectionGap: 24, stackGap: 20, cardPx: 20, cardPy: 16, headerPy: 16 },
+  compact:     { pagePx: 160, pagePy: 10, sectionGap: 10, stackGap: 8,  cardPx: 12, cardPy: 8,  headerPy: 8  },
+  comfortable: { pagePx: 112, pagePy: 15, sectionGap: 13, stackGap: 12, cardPx: 14, cardPy: 10, headerPy: 10 },
+  spacious:    { pagePx: 64,  pagePy: 20, sectionGap: 16, stackGap: 16, cardPx: 16, cardPy: 12, headerPy: 12 },
 };
 
 export function detailDensityStyle(density: GridDensity): React.CSSProperties {
