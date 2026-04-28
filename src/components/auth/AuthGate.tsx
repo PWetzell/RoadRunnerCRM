@@ -689,10 +689,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        {/* Brand strip — wordmark only. Bumped to 22px so it reads as
-             the panel's primary mark rather than a tiny breadcrumb;
-             the big bird animation below is the hero. */}
-        <div className="relative z-10">
+        {/* Brand strip — wordmark only. mt-12 adds 48px of negative
+             space above the title to mirror the mb-12 the feature
+             stack already has below "Smart duplicate detection",
+             keeping the panel visually balanced top-to-bottom. */}
+        <div className="relative z-10 mt-12">
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
