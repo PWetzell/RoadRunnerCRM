@@ -726,10 +726,6 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                 style={{ width: '120px', animation: 'roadrunner-speed-line 1.4s cubic-bezier(.2,.7,.3,1) 0.16s both' }}
               />
             </div>
-            <div
-              className="absolute left-[10px] bottom-[14px] w-10 h-10 rounded-full bg-white/50 blur-[10px] pointer-events-none"
-              style={{ animation: 'roadrunner-dust 1.6s ease-out both' }}
-            />
             <img
               src="/roadrunner-logo-white.svg"
               alt=""
