@@ -237,6 +237,23 @@ html, body { background: var(--sidebar-bg) !important; }
   65%     { opacity: 0.7; transform: scale(1); }
   100%    { opacity: 0; transform: scale(1.6) translateY(4px); }
 }
+/* Spotlight flash behind the bird — stays hidden during the run-in,
+   then bursts to peak brightness as the bird settles, and decays to
+   a subtle persistent halo. Pairs with roadrunner-run-in's 1.4s
+   duration: spotlight fires at the 60% mark when the bird is
+   touching down and overshooting. */
+@keyframes roadrunner-spotlight {
+  0%, 45% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  60%     { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  78%     { opacity: 0.7; transform: translate(-50%, -50%) scale(1.05); }
+  100%    { opacity: 0.45; transform: translate(-50%, -50%) scale(1); }
+}
+/* Gentle pulse the spotlight settles into after the initial flash,
+   keeping a "still glowing" feel while the bird idle-bobs. */
+@keyframes roadrunner-spotlight-pulse {
+  0%, 100% { opacity: 0.45; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 0.6;  transform: translate(-50%, -50%) scale(1.04); }
+}
 /* Two bird legs pumping alternately — hips anchored, feet swing front/back
    like a sprinter. Fast cycle (~0.14s) sells the running motion. */
 @keyframes roadrunner-leg-a {

@@ -696,6 +696,22 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
         <div className="relative z-10 flex flex-col gap-10 max-w-[520px]">
           <div className="relative w-[200px] h-[200px]">
+            {/* Spotlight flash behind the bird — radial gradient anchored
+                at the geometric center of the bird container. Animation
+                stays hidden during the run-in, bursts when the bird
+                lands, then sustains as a subtle halo. Inset glow uses
+                white→yellow→transparent so it reads as "spotlight" not
+                "drop shadow". */}
+            <div
+              className="absolute left-1/2 top-1/2 w-[340px] h-[340px] rounded-full pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(circle, rgba(255,243,180,0.55) 0%, rgba(255,235,140,0.32) 28%, rgba(184,218,255,0.18) 55%, rgba(184,218,255,0) 75%)',
+                filter: 'blur(4px)',
+                animation:
+                  'roadrunner-spotlight 1.4s cubic-bezier(.2,.7,.3,1) both, roadrunner-spotlight-pulse 3.2s ease-in-out 1.6s infinite',
+              }}
+            />
             <div className="absolute left-[-20px] top-[45%] pointer-events-none flex flex-col gap-2">
               <span
                 className="block h-[3px] rounded-full bg-white/75"
@@ -738,23 +754,29 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-md">
+          <div className="flex flex-col gap-3 max-w-md mb-12">
             <FeatureLine icon={<Sparkle size={16} weight="fill" />} label="AI-assisted contact enrichment" />
             <FeatureLine icon={<Lightning size={16} weight="fill" />} label="Real-time pipeline insights" />
             <FeatureLine icon={<ShieldCheck size={16} weight="fill" />} label="Smart duplicate detection" />
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-4 text-white/50 text-[11px] font-semibold">
+        {/* Footer — extra top margin so the feature stack above doesn't
+             collide with the copyright on shorter viewports. The
+             `justify-between` parent was packing them flush. */}
+        <div className="relative z-10 mt-8 flex items-center gap-4 text-white/50 text-[11px] font-semibold">
           <span>© Roadrunner {new Date().getFullYear()}</span>
           <span className="w-1 h-1 rounded-full bg-white/30" />
           <span>AI-assisted contact intelligence</span>
         </div>
       </div>
 
-      {/* ═══ RIGHT — AUTH PANEL ═══ */}
-      <div className="flex-1 min-h-screen flex items-center justify-center p-6 md:p-10 bg-[var(--surface-card)]">
-        <div className="w-full max-w-[400px] flex flex-col gap-6">
+      {/* ═══ RIGHT — AUTH PANEL ═══
+           Padding scales up at md+ so the auth card breathes on desktop
+           (was a uniform 40px; now 56px vertical / 40px horizontal).
+           Inner gap also bumped from 24 → 28px on desktop. */}
+      <div className="flex-1 min-h-screen flex items-center justify-center p-6 md:px-10 md:py-14 bg-[var(--surface-card)]">
+        <div className="w-full max-w-[400px] flex flex-col gap-6 md:gap-7">
           {/* Mobile-only brand strip */}
           <div className="md:hidden flex items-center gap-3 pb-4 border-b border-[var(--border-subtle)]">
             <div
@@ -902,11 +924,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                   active half. Replaces the earlier segmented-control
                   (pills-in-padded-container) look per Paul's request.
                   Same pattern as Stripe's "Pay" / "Save card" toggle and
-                  Linear's billing-period switch. */}
+                  Linear's billing-period switch.
+                  mb-2 carves out a touch more breathing room above the
+                  "Take a look around" header below — the parent
+                  flex-gap was running them flush. */}
               <div
                 role="tablist"
                 aria-label="Authentication"
-                className="flex border border-[var(--border)] rounded-lg overflow-hidden"
+                className="flex border border-[var(--border)] rounded-lg overflow-hidden mb-2"
               >
                 <ButtonGroupTab
                   active={mode === 'login'}
@@ -1018,7 +1043,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                     <button
                       type="submit"
                       disabled={!loginReady || submitting}
-                      className="h-11 text-[13px] font-bold rounded-lg border-2 border-[var(--brand-primary)] bg-[var(--surface-card)] text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2"
+                      className="h-11 text-[13px] font-bold rounded-lg border-2 border-[var(--brand-primary)] bg-[var(--surface-card)] text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2 mb-2"
                     >
                       <SignIn size={15} weight="bold" />
                       {submitting ? 'Logging in…' : 'Log in to your account'}
