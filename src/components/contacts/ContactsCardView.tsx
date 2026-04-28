@@ -11,7 +11,10 @@ import { ContactWithEntries } from '@/types/contact';
 import { useUnreadCountForContact } from '@/hooks/use-unread-emails';
 import InlineCardSettings, { useCardStyleVars, useCardHeaderColor } from '@/components/ui/InlineCardSettings';
 import SavedCardViewBar from '@/components/ui/SavedCardViewBar';
+import FavoriteCell from '@/components/lists/FavoriteCell';
+import { useGridLayoutStore } from '@/stores/grid-layout-store';
 import { cardDensityStyle, DENSITY_LABELS, DENSITY_HINTS, GridDensity } from '@/lib/grid-density';
+import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
 
 const TAG_PALETTE = [
   'bg-[var(--brand-bg)] text-[var(--brand-primary)]',
@@ -34,19 +37,40 @@ export default function ContactsCardView() {
   const searchParams = useSearchParams();
   const listId = searchParams.get('list');
   const urlPrivate = searchParams.get('private') === '1';
+  // Favorites toggle (top-of-page Favorites pill writes ?fav=1 to the URL).
+  // Card view was previously ignoring this — fixed 2026-04-28.
+  const favOnly = searchParams.get('fav') === '1';
   const contacts = useContactStore((s) => s.contacts);
   const filter = useContactStore((s) => s.filter);
   const search = useContactStore((s) => s.search);
   const memberships = useListStore((s) => s.memberships);
   const gridDensity = useUserStore((s) => s.gridDensity);
   const setGridDensity = useUserStore((s) => s.setGridDensity);
-  const [sortBy, setSortBy] = useState<CardSort>('lastUpdated');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [createdByFilter, setCreatedByFilter] = useState('');
-  const [privateOnly, setPrivateOnly] = useState(false);
+  // Card-view filter + sort state, persisted under scope "contacts" so a
+  // refresh restores everything the user picked. Loaded once from the
+  // grid-layout store on mount.
+  const persisted = useGridLayoutStore.getState().getCardViewState('contacts');
+  const setCardViewState = useGridLayoutStore((s) => s.setCardViewState);
+  const [sortBy, _setSortBy] = useState<CardSort>((persisted.sortBy as CardSort) || 'lastUpdated');
+  const [statusFilter, _setStatusFilter] = useState<StatusFilter>((persisted.statusFilter as StatusFilter) || 'all');
+  const [dateFrom, _setDateFrom] = useState(String(persisted.dateFrom || ''));
+  const [dateTo, _setDateTo] = useState(String(persisted.dateTo || ''));
+  const [createdByFilter, _setCreatedByFilter] = useState(String(persisted.createdByFilter || ''));
+  const [privateOnly, _setPrivateOnly] = useState(Boolean(persisted.privateOnly));
   const [showFilters, setShowFilters] = useState(false);
+  // Mirror every state change back into the persisted store so the next
+  // refresh picks them up. Wrapped setters keep the local UI snappy
+  // (synchronous setState) while still writing through.
+  const writeThrough = (patch: Record<string, unknown>) => {
+    const current = useGridLayoutStore.getState().getCardViewState('contacts');
+    setCardViewState('contacts', { ...current, ...patch });
+  };
+  const setSortBy = (v: CardSort) => { _setSortBy(v); writeThrough({ sortBy: v }); };
+  const setStatusFilter = (v: StatusFilter) => { _setStatusFilter(v); writeThrough({ statusFilter: v }); };
+  const setDateFrom = (v: string) => { _setDateFrom(v); writeThrough({ dateFrom: v }); };
+  const setDateTo = (v: string) => { _setDateTo(v); writeThrough({ dateTo: v }); };
+  const setCreatedByFilter = (v: string) => { _setCreatedByFilter(v); writeThrough({ createdByFilter: v }); };
+  const setPrivateOnly = (v: boolean) => { _setPrivateOnly(v); writeThrough({ privateOnly: v }); };
   const [showDensityMenu, setShowDensityMenu] = useState(false);
   const densityMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -95,6 +119,12 @@ export default function ContactsCardView() {
       const memberIds = new Set(memberships.filter((m) => m.listId === listId).map((m) => m.entityId));
       l = l.filter((c) => memberIds.has(c.id));
     }
+    // Favorites filter — mirrors the list-view path in DataGrid.tsx so
+    // the Favorites toggle behaves identically across List + Card views.
+    if (favOnly) {
+      const favIds = new Set(memberships.filter((m) => m.listId === FAVORITES_LIST_IDS.contact).map((m) => m.entityId));
+      l = l.filter((c) => favIds.has(c.id));
+    }
     // Sort
     l.sort((a, b) => {
       switch (sortBy) {
@@ -106,7 +136,7 @@ export default function ContactsCardView() {
       }
     });
     return l;
-  }, [contacts, filter, search, sortBy, statusFilter, dateFrom, dateTo, createdByFilter, privateOnly, urlPrivate, listId, memberships]);
+  }, [contacts, filter, search, sortBy, statusFilter, dateFrom, dateTo, createdByFilter, privateOnly, urlPrivate, listId, favOnly, memberships]);
 
   const activeFilterCount = [statusFilter !== 'all', !!dateFrom, !!dateTo, !!createdByFilter, privateOnly, sortBy !== 'lastUpdated'].filter(Boolean).length;
 
@@ -287,6 +317,12 @@ function ContactCard({ c, onOpen }: { c: ContactWithEntries; onOpen: () => void 
       className="group/icard relative bg-[var(--surface-card)] border border-[var(--border)] rounded-xl text-left hover:border-[var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer flex flex-col"
     >
       {accent && <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style={{ background: accent }} />}
+      {/* Favorite star — pinned to top-right, just left of the settings
+          gear, so it doesn't get buried under the avatar (which dominates
+          the top-left). Mirrors the list-view star-column toggle. */}
+      <div className="absolute top-0.5 right-8 z-10">
+        <FavoriteCell entityId={c.id} entityType="contact" />
+      </div>
       <InlineCardSettings cardId={cardKey} title={c.name} defaultIconName={isOrg ? 'Buildings' : 'User'} />
       {/* Header: avatar only */}
       <div className="flex items-start gap-2">

@@ -8,6 +8,8 @@ import { useDocumentStore } from '@/stores/document-store';
 import { useListStore } from '@/stores/list-store';
 import { CrmDocument } from '@/types/document';
 import DocumentCard from './DocumentCard';
+import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
+import { useGridLayoutStore } from '@/stores/grid-layout-store';
 
 interface Props {
   documents?: CrmDocument[];
@@ -26,13 +28,27 @@ type DocCategoryFilter = 'all' | 'contract' | 'proposal' | 'invoice' | 'report' 
 export default function DocumentCardView({ documents: externalDocs, onPreview, onRemove }: Props) {
   const searchParams = useSearchParams();
   const listId = searchParams.get('list');
+  // Favorites toggle URL param — was previously not honored in card view.
+  const favOnly = searchParams.get('fav') === '1';
   const memberships = useListStore((s) => s.memberships);
-  const [cardSort, setCardSort] = useState<DocCardSort>('uploadedAt');
+  // Persisted card-view state, scope "documents".
+  const persisted = useGridLayoutStore.getState().getCardViewState('documents');
+  const setCardViewState = useGridLayoutStore((s) => s.setCardViewState);
+  const [cardSort, _setCardSort] = useState<DocCardSort>((persisted.cardSort as DocCardSort) || 'uploadedAt');
   const [showDocFilters, setShowDocFilters] = useState(false);
-  const [catFilter, setCatFilter] = useState<DocCategoryFilter>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [uploadedByFilter, setUploadedByFilter] = useState('');
+  const [catFilter, _setCatFilter] = useState<DocCategoryFilter>((persisted.catFilter as DocCategoryFilter) || 'all');
+  const [dateFrom, _setDateFrom] = useState(String(persisted.dateFrom || ''));
+  const [dateTo, _setDateTo] = useState(String(persisted.dateTo || ''));
+  const [uploadedByFilter, _setUploadedByFilter] = useState(String(persisted.uploadedByFilter || ''));
+  const writeThrough = (patch: Record<string, unknown>) => {
+    const current = useGridLayoutStore.getState().getCardViewState('documents');
+    setCardViewState('documents', { ...current, ...patch });
+  };
+  const setCardSort = (v: DocCardSort) => { _setCardSort(v); writeThrough({ cardSort: v }); };
+  const setCatFilter = (v: DocCategoryFilter) => { _setCatFilter(v); writeThrough({ catFilter: v }); };
+  const setDateFrom = (v: string) => { _setDateFrom(v); writeThrough({ dateFrom: v }); };
+  const setDateTo = (v: string) => { _setDateTo(v); writeThrough({ dateTo: v }); };
+  const setUploadedByFilter = (v: string) => { _setUploadedByFilter(v); writeThrough({ uploadedByFilter: v }); };
 
   const activeDocFilterCount = [catFilter !== 'all', !!dateFrom, !!dateTo, !!uploadedByFilter, cardSort !== 'uploadedAt'].filter(Boolean).length;
   // Pull raw state and derive in useMemo — calling getFilteredDocuments()
@@ -59,6 +75,10 @@ export default function DocumentCardView({ documents: externalDocs, onPreview, o
       const memberIds = new Set(memberships.filter((m) => m.listId === listId).map((m) => m.entityId));
       list = list.filter((d) => memberIds.has(d.id));
     }
+    if (favOnly) {
+      const favIds = new Set(memberships.filter((m) => m.listId === FAVORITES_LIST_IDS.document).map((m) => m.entityId));
+      list = list.filter((d) => favIds.has(d.id));
+    }
     list.sort((a, b) => {
       const aVal = a[sortField] ?? '';
       const bVal = b[sortField] ?? '';
@@ -69,7 +89,7 @@ export default function DocumentCardView({ documents: externalDocs, onPreview, o
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [documents, search, categoryFilter, sortField, sortDir, listId, memberships]);
+  }, [documents, search, categoryFilter, sortField, sortDir, listId, favOnly, memberships]);
   const presortedDocs = externalDocs ?? storeFiltered;
   const uploaderOptions = useMemo(() => {
     const set = new Set<string>();

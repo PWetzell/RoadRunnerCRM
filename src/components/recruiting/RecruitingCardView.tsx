@@ -1,30 +1,54 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Funnel, Sparkle, Buildings } from '@phosphor-icons/react';
 import { useSalesStore } from '@/stores/sales-store';
 import { useContactStore } from '@/stores/contact-store';
+import { useListStore } from '@/stores/list-store';
 import { RECRUITING_STAGES, RecruitingStage, dealStageToRecruitingStage, CandidateCard } from '@/types/recruiting';
 import { initials, getAvatarColor } from '@/lib/utils';
 import InlineCardSettings, { useCardStyleVars, useCardHeaderColor } from '@/components/ui/InlineCardSettings';
 import { useIsDark } from '@/hooks/useIsDark';
 import SavedCardViewBar from '@/components/ui/SavedCardViewBar';
+import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
+import FavoriteCell from '@/components/lists/FavoriteCell';
+import { useGridLayoutStore } from '@/stores/grid-layout-store';
 
 type RecCardSort = 'matchScore' | 'name' | 'lastActivity' | 'dealAmount';
 type RecStageFilter = RecruitingStage | 'all';
 
 export default function RecruitingCardView({ search }: { search: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listId = searchParams.get('list');
+  // Favorites toggle URL param — was previously not honored in this card
+  // view at all (no searchParams was even read). Recruiting cards live on
+  // top of deals so we filter by FAVORITES_LIST_IDS.deal, mirroring
+  // RecruitingList.tsx.
+  const favOnly = searchParams.get('fav') === '1';
+  const memberships = useListStore((s) => s.memberships);
   const deals = useSalesStore((s) => s.deals);
   const contacts = useContactStore((s) => s.contacts);
 
-  const [sortBy, setSortBy] = useState<RecCardSort>('matchScore');
-  const [stageFilter, setStageFilter] = useState<RecStageFilter>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
+  // Persisted card-view state, scope "recruiting".
+  const persisted = useGridLayoutStore.getState().getCardViewState('recruiting');
+  const setCardViewState = useGridLayoutStore((s) => s.setCardViewState);
+  const [sortBy, _setSortBy] = useState<RecCardSort>((persisted.sortBy as RecCardSort) || 'matchScore');
+  const [stageFilter, _setStageFilter] = useState<RecStageFilter>((persisted.stageFilter as RecStageFilter) || 'all');
+  const [dateFrom, _setDateFrom] = useState(String(persisted.dateFrom || ''));
+  const [dateTo, _setDateTo] = useState(String(persisted.dateTo || ''));
+  const [sourceFilter, _setSourceFilter] = useState(String(persisted.sourceFilter || ''));
   const [showFilters, setShowFilters] = useState(false);
+  const writeThrough = (patch: Record<string, unknown>) => {
+    const current = useGridLayoutStore.getState().getCardViewState('recruiting');
+    setCardViewState('recruiting', { ...current, ...patch });
+  };
+  const setSortBy = (v: RecCardSort) => { _setSortBy(v); writeThrough({ sortBy: v }); };
+  const setStageFilter = (v: RecStageFilter) => { _setStageFilter(v); writeThrough({ stageFilter: v }); };
+  const setDateFrom = (v: string) => { _setDateFrom(v); writeThrough({ dateFrom: v }); };
+  const setDateTo = (v: string) => { _setDateTo(v); writeThrough({ dateTo: v }); };
+  const setSourceFilter = (v: string) => { _setSourceFilter(v); writeThrough({ sourceFilter: v }); };
 
   const activeFilterCount = [stageFilter !== 'all', !!dateFrom, !!dateTo, !!sourceFilter, sortBy !== 'matchScore'].filter(Boolean).length;
 
@@ -65,6 +89,14 @@ export default function RecruitingCardView({ search }: { search: string }) {
     if (dateFrom) list = list.filter((c) => (c.lastActivity || '') >= dateFrom);
     if (dateTo) list = list.filter((c) => (c.lastActivity || '') <= dateTo);
     if (sourceFilter) list = list.filter((c) => c.source === sourceFilter);
+    if (listId) {
+      const memberIds = new Set(memberships.filter((m) => m.listId === listId).map((m) => m.entityId));
+      list = list.filter((c) => !!c.dealId && memberIds.has(c.dealId));
+    }
+    if (favOnly) {
+      const favIds = new Set(memberships.filter((m) => m.listId === FAVORITES_LIST_IDS.deal).map((m) => m.entityId));
+      list = list.filter((c) => !!c.dealId && favIds.has(c.dealId));
+    }
 
     list.sort((a, b) => {
       switch (sortBy) {
@@ -76,7 +108,7 @@ export default function RecruitingCardView({ search }: { search: string }) {
       }
     });
     return list;
-  }, [deals, contacts, search, sortBy, stageFilter, dateFrom, dateTo, sourceFilter]);
+  }, [deals, contacts, search, sortBy, stageFilter, dateFrom, dateTo, sourceFilter, listId, favOnly, memberships]);
 
   const isDark = useIsDark();
   const STAGE_COLOR: Record<RecruitingStage, string> = Object.fromEntries(RECRUITING_STAGES.map((s) => [s.id, isDark ? s.darkColor : s.color])) as Record<RecruitingStage, string>;
@@ -163,6 +195,11 @@ function CandidateCardItem({ card, stageColor, onOpen }: { card: CandidateCard; 
     <div onClick={onOpen} style={cssVars}
       className="group/icard relative bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-3 hover:border-[var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer flex flex-col gap-2">
       {accent && <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style={{ background: accent }} />}
+      {card.dealId && (
+        <div className="absolute top-0.5 right-8 z-10">
+          <FavoriteCell entityId={card.dealId} entityType="deal" />
+        </div>
+      )}
       <InlineCardSettings cardId={cardKey} title={card.name} defaultIconName="User" />
 
       <div className="flex items-center gap-2.5 pr-8">

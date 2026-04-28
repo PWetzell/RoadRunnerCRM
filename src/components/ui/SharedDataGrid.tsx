@@ -390,6 +390,7 @@ export default function SharedDataGrid<T>({
   const persistedOrder = gridLayoutRaw?.columnOrder ?? [];
   const persistedVisibility = gridLayoutRaw?.columnVisibility ?? null;
   const persistedSorting = gridLayoutRaw?.sorting ?? null;
+  const persistedFilters = gridLayoutRaw?.columnFilters ?? null;
   const persistedViews = gridLayoutRaw?.savedViews ?? [];
   const persistedActiveViewId = gridLayoutRaw?.activeViewId ?? null;
 
@@ -397,6 +398,7 @@ export default function SharedDataGrid<T>({
   const setStoreColumnVisibility = useGridLayoutStore((s) => s.setColumnVisibility);
   const setStoreColumnPinning = useGridLayoutStore((s) => s.setColumnPinning);
   const setStoreSorting = useGridLayoutStore((s) => s.setSorting);
+  const setStoreColumnFilters = useGridLayoutStore((s) => s.setColumnFilters);
   const setStoreSavedViews = useGridLayoutStore((s) => s.setSavedViews);
   const setStoreActiveViewId = useGridLayoutStore((s) => s.setActiveViewId);
 
@@ -450,9 +452,16 @@ export default function SharedDataGrid<T>({
     setStoreSorting(gridId, next);
   }, [setStoreSorting, gridId, defaultSorting]);
 
-  // Filters stay in local state (per-session) on purpose — refreshing to
-  // a clean unfiltered view is the expected industry behavior.
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  // Per-column filter state — persisted so filters set via the column-
+  // header funnel icon survive a page refresh. Paul's directive on
+  // 2026-04-28: "any filter or grid setting applied by the user has to
+  // remain persistent on refresh".
+  const columnFilters: ColumnFiltersState = (persistedFilters ?? []) as ColumnFiltersState;
+  const setColumnFilters = useCallback((updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+    const current = (useGridLayoutStore.getState().grids[gridId]?.columnFilters ?? []) as ColumnFiltersState;
+    const next = typeof updater === 'function' ? (updater as (p: ColumnFiltersState) => ColumnFiltersState)(current) : updater;
+    setStoreColumnFilters(gridId, next as Array<{ id: string; value: unknown }>);
+  }, [setStoreColumnFilters, gridId]);
 
   // Column pinning — already persisted, kept as-is.
   const columnPinning: ColumnPinningState = persistedPinning;
@@ -587,13 +596,10 @@ export default function SharedDataGrid<T>({
   };
 
   const resetView = () => {
-    setColumnOrder(currentColumnIds);
-    useGridLayoutStore.getState().setColumnWidths(gridId, {});
-    useGridLayoutStore.getState().setColumnPinning(gridId, { left: [], right: [] });
-    setColumnVisibility({});
-    setSorting(defaultSorting ?? []);
-    setColumnFilters([]);
-    setActiveViewId(null);
+    // Clear every persisted slice for this grid so a Reset truly returns
+    // the user to a clean default — including filters and sort, which
+    // now persist across refresh.
+    useGridLayoutStore.getState().resetGrid(gridId);
   };
 
   // "Auto-size" = drop width overrides so each column falls back to its configured getSize().
