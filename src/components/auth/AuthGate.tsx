@@ -697,7 +697,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
-        <div className="relative z-10 flex flex-col gap-3 max-w-[520px]">
+        <div className="relative z-10 flex flex-col gap-0 max-w-[520px]">
           <div className="relative w-[200px] h-[200px]">
             {/* Spotlight flash behind the bird — radial gradient anchored
                 at the geometric center of the bird container. Animation
