@@ -62,6 +62,32 @@ export const useGridLayoutStore = create<GridLayoutStore>()(
         return { grids: next };
       }),
     }),
-    { name: 'roadrunner-grid-layouts' }
+    {
+      name: 'roadrunner-grid-layouts',
+      // The reverted persistence-fix commit (42f35d3) bumped version to 2
+      // and added fields (sorting, columnFilters, savedViews,
+      // activeViewId, cardViewState) that no longer exist after the
+      // revert. Browsers that loaded the broken version still have
+      // version: 2 in localStorage. Without a migrate fn Zustand throws
+      // "State loaded from storage couldn't be migrated since no migrate
+      // function was provided" and refuses to hydrate. This migrate
+      // accepts any prior version and returns a minimal valid shape so
+      // hydration succeeds; the extra fields from v2 are silently
+      // dropped and the user keeps their column widths + pinning.
+      version: 0,
+      migrate: (persistedState: unknown) => {
+        const s = (persistedState as { grids?: Record<string, Partial<GridLayout>> }) ?? {};
+        const grids: Record<string, GridLayout> = {};
+        for (const [id, g] of Object.entries(s.grids ?? {})) {
+          grids[id] = {
+            columnOrder: g?.columnOrder ?? [],
+            columnVisibility: g?.columnVisibility ?? {},
+            columnWidths: g?.columnWidths ?? {},
+            columnPinning: g?.columnPinning ?? { left: [], right: [] },
+          };
+        }
+        return { grids };
+      },
+    }
   )
 );
