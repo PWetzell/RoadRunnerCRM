@@ -25,15 +25,15 @@ export default function RecruitingFilterBar({ view, setView }: Props) {
         {/* View toggle */}
         <div data-tour="recruiting-view-toggle" className="flex items-center gap-0.5 bg-[var(--surface-card)] border border-[var(--border)] rounded-full p-1">
           <button onClick={() => setView('list')} aria-label="List view"
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'list' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'list' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
             <Rows size={12} weight="bold" /> List
           </button>
           <button onClick={() => setView('card')} aria-label="Card view"
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'card' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'card' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
             <SquaresFour size={12} weight="bold" /> Card
           </button>
           <button onClick={() => setView('kanban')} aria-label="Pipeline view"
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'kanban' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'kanban' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
             <Kanban size={12} weight="bold" /> Pipeline
           </button>
         </div>

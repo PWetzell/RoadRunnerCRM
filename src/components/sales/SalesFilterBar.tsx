@@ -34,21 +34,21 @@ export default function SalesFilterBar({ onAddLead }: { onAddLead: () => void })
         <button
           onClick={() => setView('list')}
           aria-label="List view"
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'list' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'list' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
           <Rows size={12} weight="bold" /> List
         </button>
         <button
           onClick={() => setView('card')}
           aria-label="Card view"
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'card' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'card' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
           <SquaresFour size={12} weight="bold" /> Card
         </button>
         <button
           onClick={() => setView('status')}
           aria-label="Status view"
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'status' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'status' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
           <Kanban size={12} weight="bold" /> Status
         </button>
@@ -62,7 +62,7 @@ export default function SalesFilterBar({ onAddLead }: { onAddLead: () => void })
             <button
               key={f.id}
               onClick={() => setTypeFilter(f.id)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
             >
               {f.icon}
               {f.label}
@@ -79,7 +79,7 @@ export default function SalesFilterBar({ onAddLead }: { onAddLead: () => void })
             <button
               key={f.id}
               onClick={() => setStageFilter(f.id)}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
             >
               {f.label}
             </button>

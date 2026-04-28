@@ -58,7 +58,7 @@ function ViewBtn({ active, onClick, label, children }: { active: boolean; onClic
     <button
       onClick={onClick}
       aria-label={label}
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${
         active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
       }`}
     >
@@ -71,7 +71,7 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
   return (
     <button
       onClick={onClick}
-      className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${
+      className={`px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${
         active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
       }`}
     >

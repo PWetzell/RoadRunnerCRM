@@ -557,12 +557,12 @@ export default function SharedDataGrid<T>({
   return (
     <div className="flex flex-col h-full gap-2">
       {/* Grid Toolbar -- View first, then Columns, then Reset */}
-      <div data-tour="grid-toolbar" className="flex items-center gap-2 flex-wrap min-h-[34px]">
+      <div data-tour="grid-toolbar" className="flex items-center gap-1.5 flex-wrap min-h-[26px]">
         {/* Views -- FIRST */}
         <div className="relative" data-tour="grid-view-menu">
           <button
             onClick={() => setShowViewMenu(!showViewMenu)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+            className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
           >
             <FloppyDisk size={14} weight="bold" /> View: {activeViewId ? views.find((v) => v.id === activeViewId)?.name : 'Default'}
           </button>
@@ -583,7 +583,7 @@ export default function SharedDataGrid<T>({
         <div className="relative" ref={columnMenuRef} data-tour="grid-columns-menu">
           <button
             onClick={() => setShowColumnMenu(!showColumnMenu)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+            className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
           >
             <Columns size={14} weight="bold" /> Columns
           </button>
@@ -640,7 +640,7 @@ export default function SharedDataGrid<T>({
         <div className="relative" ref={densityMenuRef} data-tour="grid-density-menu">
           <button
             onClick={() => setShowDensityMenu(!showDensityMenu)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+            className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
             title="Row density"
           >
             <Rows size={14} weight="bold" /> Density
@@ -684,7 +684,7 @@ export default function SharedDataGrid<T>({
         <button
           onClick={resetView}
           data-tour="grid-reset"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <ArrowClockwise size={14} weight="bold" /> Reset
         </button>

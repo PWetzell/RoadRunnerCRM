@@ -123,10 +123,10 @@ export default function Sidebar() {
     >
       {/* Logo */}
       {!collapsed && (
-        <div className="p-4 pb-3 border-b border-[var(--sidebar-border)]">
-          <Link href="/contacts" className="no-underline flex items-center gap-2.5">
+        <div className="p-3 pb-2 border-b border-[var(--sidebar-border)]">
+          <Link href="/contacts" className="no-underline flex items-center gap-2">
             <img src="/roadrunner-logo-white.svg" alt="" className="w-[41px] h-[41px] flex-shrink-0" />
-            <div className="text-sm font-extrabold text-[var(--sidebar-text-active)] leading-tight">Roadrunner CRM</div>
+            <div className="text-[12px] font-extrabold text-[var(--sidebar-text-active)] leading-tight">Roadrunner CRM</div>
           </Link>
         </div>
       )}
@@ -156,10 +156,10 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-2.5 rounded-[var(--radius-md)] no-underline transition-all duration-150 relative ${
+              className={`flex items-center gap-2 rounded-[var(--radius-md)] no-underline transition-all duration-150 relative ${
                 collapsed
-                  ? 'justify-center px-0 py-2.5 mx-0'
-                  : 'px-3 py-2.5 mx-0'
+                  ? 'justify-center px-0 py-2 mx-0'
+                  : 'px-2 py-2 mx-0'
               }`}
               style={isActive
                 ? { background: '#1955A6', color: '#FFFFFF' }
@@ -188,14 +188,14 @@ export default function Sidebar() {
             >
               <Icon size={20} weight={isActive ? 'fill' : 'regular'} className="flex-shrink-0" style={isActive ? { color: '#FFFFFF' } : {}} />
               {!collapsed && (
-                <span className="text-[13px] font-semibold" style={isActive ? { color: '#FFFFFF' } : {}}>{item.label}</span>
+                <span className="text-[11px] font-semibold" style={isActive ? { color: '#FFFFFF' } : {}}>{item.label}</span>
               )}
               {showBadge && (
                 collapsed ? (
                   <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: colors?.icon }} />
                 ) : (
                   <span
-                    className="ml-auto inline-flex items-center gap-1 text-[11px] font-extrabold leading-none"
+                    className="ml-auto inline-flex items-center gap-1 text-[9px] font-extrabold leading-none"
                     title={`${count} ${badgeKey === 'contacts' ? 'incomplete' : badgeKey === 'sales' ? 'stalled' : badgeKey === 'recruiting' ? 'need action' : 'uncategorized'}`}
                   >
                     <Warning size={14} weight="fill" style={{ color: colors?.icon }} />
@@ -216,7 +216,7 @@ export default function Sidebar() {
                  with the per-row count numbers. */}
             <div className="flex items-center gap-2 px-3 mb-1.5">
               <Bookmark size={11} weight="fill" className="flex-shrink-0 text-[var(--sidebar-text)]" />
-              <span className="flex-1 text-[10px] font-bold uppercase tracking-wider text-[var(--sidebar-text)]">
+              <span className="flex-1 text-[8px] font-bold uppercase tracking-wider text-[var(--sidebar-text)]">
                 Saved Lists
               </span>
               <button
@@ -234,7 +234,7 @@ export default function Sidebar() {
             </div>
 
             {publicLists.length === 0 && (
-              <div className="px-3 py-2 text-[10px] italic text-[var(--sidebar-text)] opacity-70">
+              <div className="px-3 py-2 text-[8px] italic text-[var(--sidebar-text)] opacity-70">
                 No lists pinned. Click the gear to choose which lists appear here.
               </div>
             )}
@@ -267,8 +267,8 @@ export default function Sidebar() {
                       }
                     }}
                   >
-                    <span className="text-[12px] font-semibold truncate flex-1">{list.name}</span>
-                    <span className="text-[10px] font-bold opacity-60">{count}</span>
+                    <span className="text-[10px] font-semibold truncate flex-1">{list.name}</span>
+                    <span className="text-[8px] font-bold opacity-60">{count}</span>
                   </Link>
                 );
               })}
@@ -291,7 +291,7 @@ export default function Sidebar() {
           ) : (
             <>
               <CaretLeft size={16} />
-              <span className="text-[13px] font-semibold">Collapse Menu</span>
+              <span className="text-[11px] font-semibold">Collapse Menu</span>
             </>
           )}
         </button>
@@ -374,7 +374,7 @@ function NavGroup({
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[var(--radius-md)] transition-all duration-150 bg-transparent border-none cursor-pointer"
+        className="w-full flex items-center gap-2 px-2 py-2 rounded-[var(--radius-md)] transition-all duration-150 bg-transparent border-none cursor-pointer"
         style={childActive && !open
           ? { color: '#FFFFFF' }
           : { color: 'var(--sidebar-text)' }
@@ -393,7 +393,7 @@ function NavGroup({
         }}
       >
         <Icon size={20} weight={childActive ? 'fill' : 'regular'} className="group-icon flex-shrink-0" />
-        <span className="text-[13px] font-semibold flex-1 text-left">{item.label}</span>
+        <span className="text-[11px] font-semibold flex-1 text-left">{item.label}</span>
         {open
           ? <CaretDown size={12} weight="bold" />
           : <CaretRight size={12} weight="bold" />

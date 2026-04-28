@@ -35,14 +35,14 @@ export default function ContactFilterBar({ onAddContact }: ContactFilterBarProps
         <button
           onClick={() => setView('list')}
           aria-label="List view"
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'list' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'list' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
           <Rows size={12} weight="bold" /> List
         </button>
         <button
           onClick={() => setView('card')}
           aria-label="Card view"
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${view === 'card' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${view === 'card' ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
           <SquaresFour size={12} weight="bold" /> Card
         </button>
@@ -59,7 +59,7 @@ export default function ContactFilterBar({ onAddContact }: ContactFilterBarProps
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold cursor-pointer border-none transition-colors ${active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${active ? 'bg-[var(--brand-primary)] text-white' : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
             >
               {tab.label}
             </button>
@@ -80,9 +80,9 @@ export default function ContactFilterBar({ onAddContact }: ContactFilterBarProps
         <button
           data-tour="new-contact-btn"
           onClick={onAddContact}
-          className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--brand-primary)] text-white text-[12px] font-bold border-none cursor-pointer hover:opacity-90"
+          className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold border-none cursor-pointer hover:opacity-90"
         >
-          <Plus size={14} weight="bold" /> New Contact
+          <Plus size={11} weight="bold" /> New Contact
         </button>
       )}
     </div>
