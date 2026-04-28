@@ -201,14 +201,102 @@ export const TOUR_STEPS: Record<string, TourStep[]> = {
       placement: 'top',
     },
     {
-      content: 'Use the search bar to find contacts by name, company, email, or any field.',
+      content: 'Use the search bar to find contacts by name, company, email, or any field. Click the X (or press Esc) to clear it.',
       target: 'topbar-search',
       placement: 'bottom',
     },
     {
-      content: 'The sidebar navigation takes you to any section of the CRM. The badge shows incomplete contacts.',
+      content: 'The Density button switches row height: Compact (~20px, fits ~40 rows) / Comfortable / Spacious. Pick what suits your scanning style.',
+      target: 'grid-density-menu',
+      placement: 'bottom',
+    },
+    {
+      content: 'The sidebar navigation takes you to any section of the CRM. Click "Manage Emails" to expand Bulk + Sequencing.',
       target: 'sidebar-nav',
       placement: 'right',
+    },
+  ],
+  '/bulk': [
+    {
+      content: 'Welcome to Bulk Email. Send personalized messages to many recipients at once and track delivery for every one.',
+      target: 'bulk-header',
+      placement: 'bottom',
+    },
+    {
+      content: 'Live stats across every batch you\'ve sent: total messages, batches, delivery rate, and unique recipients.',
+      target: 'bulk-stats',
+      placement: 'bottom',
+    },
+    {
+      content: 'Search by subject, recipient, or template. Sort by newest, most recipients, or delivery rate.',
+      target: 'bulk-search-sort',
+      placement: 'bottom',
+    },
+    {
+      content: 'Click here to compose a new bulk send — pick recipients, apply a template or use AI draft, and send with merge fields.',
+      target: 'bulk-new-send',
+      placement: 'left',
+    },
+    {
+      content: 'Each batch shows the subject, attachment count, and live delivery progress. Hover any row to reveal the trash icon.',
+      target: 'bulk-feed',
+      placement: 'top',
+    },
+  ],
+  '/sequences': [
+    {
+      content: 'Sequences are multi-step email cadences that pace your follow-ups across days. Pick one from the left or click "+ New" to start.',
+      target: 'seq-list-panel',
+      placement: 'right',
+    },
+    {
+      content: 'Timeline strip — shows when this sequence was created, last edited, total cadence length, and when your most-recent enrollment will wrap.',
+      target: 'seq-timeline',
+      placement: 'bottom',
+    },
+    {
+      content: 'Performance dashboard. Live stats: active enrollments, completed cadences, replied contacts, and reply rate. The funnel below shows step-by-step drop-off.',
+      target: 'seq-analytics',
+      placement: 'bottom',
+    },
+    {
+      content: 'Each step is a collapsible accordion with a Day-N badge. "Day 0" sends on enrollment; later steps fire after the configured delay.',
+      target: 'seq-steps',
+      placement: 'top',
+    },
+    {
+      content: 'Contacts enrolled in this sequence. Click "Send next step" on any due row to fire the email manually. Reply detection auto-stops on inbound replies.',
+      target: 'seq-enrollments',
+      placement: 'top',
+    },
+  ],
+  'ai': [
+    {
+      content: 'AI assistance is woven throughout the CRM. Let\'s tour the major surfaces — drafting, suggestions, and contextual flags.',
+      target: 'sidebar-nav',
+      placement: 'right',
+      navigateTo: '/contacts',
+    },
+    {
+      content: 'AI Insights bar — monitors your contacts in real time. Flags incomplete profiles and shows recent AI-suggested edits.',
+      target: 'contacts-insights',
+      placement: 'bottom',
+    },
+    {
+      content: 'Contacts the AI has flagged show an "AI" badge in the Tags column. Clicking the contact opens their detail page where you can review/accept the suggestions.',
+      target: 'contacts-grid',
+      placement: 'top',
+    },
+    {
+      content: 'Inside any single-contact email composer, "Draft with AI" pulls the contact\'s recent activity to write a contextual first draft.',
+      target: 'ai-draft-single',
+      placement: 'top',
+    },
+    {
+      content: 'In Bulk Email, the AI draft panel takes a goal + tone + length, then writes a single draft that personalizes per recipient via merge fields.',
+      target: 'bulk-ai-draft',
+      placement: 'top',
+      navigateTo: '/bulk',
     },
   ],
   '/sales': [

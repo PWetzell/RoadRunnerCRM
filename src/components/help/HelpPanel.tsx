@@ -6,7 +6,7 @@ import {
   X, BookOpen, Compass, Play, Question, Sparkle, House, Users, CurrencyDollar,
   UsersFour, Files, ChartPieSlice, UserCircleGear, Keyboard, ChatCircle, Lifebuoy,
   ArrowRight, GraduationCap, Lightning, Flag, BellRinging, Gear, GridFour,
-  UserPlus, Buildings, Bookmark, Envelope,
+  UserPlus, Buildings, Bookmark, Envelope, PaperPlaneTilt, ListNumbers,
 } from '@phosphor-icons/react';
 // TourSpotlight rendering moved to ActiveTourOverlay (independent of panel open/close)
 import { TOUR_STEPS, getTourForPath, TourStep } from '@/lib/tour-steps';
@@ -58,6 +58,7 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'Edit any field by clicking the pencil icon on detail cards.',
       'Tags help you categorize contacts — add them from the detail header.',
       'AI badges show which fields were auto-populated.',
+      'Use the Density button to switch between Compact, Comfortable, and Spacious row heights.',
     ],
     walkthrough: [
       'This is your contact list — everyone you do business with.',
@@ -66,6 +67,51 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'The Overview tab shows key info at a glance. Details has editable field cards.',
       'The Documents tab shows files attached to this contact.',
       'Use the search bar to find contacts by name, company, or email.',
+      'Density picks row height. Compact fits ~40 rows on screen for fast scanning.',
+    ],
+  },
+  '/bulk': {
+    title: 'Bulk Email',
+    icon: <PaperPlaneTilt size={14} weight="duotone" />,
+    tips: [
+      'Click "+ New bulk send" to compose a personalized email to many recipients at once.',
+      'Use {{firstName}}, {{company}}, {{senderName}} merge fields — they auto-fill per recipient at send time.',
+      'Apply a template to skip writing from scratch. Templates auto-sort by most-used.',
+      'Click ✨ AI draft to generate a draft with goal + tone + length controls.',
+      'Every batch tracks per-recipient delivery (sent / failed / pending). Click any batch to open the detail panel.',
+      'Search by subject, recipient, or template. Sort by newest, most recipients, or delivery rate.',
+      'Hover any batch row to reveal the trash icon — removes from history without affecting Gmail.',
+    ],
+    walkthrough: [
+      'Bulk Email is your hub for sending personalized messages to many recipients.',
+      'The stats row shows lifetime totals: sent, batches, delivery rate, recipients.',
+      'Search and sort the history feed to find any past send.',
+      'Click "+ New bulk send" to compose a new one. Pick recipients from contacts, lists, or paste addresses.',
+      'Inside the composer, ✨ AI draft generates a draft from a goal + tone + length you specify.',
+      'Each batch card shows subject, attachment count, and live delivery progress.',
+      'Click any batch to open a detail panel with per-recipient status and attachment previews.',
+    ],
+  },
+  '/sequences': {
+    title: 'Sequences',
+    icon: <ListNumbers size={14} weight="duotone" />,
+    tips: [
+      'Sequences are multi-step email cadences that pace your follow-ups across days.',
+      'The funnel shape shows what % of your starting cohort received each step. Cards narrow as people drop off.',
+      'Each step is a collapsible accordion. Click to expand and edit subject, body, delay.',
+      'Day-N badges on each step show cumulative timing: Day 0, Day 3, Day 7…',
+      'The timeline strip shows: Created · Last edit · Cadence length · Latest finish.',
+      'Click "Send next step" on a due enrollment to fire the email manually (Phase 1).',
+      'Reply detection auto-stops a sequence when the contact replies.',
+    ],
+    walkthrough: [
+      'Sequences automate multi-step email follow-ups so you stay top-of-mind without manual nagging.',
+      'The left panel lists your sequences with search and sort. Click "+ New" to start one.',
+      'The Performance dashboard shows live stats: active enrollments, completed cadences, reply rate.',
+      'The step funnel visualizes drop-off across the cadence — each card width is the % of starting cohort.',
+      'Each step is collapsible. Day-N badges show when each fires relative to enrollment.',
+      'The timeline strip tells you when this sequence was created and when its current cohort wraps.',
+      'Enroll a contact, then "Send next step" when due. Reply detection auto-stops it on reply.',
     ],
   },
   '/sales': {
@@ -257,6 +303,28 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'Sync now does an on-demand pull. If it errors "no_gmail_connection", OAuth was only partially completed and you need to reconnect from Settings.',
       'Import contacts runs the suggestions algorithm: frequency-rank senders, drop noise, dedupe against existing contacts. What\'s left is what you import.',
       'Gmail-imported contacts don\'t carry a "source" tag — they look identical to manual contacts. Delete them from the contacts grid if you need to prune.',
+    ],
+  },
+  'ai': {
+    title: 'AI Assistance',
+    icon: <Sparkle size={14} weight="duotone" />,
+    tips: [
+      'AI Insights bar (Contacts page) flags incomplete profiles and AI-suggested edits in real time.',
+      'AI badges on contact rows mark fields the AI auto-populated — review them in the Tags column.',
+      'Inside any email composer, click "✨ Draft with AI" to generate a contextual draft.',
+      'In Bulk Email, AI keeps your {{firstName}} {{company}} merge fields intact so a single draft personalizes per recipient.',
+      'AI multi-suggestion chips appear during contact entry when a company has multiple known offices.',
+      'The "Ask AI" bar at the top of this Help panel answers natural-language questions about your CRM.',
+      'AI features require your ANTHROPIC_API_KEY to be set in environment variables.',
+    ],
+    walkthrough: [
+      'AI assistance is woven across the CRM — drafting, suggesting, flagging — wherever it saves keystrokes.',
+      'On Contacts, the AI Insights bar monitors your data and flags incomplete profiles + recent suggestions.',
+      'Contacts the AI has flagged show an "AI" badge in the Tags column — at-a-glance signal.',
+      'Inside any single-contact email composer, "Draft with AI" pulls in the contact\'s recent activity to write a contextual first pass.',
+      'In Bulk Email, the AI draft panel takes a goal + tone + length, then writes a draft with merge fields preserved.',
+      'When entering a new contact at a company with multiple offices, AI suggests them as one-click chips.',
+      'For anything else, the Ask AI input at the top of Help answers in natural language — no exact wording needed.',
     ],
   },
   'grids': {

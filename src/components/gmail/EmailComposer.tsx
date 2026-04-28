@@ -590,6 +590,7 @@ export default function EmailComposer({
                 )}
               </button>
               <button
+                data-tour="ai-draft-single"
                 onClick={() => { setAiOpen(true); setTemplatePickerOpen(false); }}
                 title={contactId ? 'Draft with AI' : 'Open from a contact to use AI'}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11.5px] font-bold bg-transparent text-[var(--brand-primary)] border border-[var(--brand-primary)] cursor-pointer hover:bg-[var(--brand-bg)]"

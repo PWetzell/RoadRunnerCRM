@@ -864,6 +864,7 @@ export default function BulkEmailComposer({ open, onClose, initialRecipients = [
               )}
             </button>
             <button
+              data-tour="bulk-ai-draft"
               onClick={() => setAiOpen((v) => !v)}
               title="Generate a draft with AI — keeps {{firstName}}, {{company}} merge fields intact"
               className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11.5px] font-bold bg-transparent border cursor-pointer hover:bg-[var(--ai-bg,var(--brand-bg))] ${

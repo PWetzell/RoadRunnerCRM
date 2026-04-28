@@ -141,7 +141,7 @@ export default function BulkEmailPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-shrink-0 px-6 pt-5 pb-3 border-b border-[var(--border)] bg-[var(--bg-app,var(--surface-card))]">
           {/* Header: title + primary CTA */}
-          <div className="flex items-center justify-between mb-4">
+          <div data-tour="bulk-header" className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-[20px] font-extrabold text-[var(--text-primary)] mb-0.5">
                 Bulk Email
@@ -151,6 +151,7 @@ export default function BulkEmailPage() {
               </p>
             </div>
             <button
+              data-tour="bulk-new-send"
               onClick={() => setComposerOpen(true)}
               className="cta-press inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-[13px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer shadow-sm"
             >
@@ -162,7 +163,7 @@ export default function BulkEmailPage() {
           {/* Stats row — each card fades up + scales on mount, staggered
               ~80ms apart. Numeric values use a count-up wrapper so they
               tick from 0 to the final on first paint. */}
-          <div className="grid grid-cols-4 gap-3 mb-5">
+          <div data-tour="bulk-stats" className="grid grid-cols-4 gap-3 mb-5">
             <StatCard
               label="Total sent"
               value={stats.totalSent}
@@ -211,7 +212,7 @@ export default function BulkEmailPage() {
               at a glance (WCAG 2.1 1.4.11 non-text contrast). The
               focused state ramps to brand-primary so keyboard users
               get a clear active-element cue. */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div data-tour="bulk-search-sort" className="flex items-center gap-2 mb-4 flex-wrap">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -263,7 +264,7 @@ export default function BulkEmailPage() {
               )}
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div data-tour="bulk-feed" className="flex flex-col gap-2">
               {filteredBatches.map((batch, idx) => (
                 <BulkBatchCard
                   key={batch.id}

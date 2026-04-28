@@ -186,7 +186,7 @@ export default function SequencesPage() {
         {/* Left: sequence list — header + search + sort pinned at top,
              list scrolls below. Same shape as /bulk's fixed-header
              pattern so the two pages feel consistent. */}
-        <div className="w-[280px] flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface-card)] flex flex-col">
+        <div data-tour="seq-list-panel" className="w-[280px] flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface-card)] flex flex-col">
           <div className="px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Sequences
@@ -446,7 +446,9 @@ function SequenceEditor({
           {date} · {N} steps · {duration} day cadence"; this strip is
           the same row of metadata, plus a forward-looking finish
           estimate so users see "this is supposed to wrap by X". */}
-      <SequenceTimeline sequence={sequence} enrollments={enrollments} steps={steps} />
+      <div data-tour="seq-timeline">
+        <SequenceTimeline sequence={sequence} enrollments={enrollments} steps={steps} />
+      </div>
 
       <div className="px-6 py-4 border-b border-[var(--border)]">
         <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
@@ -464,9 +466,11 @@ function SequenceEditor({
       {/* Analytics dashboard — live stats computed from enrollments.
           Mirrors the "Performance" panel HubSpot/Outreach/Apollo show
           at the top of every sequence. */}
-      <SequenceAnalytics stats={stats} sequence={sequence} />
+      <div data-tour="seq-analytics">
+        <SequenceAnalytics stats={stats} sequence={sequence} />
+      </div>
 
-      <div className="px-6 py-4 border-b border-[var(--border)]">
+      <div data-tour="seq-steps" className="px-6 py-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Steps</h3>
           <button
@@ -503,7 +507,7 @@ function SequenceEditor({
         </p>
       </div>
 
-      <div className="px-6 py-4">
+      <div data-tour="seq-enrollments" className="px-6 py-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[14px] font-bold text-[var(--text-primary)]">
             Enrolled contacts ({enrollments.length})
