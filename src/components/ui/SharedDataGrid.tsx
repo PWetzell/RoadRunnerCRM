@@ -114,8 +114,12 @@ function SortableHeader({ header, columnWidths, onResize, onToggleGroup, pinStyl
   return (
     <th
       ref={setNodeRef}
-      style={style}
-      className={`group/th px-3 text-left font-bold uppercase tracking-wider select-none border-b border-[var(--grid-header-border)] ${
+      style={{
+        ...style,
+        paddingLeft: 'var(--grid-row-px, 12px)',
+        paddingRight: 'var(--grid-row-px, 12px)',
+      }}
+      className={`group/th text-left font-bold uppercase tracking-wider select-none border-b border-[var(--grid-header-border)] ${
         isGroupedCol
           ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-l border-l-[var(--brand-primary)]/20'
           : 'bg-[var(--grid-header-bg)] text-[var(--text-tertiary)]'
@@ -769,12 +773,17 @@ export default function SharedDataGrid<T>({
                     return (
                     <td
                       key={cell.id}
-                      className="px-3 align-middle overflow-hidden whitespace-nowrap text-ellipsis"
+                      className="align-middle overflow-hidden whitespace-nowrap text-ellipsis"
                       style={{
                         width: columnWidths[cell.column.id] || cell.column.getSize(),
                         minWidth: 0,
-                        paddingTop: 'var(--grid-row-py, 10px)',
-                        paddingBottom: 'var(--grid-row-py, 10px)',
+                        // All four paddings are density-driven so compact
+                        // can squeeze cells tight (~6px) while spacious
+                        // keeps generous breathing room.
+                        paddingTop: 'var(--grid-row-py, 6px)',
+                        paddingBottom: 'var(--grid-row-py, 6px)',
+                        paddingLeft: 'var(--grid-row-px, 12px)',
+                        paddingRight: 'var(--grid-row-px, 12px)',
                         fontSize: 'var(--grid-font, 12px)',
                         ...pinStyle,
                       }}

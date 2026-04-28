@@ -14,6 +14,9 @@ export type GridDensity = 'compact' | 'comfortable' | 'spacious';
 export interface DensityConfig {
   /** Vertical padding on body cells (px) */
   rowPy: number;
+  /** Horizontal padding on body cells (px) — replaces the previously
+   *  hardcoded `px-3` so compact mode can tighten cell whitespace too. */
+  rowPx: number;
   /** Vertical padding on header cells (px) */
   headerPy: number;
   /** Body cell font size (px) */
@@ -26,10 +29,13 @@ export interface DensityConfig {
   chipFont: number;
 }
 
+// Compact recalibrated 2026-04-28: previous compact preset was barely
+// distinguishable from comfortable. Now ~26px row height (vs. ~36px
+// comfortable, ~46px spacious) — fits 30+ rows in a 1080-tall window.
 export const DENSITY: Record<GridDensity, DensityConfig> = {
-  compact: { rowPy: 4, headerPy: 6, font: 11, headerFont: 10, avatar: 22, chipFont: 9 },
-  comfortable: { rowPy: 6, headerPy: 8, font: 12, headerFont: 11, avatar: 28, chipFont: 10 },
-  spacious: { rowPy: 10, headerPy: 10, font: 13, headerFont: 11, avatar: 32, chipFont: 10 },
+  compact:     { rowPy: 2, rowPx: 6,  headerPy: 3, font: 11,   headerFont: 9.5, avatar: 18, chipFont: 8.5 },
+  comfortable: { rowPy: 6, rowPx: 12, headerPy: 8, font: 12,   headerFont: 11,  avatar: 28, chipFont: 10  },
+  spacious:    { rowPy: 10, rowPx: 14, headerPy: 10, font: 13, headerFont: 11,  avatar: 32, chipFont: 10  },
 };
 
 /**
@@ -41,6 +47,7 @@ export function densityStyle(density: GridDensity): React.CSSProperties {
   return {
     // Cast so TS accepts custom properties on CSSProperties
     ['--grid-row-py' as string]: `${d.rowPy}px`,
+    ['--grid-row-px' as string]: `${d.rowPx}px`,
     ['--grid-header-py' as string]: `${d.headerPy}px`,
     ['--grid-font' as string]: `${d.font}px`,
     ['--grid-header-font' as string]: `${d.headerFont}px`,
