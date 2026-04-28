@@ -777,14 +777,15 @@ export default function SharedDataGrid<T>({
                       style={{
                         width: columnWidths[cell.column.id] || cell.column.getSize(),
                         minWidth: 0,
-                        // All four paddings are density-driven so compact
-                        // can squeeze cells tight (~6px) while spacious
-                        // keeps generous breathing room.
+                        // All four paddings + line-height are density-driven
+                        // so compact can squeeze cells text-flush while
+                        // spacious keeps generous breathing room.
                         paddingTop: 'var(--grid-row-py, 6px)',
                         paddingBottom: 'var(--grid-row-py, 6px)',
                         paddingLeft: 'var(--grid-row-px, 12px)',
                         paddingRight: 'var(--grid-row-px, 12px)',
                         fontSize: 'var(--grid-font, 12px)',
+                        lineHeight: 'var(--grid-line-height, 1.2)',
                         ...pinStyle,
                       }}
                       title={titleText}

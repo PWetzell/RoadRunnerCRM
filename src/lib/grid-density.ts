@@ -21,6 +21,10 @@ export interface DensityConfig {
   headerPy: number;
   /** Body cell font size (px) */
   font: number;
+  /** Line-height multiplier on cell content. Default browser line-height
+   *  is ~1.5 which pads rows beyond what padding controls. Compact uses
+   *  1.0 (text-flush), Comfortable 1.2, Spacious 1.4. */
+  lineHeight: number;
   /** Header font size (px) */
   headerFont: number;
   /** Avatar / initials chip size (px) — used by cell renderers that display people/org avatars */
@@ -29,13 +33,19 @@ export interface DensityConfig {
   chipFont: number;
 }
 
-// Compact recalibrated 2026-04-28: previous compact preset was barely
-// distinguishable from comfortable. Now ~26px row height (vs. ~36px
-// comfortable, ~46px spacious) — fits 30+ rows in a 1080-tall window.
+// Calibrated 2026-04-28 to target row heights of ~12 / 24 / 36 px.
+// Compact is now spreadsheet-tight: tiny avatars, minimal padding,
+// near-flush text. Comfortable is the balanced default. Spacious gives
+// reading-breathing-room without sprawling.
+//
+// Note: actual rendered height is max(text, avatar, chip). Compact's
+// 12px target is approximated — the smallest chip pill renders at ~14px
+// regardless of density, which pins the floor. Visible compact rows
+// land around 14–16px in practice.
 export const DENSITY: Record<GridDensity, DensityConfig> = {
-  compact:     { rowPy: 2, rowPx: 6,  headerPy: 3, font: 11,   headerFont: 9.5, avatar: 18, chipFont: 8.5 },
-  comfortable: { rowPy: 6, rowPx: 12, headerPy: 8, font: 12,   headerFont: 11,  avatar: 28, chipFont: 10  },
-  spacious:    { rowPy: 10, rowPx: 14, headerPy: 10, font: 13, headerFont: 11,  avatar: 32, chipFont: 10  },
+  compact:     { rowPy: 1,  rowPx: 4,  headerPy: 2, font: 10, lineHeight: 1.0, headerFont: 9,    avatar: 14, chipFont: 8   },
+  comfortable: { rowPy: 4,  rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2, headerFont: 10,   avatar: 20, chipFont: 9   },
+  spacious:    { rowPy: 8,  rowPx: 12, headerPy: 8, font: 13, lineHeight: 1.4, headerFont: 11,   avatar: 28, chipFont: 10  },
 };
 
 /**
@@ -50,6 +60,7 @@ export function densityStyle(density: GridDensity): React.CSSProperties {
     ['--grid-row-px' as string]: `${d.rowPx}px`,
     ['--grid-header-py' as string]: `${d.headerPy}px`,
     ['--grid-font' as string]: `${d.font}px`,
+    ['--grid-line-height' as string]: `${d.lineHeight}`,
     ['--grid-header-font' as string]: `${d.headerFont}px`,
     ['--grid-avatar' as string]: `${d.avatar}px`,
     ['--grid-chip-font' as string]: `${d.chipFont}px`,
