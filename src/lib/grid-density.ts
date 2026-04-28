@@ -46,11 +46,17 @@ export interface DensityConfig {
 // 12px target is approximated — the smallest chip pill renders at ~14px
 // regardless of density, which pins the floor. Visible compact rows
 // land around 14–16px in practice.
-// Targets ~8 / 24 / 36 px row heights. Compact is now spreadsheet-tight:
-// 8px font, 12px avatars with 6.5px initials that actually fit, near-zero
-// padding. Comfortable + Spacious unchanged from prior calibration.
+// Targets ~8 / 24 / 36 px row heights. Compact is spreadsheet-tight:
+// 8px font, 10px avatars with 5.5px initials, zero cell padding, plus
+// chip-padding overrides + line-height: 1 forced on all descendants
+// via globals.css [data-density="compact"] rules.
+//
+// Visible compact row floor is ~12-13px in practice (avatar circle is
+// the limiter; chips collapse to ~10-11px after the !important padding
+// halving). That's 50% denser than the previous baseline and on par
+// with Excel/Airtable's compact density.
 export const DENSITY: Record<GridDensity, DensityConfig> = {
-  compact:     { rowPy: 0, rowPx: 4,  headerPy: 1, font: 8,  lineHeight: 1.0, headerFont: 8,  avatar: 12, avatarFont: 6.5, chipFont: 7   },
+  compact:     { rowPy: 0, rowPx: 3,  headerPy: 0, font: 8,  lineHeight: 1.0, headerFont: 8,  avatar: 10, avatarFont: 5.5, chipFont: 7   },
   comfortable: { rowPy: 4, rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2, headerFont: 10, avatar: 20, avatarFont: 10,  chipFont: 9   },
   spacious:    { rowPy: 8, rowPx: 12, headerPy: 8, font: 13, lineHeight: 1.4, headerFont: 11, avatar: 28, avatarFont: 12,  chipFont: 10  },
 };

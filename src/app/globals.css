@@ -829,6 +829,48 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
 }
 
 /* =====================================================================
+   GRID COMPACT MODE — Aggressive density overrides
+   The SharedDataGrid root carries `data-density="compact"` when the
+   user picks the Compact density. These overrides halve chip padding,
+   shrink avatars further, and force tight line-height on all row
+   descendants so the visible row floor lands at ~12-14px.
+   ===================================================================== */
+
+/* Halve padding on every pill/chip inside a compact-grid cell. We
+   target the `rounded-full` shape which is universal across our chip
+   components (Tags, Type, Status, AI, badges). The !important is
+   needed because Tailwind's px-2 / py-0.5 utilities have higher
+   specificity than the default cascade. */
+[data-density="compact"] td .rounded-full {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+/* Tighten min-width on counter badges (e.g. unread email count) so
+   they don't reserve a full 18px when the number is single-digit. */
+[data-density="compact"] td .rounded-full[class*="min-w"] {
+  min-width: 12px !important;
+  height: 12px !important;
+}
+
+/* Force line-height: 1 on every row descendant — kills the residual
+   ~3px of leading that browsers apply by default and lets text-only
+   cells collapse to their actual font height. */
+[data-density="compact"] tbody td,
+[data-density="compact"] tbody td * {
+  line-height: 1 !important;
+}
+
+/* Header same treatment so the column titles aren't taller than
+   the rows they label. */
+[data-density="compact"] thead th,
+[data-density="compact"] thead th * {
+  line-height: 1 !important;
+}
+
+/* =====================================================================
    BULK EMAIL — Page-level micro-interactions
    These are scoped utilities used by /bulk: panel slide, backdrop fade,
    stat-card stagger, card hover lifts, attachment zoom, recipient row
