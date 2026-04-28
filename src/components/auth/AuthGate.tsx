@@ -698,10 +698,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="relative z-10 flex flex-col gap-0 max-w-[520px]">
-          {/* -mt-5 (-20px) lifts the bird 20px higher in the hero
-               stack per Paul's request, giving the spotlight more
-               room to read against the panel's top region. */}
-          <div className="relative w-[200px] h-[200px] -mt-5">
+          <div className="relative w-[200px] h-[200px]">
             {/* Spotlight flash behind the bird — radial gradient anchored
                 at the geometric center of the bird container. Animation
                 stays hidden during the run-in, bursts when the bird
