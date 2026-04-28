@@ -188,13 +188,13 @@ export default function SequencesPage() {
              pattern so the two pages feel consistent. */}
         <div data-tour="seq-list-panel" className="w-[280px] flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface-card)] flex flex-col">
           <div className="px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <span className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Sequences
             </span>
             <button
               onClick={handleCreate}
               title="Create a new sequence"
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer hover:opacity-90"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9.5px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer hover:opacity-90"
             >
               <Plus size={11} weight="bold" />
               New
@@ -208,20 +208,20 @@ export default function SequencesPage() {
               ariaLabel="Search sequences"
               size="sm"
             />
-            <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-0.5">
+            <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-0.5">
               Sort
               <select
                 value={seqSort}
                 onChange={(e) => setSeqSort(e.target.value as SeqSortMode)}
                 aria-label="Sort sequences"
-                className="flex-1 h-7 px-1.5 text-[11px] font-semibold bg-[var(--surface-raised)] border border-[var(--text-tertiary)] rounded text-[var(--text-primary)] outline-none cursor-pointer focus:border-[var(--brand-primary)]"
+                className="flex-1 h-7 px-1.5 text-[9.5px] font-semibold bg-[var(--surface-raised)] border border-[var(--text-tertiary)] rounded text-[var(--text-primary)] outline-none cursor-pointer focus:border-[var(--brand-primary)]"
               >
                 {(Object.keys(SEQ_SORT_LABEL) as SeqSortMode[]).map((m) => (
                   <option key={m} value={m}>{SEQ_SORT_LABEL[m]}</option>
                 ))}
               </select>
             </label>
-            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] px-0.5">
+            <span className="text-[9px] font-semibold text-[var(--text-tertiary)] px-0.5">
               {visibleSequences.length} of {sequences.length}
             </span>
           </div>
@@ -229,13 +229,13 @@ export default function SequencesPage() {
             {sequences.length === 0 ? (
               <div className="px-3 py-6 text-center">
                 <ListNumbers size={28} weight="duotone" className="mx-auto text-[var(--text-tertiary)] mb-2" />
-                <p className="text-[12px] text-[var(--text-tertiary)]">
+                <p className="text-[10.5px] text-[var(--text-tertiary)]">
                   No sequences yet. Click <strong>+ New</strong> to create one.
                 </p>
               </div>
             ) : visibleSequences.length === 0 ? (
               <div className="px-3 py-6 text-center">
-                <p className="text-[12px] text-[var(--text-tertiary)] italic">
+                <p className="text-[10.5px] text-[var(--text-tertiary)] italic">
                   No sequences match your search.
                 </p>
               </div>
@@ -254,10 +254,10 @@ export default function SequencesPage() {
                       active ? 'bg-[var(--brand-bg)]' : 'bg-transparent hover:bg-[var(--surface-raised)]'
                     } border-l-2 ${active ? 'border-l-[var(--brand-primary)]' : 'border-l-transparent'}`}
                   >
-                    <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">
+                    <div className="text-[11.5px] font-bold text-[var(--text-primary)] truncate">
                       {seq.name}
                     </div>
-                    <div className="text-[10.5px] text-[var(--text-tertiary)] mt-0.5">
+                    <div className="text-[9.5px] text-[var(--text-tertiary)] mt-0.5">
                       {seq.steps.length} step{seq.steps.length === 1 ? '' : 's'}
                       {activeEnrollments > 0 && (
                         <> · {activeEnrollments} enrolled</>
@@ -267,7 +267,7 @@ export default function SequencesPage() {
                          "Newest first" actually has visible scaffolding.
                          Formatted as a short date; the full timestamp is
                          on the title attribute for hover detail. */}
-                    <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5 opacity-80">
+                    <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5 opacity-80">
                       Created {formatSeqDate(seq.createdAt)}
                     </div>
                   </button>
@@ -290,17 +290,17 @@ export default function SequencesPage() {
             <div className="flex-1 flex items-center justify-center px-6">
               <div className="max-w-md text-center">
                 <ListNumbers size={48} weight="duotone" className="mx-auto text-[var(--text-tertiary)] mb-4" />
-                <h2 className="text-[16px] font-bold text-[var(--text-primary)] mb-2">
+                <h2 className="text-[14px] font-bold text-[var(--text-primary)] mb-2">
                   Build a sequence
                 </h2>
-                <p className="text-[13px] text-[var(--text-secondary)] mb-4">
+                <p className="text-[11.5px] text-[var(--text-secondary)] mb-4">
                   A sequence is a multi-step email cadence — intro, follow-up, second
                   follow-up, etc. — with delays between each step. Enroll contacts and
                   fire each step manually for now (full automation comes next).
                 </p>
                 <button
                   onClick={handleCreate}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer hover:opacity-90"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10.5px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer hover:opacity-90"
                 >
                   <Plus size={12} weight="bold" />
                   Create your first sequence
@@ -412,13 +412,13 @@ function SequenceEditor({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Sequence name"
-          className="flex-1 text-[18px] font-extrabold text-[var(--text-primary)] bg-transparent border-none outline-none"
+          className="flex-1 text-[16px] font-extrabold text-[var(--text-primary)] bg-transparent border-none outline-none"
         />
         <div className="flex items-center gap-2">
           <button
             onClick={save}
             disabled={!dirty}
-            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-bold border-none ${
+            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-[10.5px] font-bold border-none ${
               dirty
                 ? 'bg-[var(--brand-primary)] text-white cursor-pointer hover:opacity-90'
                 : 'bg-[var(--surface-raised)] text-[var(--text-tertiary)] cursor-not-allowed'
@@ -451,7 +451,7 @@ function SequenceEditor({
       </div>
 
       <div className="px-6 py-4 border-b border-[var(--border)]">
-        <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+        <label className="block text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
           Description
         </label>
         <textarea
@@ -459,7 +459,7 @@ function SequenceEditor({
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
           placeholder="Internal note: what's this sequence for?"
-          className="w-full text-[13px] text-[var(--text-primary)] bg-[var(--surface-raised)] border border-[var(--border)] rounded-md px-2.5 py-1.5 outline-none placeholder:text-[var(--text-tertiary)] resize-none"
+          className="w-full text-[11.5px] text-[var(--text-primary)] bg-[var(--surface-raised)] border border-[var(--border)] rounded-md px-2.5 py-1.5 outline-none placeholder:text-[var(--text-tertiary)] resize-none"
         />
       </div>
 
@@ -472,17 +472,17 @@ function SequenceEditor({
 
       <div data-tour="seq-steps" className="px-6 py-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Steps</h3>
+          <h3 className="text-[12px] font-bold text-[var(--text-primary)]">Steps</h3>
           <button
             onClick={addStep}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-bold border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-bg)] cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-bg)] cursor-pointer"
           >
             <Plus size={11} weight="bold" />
             Add step
           </button>
         </div>
         {steps.length === 0 ? (
-          <p className="text-[12px] text-[var(--text-tertiary)] italic py-4 text-center">
+          <p className="text-[10.5px] text-[var(--text-tertiary)] italic py-4 text-center">
             No steps yet. Add one to start building the sequence.
           </p>
         ) : (
@@ -500,7 +500,7 @@ function SequenceEditor({
             ))}
           </div>
         )}
-        <p className="text-[10.5px] text-[var(--text-tertiary)] italic mt-3">
+        <p className="text-[9.5px] text-[var(--text-tertiary)] italic mt-3">
           Use merge fields like <code className="font-mono">{'{{firstName}}'}</code>,
           <code className="font-mono"> {'{{company}}'}</code>,
           <code className="font-mono"> {'{{senderName}}'}</code> — they auto-fill per recipient at send time.
@@ -509,13 +509,13 @@ function SequenceEditor({
 
       <div data-tour="seq-enrollments" className="px-6 py-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[14px] font-bold text-[var(--text-primary)]">
+          <h3 className="text-[12px] font-bold text-[var(--text-primary)]">
             Enrolled contacts ({enrollments.length})
           </h3>
           <EnrollContactButton sequence={sequence} />
         </div>
         {enrollments.length === 0 ? (
-          <p className="text-[12px] text-[var(--text-tertiary)] italic py-4 text-center">
+          <p className="text-[10.5px] text-[var(--text-tertiary)] italic py-4 text-center">
             No one enrolled yet. Click <strong>+ Enroll contact</strong> to add someone.
           </p>
         ) : (
@@ -538,7 +538,7 @@ function EnrollContactButton({ sequence }: { sequence: EmailSequence }) {
             ? 'Add at least one step before enrolling contacts'
             : 'Enroll a contact in this sequence'
         }
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-bold border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-bg)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-bg)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <UserPlus size={11} weight="bold" />
         Enroll contact
@@ -604,7 +604,7 @@ function EnrollContactPicker({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-          <h2 className="text-[14px] font-bold text-[var(--text-primary)]">
+          <h2 className="text-[12px] font-bold text-[var(--text-primary)]">
             Enroll a contact in &ldquo;{sequence.name}&rdquo;
           </h2>
           <button
@@ -626,7 +626,7 @@ function EnrollContactPicker({
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {eligible.length === 0 ? (
-            <p className="text-[12px] text-[var(--text-tertiary)] italic py-6 text-center">
+            <p className="text-[10.5px] text-[var(--text-tertiary)] italic py-6 text-center">
               {search ? 'No matching contacts' : 'No eligible contacts (all enrolled or no email)'}
             </p>
           ) : (
@@ -637,8 +637,8 @@ function EnrollContactPicker({
                 className="w-full text-left flex items-center justify-between gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--brand-bg)] cursor-pointer bg-transparent border-none"
               >
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[12.5px] font-bold text-[var(--text-primary)] truncate">{c.name}</span>
-                  <span className="text-[10.5px] text-[var(--text-tertiary)] truncate">{primaryEmail(c)}</span>
+                  <span className="text-[11px] font-bold text-[var(--text-primary)] truncate">{c.name}</span>
+                  <span className="text-[9.5px] text-[var(--text-tertiary)] truncate">{primaryEmail(c)}</span>
                 </div>
                 <Plus size={12} weight="bold" className="text-[var(--brand-primary)] flex-shrink-0" />
               </button>
@@ -690,7 +690,7 @@ function StepEditor({
   }, [step.body, expanded]);
 
   const Stats = stepStats && stepStats.sent > 0 ? (
-    <div className="inline-flex items-center gap-2 text-[10.5px] font-semibold text-[var(--text-tertiary)]">
+    <div className="inline-flex items-center gap-2 text-[9.5px] font-semibold text-[var(--text-tertiary)]">
       <span className="inline-flex items-center gap-1">
         <PaperPlaneTilt size={10} weight="fill" className="text-[var(--brand-primary)]" />
         {stepStats.sent} sent
@@ -734,13 +734,13 @@ function StepEditor({
           aria-controls={`step-body-${step.id}`}
           className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 text-left bg-transparent border-none cursor-pointer"
         >
-          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--brand-bg)] text-[var(--brand-primary)] text-[11px] font-bold flex-shrink-0">
+          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--brand-bg)] text-[var(--brand-primary)] text-[9.5px] font-bold flex-shrink-0">
             {idx + 1}
           </span>
           {/* Day-N badge — cumulative offset from enrollment so the
                whole cadence reads at a glance: Day 0, Day 3, Day 7, … */}
           <span
-            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
+            className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
             title={
               dayOffset === 0
                 ? 'Sent the day the contact is enrolled'
@@ -749,7 +749,7 @@ function StepEditor({
           >
             Day {dayOffset}
           </span>
-          <span className="text-[13px] font-bold text-[var(--text-primary)] truncate">
+          <span className="text-[11.5px] font-bold text-[var(--text-primary)] truncate">
             {step.subject || <span className="text-[var(--text-tertiary)] font-normal italic">No subject yet</span>}
           </span>
           {Stats && (
@@ -788,7 +788,7 @@ function StepEditor({
             value={step.subject}
             onChange={(e) => onChange({ subject: e.target.value })}
             placeholder="Subject (use {{firstName}} for personalization)"
-            className="w-full text-[13px] font-semibold text-[var(--text-primary)] bg-transparent border-b border-[var(--border)] outline-none py-1 mb-3"
+            className="w-full text-[11.5px] font-semibold text-[var(--text-primary)] bg-transparent border-b border-[var(--border)] outline-none py-1 mb-3"
           />
           <textarea
             ref={bodyRef}
@@ -798,11 +798,11 @@ function StepEditor({
             // overflow-hidden + auto-resize via the effect above means
             // the textarea grows with content — no inner scroll, the
             // whole message stays visible.
-            className="w-full text-[12.5px] leading-relaxed text-[var(--text-primary)] bg-[var(--surface-raised)] border border-[var(--border)] rounded-md px-2.5 py-2 outline-none placeholder:text-[var(--text-tertiary)] resize-none overflow-hidden mb-3"
+            className="w-full text-[11px] leading-relaxed text-[var(--text-primary)] bg-[var(--surface-raised)] border border-[var(--border)] rounded-md px-2.5 py-2 outline-none placeholder:text-[var(--text-tertiary)] resize-none overflow-hidden mb-3"
             style={{ minHeight: '96px' }}
           />
           <div className="flex items-center gap-3 flex-wrap">
-            <label className="flex items-center gap-1 text-[11.5px] text-[var(--text-secondary)]">
+            <label className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)]">
               Wait
               <input
                 type="number"
@@ -810,11 +810,11 @@ function StepEditor({
                 max={365}
                 value={step.delayDays}
                 onChange={(e) => onChange({ delayDays: Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                className="w-14 text-[12px] text-center bg-[var(--surface-raised)] border border-[var(--border)] rounded px-1 py-0.5 outline-none"
+                className="w-14 text-[10.5px] text-center bg-[var(--surface-raised)] border border-[var(--border)] rounded px-1 py-0.5 outline-none"
               />
               days {idx === 0 ? 'after enrollment' : 'after previous step'}
             </label>
-            <label className="flex items-center gap-1 text-[11.5px] text-[var(--text-secondary)] cursor-pointer">
+            <label className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)] cursor-pointer">
               <input
                 type="checkbox"
                 checked={step.stopOnReply}
@@ -895,15 +895,15 @@ function EnrollmentsTable({
 
   return (
     <div className="border border-[var(--border)] rounded-md overflow-hidden">
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[10.5px]">
         <thead className="bg-[var(--surface-raised)]">
           <tr className="text-left">
-            <th className="px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Contact</th>
-            <th className="px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Step</th>
-            <th className="px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Started</th>
-            <th className="px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Next due</th>
-            <th className="px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Expected end</th>
-            <th className="px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Status</th>
+            <th className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Contact</th>
+            <th className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Step</th>
+            <th className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Started</th>
+            <th className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Next due</th>
+            <th className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Expected end</th>
+            <th className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Status</th>
             <th className="px-2.5 py-1.5 w-[1%]" />
           </tr>
         </thead>
@@ -935,7 +935,7 @@ function EnrollmentsTable({
               <tr key={e.id} className="border-t border-[var(--border-subtle)]">
                 <td className="px-2.5 py-2">
                   <div className="font-semibold text-[var(--text-primary)]">{e.contactName}</div>
-                  <div className="text-[10.5px] text-[var(--text-tertiary)]">{e.contactEmail}</div>
+                  <div className="text-[9.5px] text-[var(--text-tertiary)]">{e.contactEmail}</div>
                 </td>
                 <td className="px-2.5 py-2 text-[var(--text-secondary)]">{stepLabel}</td>
                 <td
@@ -954,7 +954,7 @@ function EnrollmentsTable({
                   {expectedEndLabel}
                 </td>
                 <td className="px-2.5 py-2">
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ${statusClass(e.status)}`}>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ${statusClass(e.status)}`}>
                     {e.status}
                   </span>
                 </td>
@@ -963,7 +963,7 @@ function EnrollmentsTable({
                     <button
                       onClick={() => sendNextStep(e)}
                       disabled={sending === e.id}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[9.5px] font-bold bg-[var(--brand-primary)] text-white border-none cursor-pointer hover:opacity-90 disabled:opacity-50"
                     >
                       <EnvelopeSimple size={10} weight="fill" />
                       {sending === e.id ? 'Sending…' : 'Send next step'}
@@ -972,7 +972,7 @@ function EnrollmentsTable({
                   {e.status === 'active' && !isDue && (
                     <button
                       onClick={() => pauseEnrollment(e.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-bold text-[var(--text-secondary)] bg-transparent border border-[var(--border)] cursor-pointer hover:border-[var(--text-primary)]"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[9.5px] font-bold text-[var(--text-secondary)] bg-transparent border border-[var(--border)] cursor-pointer hover:border-[var(--text-primary)]"
                     >
                       <PauseCircle size={10} weight="bold" /> Pause
                     </button>
@@ -980,7 +980,7 @@ function EnrollmentsTable({
                   {e.status === 'paused' && (
                     <button
                       onClick={() => resumeEnrollment(e.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-bold text-[var(--brand-primary)] bg-transparent border border-[var(--brand-primary)] cursor-pointer hover:bg-[var(--brand-bg)]"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[9.5px] font-bold text-[var(--brand-primary)] bg-transparent border border-[var(--brand-primary)] cursor-pointer hover:bg-[var(--brand-bg)]"
                     >
                       <PlayCircle size={10} weight="bold" /> Resume
                     </button>
@@ -989,7 +989,7 @@ function EnrollmentsTable({
                     <button
                       onClick={() => unenrollContact(e.id)}
                       title="Remove from sequence"
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-bold text-[var(--text-tertiary)] bg-transparent border-none cursor-pointer hover:text-[var(--danger)] ml-1"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[9.5px] font-bold text-[var(--text-tertiary)] bg-transparent border-none cursor-pointer hover:text-[var(--danger)] ml-1"
                     >
                       <XIcon size={10} />
                     </button>
@@ -1037,7 +1037,7 @@ function SequenceTimeline({
     }
   }
   return (
-    <div className="px-6 py-3 border-b border-[var(--border)] bg-[var(--surface-raised)] flex items-center gap-5 flex-wrap text-[12px]">
+    <div className="px-6 py-3 border-b border-[var(--border)] bg-[var(--surface-raised)] flex items-center gap-5 flex-wrap text-[10.5px]">
       <TimelineCell
         label="Created"
         value={formatSeqDate(sequence.createdAt)}
@@ -1084,11 +1084,11 @@ function TimelineCell({
 }) {
   return (
     <div className="flex flex-col" title={title}>
-      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
         {label}
       </span>
       <span
-        className={`text-[12.5px] font-bold tabular-nums ${
+        className={`text-[11px] font-bold tabular-nums ${
           accent ? 'text-[var(--brand-primary)]' : 'text-[var(--text-primary)]'
         }`}
       >
@@ -1113,10 +1113,10 @@ function SequenceAnalytics({ stats, sequence }: { stats: SequenceStats; sequence
   return (
     <div className="px-6 py-4 border-b border-[var(--border)]">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[14px] font-bold text-[var(--text-primary)]">
+        <h3 className="text-[12px] font-bold text-[var(--text-primary)]">
           Performance
         </h3>
-        <span className="text-[10.5px] text-[var(--text-tertiary)]">
+        <span className="text-[9.5px] text-[var(--text-tertiary)]">
           Live · {stats.totalEnrolled} total enrolled
         </span>
       </div>
@@ -1215,10 +1215,10 @@ function FunnelChart({
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--border)] rounded-lg p-3">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           Step funnel
         </span>
-        <span className="text-[10.5px] text-[var(--text-tertiary)]">
+        <span className="text-[9.5px] text-[var(--text-tertiary)]">
           {totalSends} total sends · width = % of starting cohort
         </span>
       </div>
@@ -1241,7 +1241,7 @@ function FunnelChart({
                 <div className="flex items-center gap-1.5 my-1">
                   <span aria-hidden="true" className="inline-block w-px h-3 bg-[var(--border)]" />
                   <span
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
                       dropPct === 0
                         ? 'bg-[var(--success-bg)] text-[var(--success)]'
                         : dropPct <= 25
@@ -1270,18 +1270,18 @@ function FunnelChart({
               >
                 {/* Header row: step number + subject */}
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-extrabold flex-shrink-0">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--brand-primary)] text-white text-[9px] font-extrabold flex-shrink-0">
                     {idx + 1}
                   </span>
-                  <span className="text-[11.5px] font-bold text-[var(--text-primary)] truncate flex-1">
+                  <span className="text-[10px] font-bold text-[var(--text-primary)] truncate flex-1">
                     {stepDef?.subject || `Step ${idx + 1}`}
                   </span>
-                  <span className="text-[10px] font-extrabold text-[var(--brand-primary)] tabular-nums flex-shrink-0">
+                  <span className="text-[9px] font-extrabold text-[var(--brand-primary)] tabular-nums flex-shrink-0">
                     {cohortPct}%
                   </span>
                 </div>
                 {/* Metrics row: sent + replied + reply-rate chip + waiting */}
-                <div className="flex items-center gap-2.5 text-[11px] font-semibold tabular-nums pl-7 flex-wrap">
+                <div className="flex items-center gap-2.5 text-[9.5px] font-semibold tabular-nums pl-7 flex-wrap">
                   <span className="text-[var(--text-primary)]">
                     <strong className="font-extrabold">{s.sent}</strong>{' '}
                     <span className="text-[var(--text-secondary)] font-medium">sent</span>
@@ -1293,7 +1293,7 @@ function FunnelChart({
                     </span>
                   )}
                   {s.sent > 0 && s.replied > 0 && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[var(--success-bg)] text-[var(--success)] text-[10px] font-bold">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[var(--success-bg)] text-[var(--success)] text-[9px] font-bold">
                       {replyRate}% reply
                     </span>
                   )}
@@ -1312,7 +1312,7 @@ function FunnelChart({
            by spelling out the visual encoding in one line. Sized at
            12px / text-secondary so it's easily readable (≥7:1 contrast
            on the surface-raised bg = WCAG AAA). */}
-      <p className="text-[12px] leading-snug text-[var(--text-secondary)] mt-3 text-center px-2">
+      <p className="text-[10.5px] leading-snug text-[var(--text-secondary)] mt-3 text-center px-2">
         <strong className="font-bold text-[var(--text-primary)]">Each card&apos;s width</strong> = % of step 1&apos;s cohort that received this step.
         Cards narrow downward as people reply, get unenrolled, or are still waiting.
       </p>
@@ -1393,14 +1393,14 @@ function SeqStatCard({
     >
       <div className="px-2.5 py-1.5 border-b border-[var(--border-subtle)] flex items-center gap-1.5">
         <span className="flex-shrink-0" style={{ color: iconColor[tone] }}>{icon}</span>
-        <span className="text-[12px] font-extrabold text-[var(--text-primary)] truncate flex-1">{label}</span>
+        <span className="text-[10.5px] font-extrabold text-[var(--text-primary)] truncate flex-1">{label}</span>
       </div>
       <div className="px-2.5 py-2">
         <div className="text-[24px] font-extrabold leading-none tracking-tight tabular-nums text-[var(--text-primary)]">
           {displayValue}
         </div>
         {hint && (
-          <div className="text-[10.5px] font-semibold text-[var(--text-tertiary)] mt-1">
+          <div className="text-[9.5px] font-semibold text-[var(--text-tertiary)] mt-1">
             {hint}
           </div>
         )}
