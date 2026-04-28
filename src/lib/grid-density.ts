@@ -56,7 +56,7 @@ export interface DensityConfig {
 // halving). That's 50% denser than the previous baseline and on par
 // with Excel/Airtable's compact density.
 export const DENSITY: Record<GridDensity, DensityConfig> = {
-  compact:     { rowPy: 0, rowPx: 3,  headerPy: 0, font: 8,  lineHeight: 1.0, headerFont: 8,  avatar: 10, avatarFont: 5.5, chipFont: 7   },
+  compact:     { rowPy: 1, rowPx: 4,  headerPy: 1, font: 9,  lineHeight: 1.1, headerFont: 9,  avatar: 14, avatarFont: 7,   chipFont: 8   },
   comfortable: { rowPy: 4, rowPx: 8,  headerPy: 5, font: 11, lineHeight: 1.2, headerFont: 10, avatar: 20, avatarFont: 10,  chipFont: 9   },
   spacious:    { rowPy: 8, rowPx: 12, headerPy: 8, font: 13, lineHeight: 1.4, headerFont: 11, avatar: 28, avatarFont: 12,  chipFont: 10  },
 };

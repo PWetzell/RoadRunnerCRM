@@ -849,13 +849,13 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
 }
 
 /* Counter badges (paperclip count, unread email count, +N overflow)
-   shrunk to 8px to fit under the new row-height cap. At this size
-   2-digit numbers still legibly render with 7px font + line-height 1.
-   Targets BOTH td (body) and th (column header). */
+   sized to fit under the 16px row cap with breathing room. At 12px
+   tall, 2-digit numbers still render legibly. Targets BOTH td (body)
+   and th (column header). */
 [data-density="compact"] td .rounded-full[class*="min-w"],
 [data-density="compact"] th .rounded-full[class*="min-w"] {
-  min-width: 8px !important;
-  height: 8px !important;
+  min-width: 12px !important;
+  height: 12px !important;
   padding-left: 3px !important;
   padding-right: 3px !important;
 }
@@ -863,18 +863,18 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
 /* Cover the badge variant that uses h-[18px] without min-w-. */
 [data-density="compact"] td .rounded-full[class*="h-["],
 [data-density="compact"] th .rounded-full[class*="h-["] {
-  height: 8px !important;
+  height: 12px !important;
 }
 
-/* Drop pill chips (Person/Tag/Status/AI) to 8px too — same target
-   as the row floor so everything aligns flush. */
+/* Pill chips (Person/Tag/Status/AI) — moderate padding so they read
+   as proper chips rather than naked text, but tight enough to fit
+   under the row cap. */
 [data-density="compact"] td .rounded-full {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  padding-left: 3px !important;
-  padding-right: 3px !important;
-  border-width: 0 !important;
-  font-size: 7px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  font-size: 8px !important;
 }
 
 /* Force line-height: 1 on every row descendant — kills the residual
@@ -892,43 +892,36 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   line-height: 1 !important;
 }
 
-/* Hard cap row height at 8px. In HTML tables, ALL cells in a row stretch
-   to the tallest cell's content height — so capping the row requires
-   capping every cell AND every cell's children. The css below clamps
-   each layer. The action-column buttons (right-pinned, opacity-0 by
-   default, only visible on hover) were the last hidden offender —
-   they're invisible but their natural ~20px height was forcing rows
-   open. We now max-height: 8px every td and every direct child. */
+/* Compact row cap at 20px. Settled here after iterating from 12 → 8
+   (too cramped) → 16 → 20. 20px gives enough room for a tiny avatar
+   circle, pills, and badges to all render legibly while still
+   fitting ~40+ rows in a 1080-tall window — far denser than every
+   competing CRM (Airtable Short = 24, HubSpot compact = 28). */
 [data-density="compact"] tbody tr {
-  height: 8px;
-  max-height: 8px;
+  height: 20px;
+  max-height: 20px;
 }
 [data-density="compact"] tbody td,
 [data-density="compact"] tbody tr > td {
-  height: 8px !important;
-  max-height: 8px !important;
+  height: 20px !important;
+  max-height: 20px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
   overflow: hidden;
   vertical-align: middle;
 }
 [data-density="compact"] tbody td > * {
-  max-height: 8px;
+  max-height: 16px;
   overflow: hidden;
 }
-/* Action toolbar buttons in the right-pinned cell — they ship at
-   ~20px natural height but are opacity-0 until hover, so they're
-   invisible AND row-bloating. Force them to 8px regardless. */
 [data-density="compact"] tbody td button,
 [data-density="compact"] tbody td a {
-  max-height: 8px !important;
+  max-height: 16px !important;
 }
 
-/* Hide the avatar circle in the contact name cell when the grid is
-   compact — the 10px circle was the previous height limiter. Name
-   text stays visible (it's the next sibling); horizontal alignment
-   collapses gracefully because the parent is `flex items-center`. */
-[data-density="compact"] td .flex.items-center > div[style*="border-radius"]:first-child {
-  display: none;
-}
+/* Avatar stays visible in compact mode now that we have a 20px row
+   cap — fits comfortably at 14px (the size set in DENSITY config).
+   Removed the display:none rule from the 8px iteration. */
 
 /* Hide the secondary subline under contact names in compact (orgName
    on Person rows). It re-appears in Comfortable / Spacious. The
