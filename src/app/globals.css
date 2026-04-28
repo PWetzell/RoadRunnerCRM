@@ -870,6 +870,37 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   line-height: 1 !important;
 }
 
+/* Hard cap row height — eliminates the residual ~6-8px that came from
+   stacked-content cells (the contact name column renders name + a
+   secondary "orgName" subline beneath it on Person rows; in compact
+   mode that 2-row stack is the row's height limiter). With max-height
+   + overflow-hidden, the subline is clipped if it would push past
+   the cap. Aggressive but matches Excel / Airtable's compact density
+   where every row is exactly the same vertical pixel. */
+[data-density="compact"] tbody tr {
+  height: 16px;
+}
+[data-density="compact"] tbody td {
+  max-height: 16px;
+  height: 16px;
+}
+
+/* Hide the secondary subline under contact names in compact (orgName
+   on Person rows). It re-appears in Comfortable / Spacious. The
+   subline is the only `text-[var(--text-tertiary)]` div sitting at
+   depth 2 inside the name cell wrapper. */
+[data-density="compact"] td .flex.items-center > div.min-w-0 > div {
+  display: none;
+}
+
+/* Shrink any inline icon (EyeSlash for private, etc.) to fit the cap.
+   Targets svg directly inside cells but skips the action toolbar in
+   the right-pinned cell (which has its own data attribute). */
+[data-density="compact"] tbody td:not([data-actions]) svg {
+  width: 10px !important;
+  height: 10px !important;
+}
+
 /* =====================================================================
    BULK EMAIL — Page-level micro-interactions
    These are scoped utilities used by /bulk: panel slide, backdrop fade,
