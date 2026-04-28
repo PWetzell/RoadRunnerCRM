@@ -142,7 +142,7 @@ export default function SectionCard({
           )}
         </div>
       </div>
-      <div style={{ paddingLeft: 'var(--detail-card-px, 16px)', paddingRight: 'var(--detail-card-px, 16px)', paddingTop: 'var(--detail-card-py, 12px)', paddingBottom: 'var(--detail-card-py, 12px)' }}>{children}</div>
+      <div className="px-4 py-3">{children}</div>
     </div>
   );
 }
