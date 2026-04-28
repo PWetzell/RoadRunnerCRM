@@ -102,14 +102,14 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
           const t = r as TaggedLead;
           return (
             <div className="flex items-center gap-1.5">
-              <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)] truncate">New lead from tag</span>
+              <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate">New lead from tag</span>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] whitespace-nowrap">
                 <Tag size={9} weight="fill" /> {t.matchedTag}
               </span>
             </div>
           );
         }
-        return <div className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)] truncate">{r.name}</div>;
+        return <div className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate">{r.name}</div>;
       },
     },
     {
@@ -195,7 +195,7 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
             >
               {initials(person.name)}
             </div>
-            <span className="text-[length:var(--grid-font)] text-[var(--text-primary)] truncate min-w-0">{person.name}</span>
+            <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate min-w-0">{person.name}</span>
           </div>
         );
       },
@@ -231,7 +231,7 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
             >
               {initials(org.name)}
             </div>
-            <span className="text-[length:var(--grid-font)] text-[var(--text-primary)] truncate min-w-0">{org.name}</span>
+            <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate min-w-0">{org.name}</span>
           </div>
         );
       },
@@ -244,7 +244,7 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       cell: ({ row }) => {
         const r = row.original;
         if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)]">{fmtMoney(r.amount)}</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{fmtMoney(r.amount)}</span>;
       },
     },
     {

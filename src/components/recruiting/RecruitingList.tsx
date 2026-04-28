@@ -94,9 +94,9 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
                   Compact-mode CSS in globals.css hides the secondary
                   title <div> below by selecting `span + div` — if name
                   were also a <div>, both would disappear. */}
-              <span className="block font-bold text-[var(--text-primary)] truncate max-w-[160px]" style={{ fontSize: 'var(--grid-font, 13px)' }}>{c.name}</span>
+              <span className="block text-[var(--text-secondary)] truncate max-w-[160px]" style={{ fontSize: 'var(--grid-font, 13px)' }}>{c.name}</span>
               {c.title && (
-                <div className="text-[var(--text-tertiary)] truncate max-w-[160px]" style={{ fontSize: 'calc(var(--grid-font, 13px) - 2px)' }}>{c.title}</div>
+                <div className="text-[var(--text-secondary)] truncate max-w-[160px]" style={{ fontSize: 'calc(var(--grid-font, 13px) - 2px)' }}>{c.title}</div>
               )}
             </div>
           </div>
@@ -158,7 +158,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       accessorKey: 'dealAmount',
       header: 'Amount',
       size: 200,
-      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)]">${(getValue() as number).toLocaleString()}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">${(getValue() as number).toLocaleString()}</span>,
     },
     {
       id: 'matchScore',
@@ -173,7 +173,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
             <div className="flex-1 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
               <div className="h-full rounded-full" style={{ width: `${score}%`, background: score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--danger)' }} />
             </div>
-            <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-secondary)] flex-shrink-0">{score}%</span>
+            <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] flex-shrink-0">{score}%</span>
           </div>
         );
       },
@@ -198,7 +198,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       accessorKey: 'dealName',
       header: 'Deal Name',
       size: 220,
-      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-primary)] truncate block">{getValue() as string || '\u2014'}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">{getValue() as string || '\u2014'}</span>,
     },
     {
       id: 'title',

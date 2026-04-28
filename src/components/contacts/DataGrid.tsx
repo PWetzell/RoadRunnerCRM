@@ -417,9 +417,9 @@ function buildColumns(
               {initials(c.name)}
             </div>
             <div className="min-w-0">
-              <span className="font-bold text-[var(--text-primary)] truncate max-w-[160px] block" style={{ fontSize: 'var(--grid-font, 13px)' }}>{c.name}</span>
+              <span className="text-[var(--text-secondary)] truncate max-w-[160px] block" style={{ fontSize: 'var(--grid-font, 13px)' }}>{c.name}</span>
               {!isOrg && 'orgName' in c && c.orgName && (
-                <div className="text-[var(--text-tertiary)] truncate max-w-[160px]" style={{ fontSize: 'calc(var(--grid-font, 13px) - 2px)' }}>{c.orgName}</div>
+                <div className="text-[var(--text-secondary)] truncate max-w-[160px]" style={{ fontSize: 'calc(var(--grid-font, 13px) - 2px)' }}>{c.orgName}</div>
               )}
             </div>
             {c.isPrivate && <EyeSlash size={14} className="text-[var(--danger)] flex-shrink-0" />}
