@@ -117,13 +117,8 @@ export interface CardDensityConfig {
 // Same shift as DENSITY: the previous "comfortable" became the new
 // "spacious" (the everyday default), and "comfortable" is now a proper
 // middle-ground between compact and that.
-//
-// 2026-04-28 — compact tightened another ~35% per Paul: the Card view
-// for contacts + sales should fit substantially more tiles per row in
-// compact mode. Padding/avatar/gap/min-width all cut hard; fonts cut
-// modestly to preserve readability.
 export const CARD_DENSITY: Record<GridDensity, CardDensityConfig> = {
-  compact:     { padding: 5,  avatar: 24, nameFont: 10, subFont: 8.5,  chipFont: 7,   gap: 4,  minCardWidth: 120 },
+  compact:     { padding: 8,  avatar: 36, nameFont: 12, subFont: 10,   chipFont: 8,   gap: 6,  minCardWidth: 180 },
   comfortable: { padding: 10, avatar: 42, nameFont: 13, subFont: 10.5, chipFont: 8.5, gap: 9,  minCardWidth: 210 },
   spacious:    { padding: 12, avatar: 48, nameFont: 14, subFont: 11,   chipFont: 9,   gap: 12, minCardWidth: 240 },
 };
@@ -165,12 +160,11 @@ export interface DetailDensityConfig {
 }
 
 // Tightened ~25% on 2026-04-28 per Paul: cards on Overview/Details
-// were too sprawling. A second pass on compact-only (later same day)
-// took an additional ~35% off, so compact in the detail view is now
-// near-spreadsheet density. Comfortable + spacious are unchanged from
-// the earlier pass.
+// were too sprawling — every spacing/padding token cut to give more
+// data density at every density preset, with the biggest effect on
+// `compact` (now genuinely spreadsheet-tight).
 export const DETAIL_DENSITY: Record<GridDensity, DetailDensityConfig> = {
-  compact:     { pagePx: 78,  pagePy: 5,  sectionGap: 5,  stackGap: 4,  cardPx: 6,  cardPy: 4, headerPy: 4 },
+  compact:     { pagePx: 120, pagePy: 8,  sectionGap: 8,  stackGap: 6,  cardPx: 9,  cardPy: 6, headerPy: 6 },
   comfortable: { pagePx: 84,  pagePy: 11, sectionGap: 10, stackGap: 9,  cardPx: 10, cardPy: 8, headerPy: 8 },
   spacious:    { pagePx: 48,  pagePy: 15, sectionGap: 12, stackGap: 12, cardPx: 12, cardPy: 9, headerPy: 9 },
 };
