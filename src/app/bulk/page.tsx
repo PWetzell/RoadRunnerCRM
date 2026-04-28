@@ -367,46 +367,42 @@ function StatCard({
   const targetNum = typeof value === 'number' ? value : 0;
   const counted = useCountUp(numeric ? targetNum : 0);
   const displayValue = numeric ? `${counted}${suffix}` : `${value}${suffix}`;
-  const styles: Record<StatTone, { bg: string; text: string; iconColor: string }> = {
-    brand: { bg: 'var(--brand-bg)', text: 'var(--brand-primary)', iconColor: 'var(--brand-primary)' },
-    success: { bg: 'var(--success-bg)', text: 'var(--success)', iconColor: 'var(--success)' },
-    info: { bg: 'var(--info-bg)', text: 'var(--info)', iconColor: 'var(--info)' },
-    neutral: { bg: 'var(--surface-card)', text: 'var(--text-primary)', iconColor: 'var(--text-tertiary)' },
-    // Soft lavender for raw-count metrics. Uses --lavender-* CSS vars
-    // (defined in globals.css) so the card adapts to dark mode along
-    // with the other tones. Light: indigo-50 bg + indigo-800 text.
-    // Dark: deep indigo bg + indigo-200 text. Contrast meets WCAG AA
-    // in both themes.
-    warm: { bg: 'var(--lavender-bg)', text: 'var(--lavender-fg)', iconColor: 'var(--lavender)' },
-    danger: { bg: 'var(--danger-bg, #FEE2E2)', text: 'var(--danger, #B91C1C)', iconColor: 'var(--danger, #B91C1C)' },
+  // Tone now lives only on the icon — backgrounds, title, value, and hint
+  // all use the neutral text/surface tokens so the four cards read as one
+  // system (matches the reporting dashboard widget style: shared dark
+  // surface-card, white extra-bold title and value, tertiary hint).
+  const iconColor: Record<StatTone, string> = {
+    brand: 'var(--brand-primary)',
+    success: 'var(--success)',
+    info: 'var(--info)',
+    neutral: 'var(--text-tertiary)',
+    warm: 'var(--lavender)',
+    danger: 'var(--danger, #B91C1C)',
   };
-  const s = styles[tone];
   return (
     <div
-      className="animate-stat-card border border-[var(--border)] rounded-lg p-3"
+      className="animate-stat-card bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden"
       style={
         {
-          background: s.bg,
           // Per-card stagger delay consumed by the @keyframes via CSS var.
           ['--stat-delay' as string]: `${delayMs}ms`,
         } as React.CSSProperties
       }
     >
-      <div className="flex items-center gap-1.5 mb-1" style={{ color: s.iconColor }}>
-        {icon}
-        <span className="text-[10.5px] font-bold uppercase tracking-wider">{label}</span>
+      <div className="px-3 py-2 border-b border-[var(--border-subtle)] flex items-center gap-1.5">
+        <span className="flex-shrink-0" style={{ color: iconColor[tone] }}>{icon}</span>
+        <span className="text-[12px] font-extrabold text-[var(--text-primary)] truncate flex-1">{label}</span>
       </div>
-      <div
-        className="text-[22px] font-extrabold leading-tight tabular-nums"
-        style={{ color: s.text }}
-      >
-        {displayValue}
-      </div>
-      {hint && (
-        <div className="text-[10.5px] font-semibold mt-0.5" style={{ color: s.iconColor, opacity: 0.85 }}>
-          {hint}
+      <div className="px-3 py-2.5">
+        <div className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums text-[var(--text-primary)]">
+          {displayValue}
         </div>
-      )}
+        {hint && (
+          <div className="text-[11px] font-semibold text-[var(--text-tertiary)] mt-1.5">
+            {hint}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

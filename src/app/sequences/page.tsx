@@ -1371,42 +1371,40 @@ function SeqStatCard({
   suffix?: string;
   delayMs?: number;
 }) {
-  const toneStyles: Record<SeqStatTone, { bg: string; text: string; iconColor: string }> = {
-    brand: { bg: 'var(--brand-bg)', text: 'var(--brand-primary)', iconColor: 'var(--brand-primary)' },
-    success: { bg: 'var(--success-bg)', text: 'var(--success)', iconColor: 'var(--success)' },
-    info: { bg: 'var(--info-bg)', text: 'var(--info)', iconColor: 'var(--info)' },
-    // Identical tokens to /bulk's StatCard so the two pages share one
-    // palette across every tone. If we tweak /bulk later we should mirror
-    // it here.
-    neutral: { bg: 'var(--surface-card)', text: 'var(--text-primary)', iconColor: 'var(--text-tertiary)' },
-    // Lavender — same CSS vars as /bulk's Recipients card, so Replied
-    // and Recipients share visual identity across pages AND adapt to
-    // dark mode (vars are defined in globals.css with light + dark).
-    warm: { bg: 'var(--lavender-bg)', text: 'var(--lavender-fg)', iconColor: 'var(--lavender)' },
-    danger: { bg: 'var(--danger-bg, #FEE2E2)', text: 'var(--danger, #B91C1C)', iconColor: 'var(--danger, #B91C1C)' },
+  // Tone now lives only on the icon — same pattern as /bulk's StatCard.
+  // Backgrounds, title, value, and hint all use the neutral text/surface
+  // tokens so the row matches the reporting dashboard widget style.
+  const iconColor: Record<SeqStatTone, string> = {
+    brand: 'var(--brand-primary)',
+    success: 'var(--success)',
+    info: 'var(--info)',
+    neutral: 'var(--text-tertiary)',
+    warm: 'var(--lavender)',
+    danger: 'var(--danger, #B91C1C)',
   };
-  const s = toneStyles[tone];
   // Count-up if the value is numeric.
   const targetNum = typeof value === 'number' ? value : 0;
   const counted = useSeqCountUp(typeof value === 'number' ? targetNum : 0);
   const displayValue = typeof value === 'number' ? `${counted}${suffix}` : `${value}${suffix}`;
   return (
     <div
-      className="animate-stat-card border border-[var(--border)] rounded-lg p-2.5"
-      style={{ background: s.bg, ['--stat-delay' as string]: `${delayMs}ms` } as React.CSSProperties}
+      className="animate-stat-card bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden"
+      style={{ ['--stat-delay' as string]: `${delayMs}ms` } as React.CSSProperties}
     >
-      <div className="flex items-center gap-1.5 mb-0.5" style={{ color: s.iconColor }}>
-        {icon}
-        <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+      <div className="px-2.5 py-1.5 border-b border-[var(--border-subtle)] flex items-center gap-1.5">
+        <span className="flex-shrink-0" style={{ color: iconColor[tone] }}>{icon}</span>
+        <span className="text-[12px] font-extrabold text-[var(--text-primary)] truncate flex-1">{label}</span>
       </div>
-      <div className="text-[18px] font-extrabold leading-tight tabular-nums" style={{ color: s.text }}>
-        {displayValue}
-      </div>
-      {hint && (
-        <div className="text-[9.5px] font-semibold mt-0.5" style={{ color: s.iconColor, opacity: 0.8 }}>
-          {hint}
+      <div className="px-2.5 py-2">
+        <div className="text-[24px] font-extrabold leading-none tracking-tight tabular-nums text-[var(--text-primary)]">
+          {displayValue}
         </div>
-      )}
+        {hint && (
+          <div className="text-[10.5px] font-semibold text-[var(--text-tertiary)] mt-1">
+            {hint}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
