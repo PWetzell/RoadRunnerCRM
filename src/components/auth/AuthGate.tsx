@@ -755,7 +755,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
               Contact creation,
               <br />
               <span className="bg-gradient-to-r from-white via-white to-[#B8DAFF] bg-clip-text text-transparent">
-                reimagined with AI.
+                reimagined
+                <br />
+                with intelligent AI.
               </span>
             </h1>
             <p className="text-white/70 text-[15px] leading-relaxed font-medium max-w-md">
