@@ -75,10 +75,14 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
         return (
           <div className="flex items-center gap-2.5">
             <div
-              className="flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0"
+              className="flex items-center justify-center font-extrabold text-white flex-shrink-0 leading-none"
               style={{
                 width: 'var(--grid-avatar, 32px)',
                 height: 'var(--grid-avatar, 32px)',
+                // Initials scale with the avatar (was hardcoded 11px,
+                // which overflowed the 14px compact avatar). Mirrors
+                // the /contacts grid avatar fix.
+                fontSize: 'var(--grid-avatar-font, 11px)',
                 background: getAvatarColor(c.id, c.avatarColor),
                 borderRadius: '50%',
               }}
@@ -86,7 +90,11 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
               {initials(c.name)}
             </div>
             <div className="min-w-0">
-              <div className="font-bold text-[var(--text-primary)] truncate max-w-[160px]" style={{ fontSize: 'var(--grid-font, 13px)' }}>{c.name}</div>
+              {/* Name is a <span> to match the /contacts grid pattern.
+                  Compact-mode CSS in globals.css hides the secondary
+                  title <div> below by selecting `span + div` — if name
+                  were also a <div>, both would disappear. */}
+              <span className="block font-bold text-[var(--text-primary)] truncate max-w-[160px]" style={{ fontSize: 'var(--grid-font, 13px)' }}>{c.name}</span>
               {c.title && (
                 <div className="text-[var(--text-tertiary)] truncate max-w-[160px]" style={{ fontSize: 'calc(var(--grid-font, 13px) - 2px)' }}>{c.title}</div>
               )}
@@ -106,7 +114,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
         return (
           <span
             title={RECRUITING_STAGES.find((s) => s.id === c.stage)?.label}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold truncate min-w-0"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
             style={{ ...(() => { const cl = dc(STAGE_META_MAP[c.stage], isDark); return { background: cl.bg, color: cl.color, border: `1px solid ${cl.color}` }; })() }}
           >
             <span className="flex-shrink-0"><StageIcon size={10} weight="fill" /></span>
@@ -123,14 +131,14 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       cell: ({ row }) => {
         const status = computeStatus(row.original);
         if (status === 'Placed')
-          return <span title="Placed" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><CheckCircle size={10} weight="fill" /></span> <span className="truncate">Placed</span></span>;
+          return <span title="Placed" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><CheckCircle size={10} weight="fill" /></span> <span className="truncate">Placed</span></span>;
         if (status === 'Rejected')
-          return <span title="Rejected" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0"><span className="flex-shrink-0"><XCircle size={10} weight="fill" /></span> <span className="truncate">Rejected</span></span>;
+          return <span title="Rejected" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0"><span className="flex-shrink-0"><XCircle size={10} weight="fill" /></span> <span className="truncate">Rejected</span></span>;
         if (status === 'Stalled')
-          return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Clock size={10} weight="fill" /></span> <span className="truncate">Stalled</span></span>;
+          return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Clock size={10} weight="fill" /></span> <span className="truncate">Stalled</span></span>;
         if (status === 'Needs Action')
-          return <span title="Needs Action" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Warning size={10} weight="fill" /></span> <span className="truncate">Needs Action</span></span>;
-        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><ArrowRight size={10} weight="bold" /></span> <span className="truncate">On Track</span></span>;
+          return <span title="Needs Action" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Warning size={10} weight="fill" /></span> <span className="truncate">Needs Action</span></span>;
+        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><ArrowRight size={10} weight="bold" /></span> <span className="truncate">On Track</span></span>;
       },
     },
     {
@@ -141,8 +149,8 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       enableSorting: false,
       cell: ({ getValue }) => {
         const v = getValue() as string | undefined;
-        if (!v) return <span className="text-[var(--text-secondary)] italic text-[12px] truncate block">Between roles</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)] truncate block">{v}</span>;
+        if (!v) return <span className="text-[var(--text-secondary)] italic text-[length:var(--grid-font)] truncate block">Between roles</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">{v}</span>;
       },
     },
     {
@@ -150,7 +158,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       accessorKey: 'dealAmount',
       header: 'Amount',
       size: 200,
-      cell: ({ getValue }) => <span className="text-[12px] font-bold text-[var(--text-primary)]">${(getValue() as number).toLocaleString()}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)]">${(getValue() as number).toLocaleString()}</span>,
     },
     {
       id: 'matchScore',
@@ -165,7 +173,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
             <div className="flex-1 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
               <div className="h-full rounded-full" style={{ width: `${score}%`, background: score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--danger)' }} />
             </div>
-            <span className="text-[11px] font-bold text-[var(--text-secondary)] flex-shrink-0">{score}%</span>
+            <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-secondary)] flex-shrink-0">{score}%</span>
           </div>
         );
       },
@@ -175,7 +183,7 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       accessorKey: 'lastActivity',
       header: 'Last Activity',
       size: 220,
-      cell: ({ getValue }) => <span className="text-[12px] text-[var(--text-secondary)]">{getValue() as string || '\u2014'}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{getValue() as string || '\u2014'}</span>,
     },
     {
       id: 'source',
@@ -183,21 +191,21 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       header: 'Source',
       size: 150,
       enableSorting: false,
-      cell: ({ getValue }) => <span className="text-[12px] text-[var(--text-secondary)]">{getValue() as string || '\u2014'}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{getValue() as string || '\u2014'}</span>,
     },
     {
       id: 'dealName',
       accessorKey: 'dealName',
       header: 'Deal Name',
       size: 220,
-      cell: ({ getValue }) => <span className="text-[12px] text-[var(--text-primary)] truncate block">{getValue() as string || '\u2014'}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-primary)] truncate block">{getValue() as string || '\u2014'}</span>,
     },
     {
       id: 'title',
       accessorKey: 'title',
       header: 'Title',
       size: 180,
-      cell: ({ getValue }) => <span className="text-[12px] text-[var(--text-secondary)] truncate block">{getValue() as string || '\u2014'}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">{getValue() as string || '\u2014'}</span>,
     },
     {
       id: 'lastCommType',
@@ -207,8 +215,8 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       enableSorting: false,
       cell: ({ getValue }) => {
         const v = getValue() as string | undefined;
-        if (!v) return <span className="text-[12px] text-[var(--text-tertiary)]">{'\u2014'}</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)]">{v}</span>;
+        if (!v) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">{'\u2014'}</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{v}</span>;
       },
     },
     {
@@ -218,8 +226,8 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       size: 190,
       cell: ({ getValue }) => {
         const v = getValue() as string | undefined;
-        if (!v) return <span className="text-[12px] text-[var(--text-tertiary)]">{'\u2014'}</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)]">{v}</span>;
+        if (!v) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">{'\u2014'}</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{v}</span>;
       },
     },
     {
@@ -229,8 +237,8 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       size: 140,
       cell: ({ getValue }) => {
         const v = getValue() as string | undefined;
-        if (!v) return <span className="text-[12px] text-[var(--text-tertiary)]">{'\u2014'}</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)] capitalize">{v}</span>;
+        if (!v) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">{'\u2014'}</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] capitalize">{v}</span>;
       },
     },
   ];

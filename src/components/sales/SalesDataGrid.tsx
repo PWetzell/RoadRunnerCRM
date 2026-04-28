@@ -102,14 +102,14 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
           const t = r as TaggedLead;
           return (
             <div className="flex items-center gap-1.5">
-              <span className="text-[13px] font-bold text-[var(--text-primary)] truncate">New lead from tag</span>
+              <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)] truncate">New lead from tag</span>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] whitespace-nowrap">
                 <Tag size={9} weight="fill" /> {t.matchedTag}
               </span>
             </div>
           );
         }
-        return <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">{r.name}</div>;
+        return <div className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)] truncate">{r.name}</div>;
       },
     },
     {
@@ -121,7 +121,11 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
         const r = row.original;
         if (!isDeal(r)) {
           return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap bg-[#E2E8F0] text-[#1E293B]">
+            // Theme-aware pill (was hardcoded slate-200/slate-900 which
+            // looked off in dark mode). Surface-raised + text-secondary
+            // is the same pattern the +N overflow tag chip uses, and
+            // adapts to dark theme.
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold whitespace-nowrap bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]">
               <Tag size={10} weight="fill" /> Tagged
             </span>
           );
@@ -141,12 +145,12 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       },
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
         const status = computeStatus(r);
-        if (status === 'Won') return <span title="Won" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0">Won</span>;
-        if (status === 'Lost') return <span title="Lost" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0">Lost</span>;
-        if (status === 'Stalled') return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><Warning size={10} weight="fill" className="flex-shrink-0" /> <span className="truncate">Stalled</span></span>;
-        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="truncate">On Track</span></span>;
+        if (status === 'Won') return <span title="Won" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0">Won</span>;
+        if (status === 'Lost') return <span title="Lost" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0">Lost</span>;
+        if (status === 'Stalled') return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><Warning size={10} weight="fill" className="flex-shrink-0" /> <span className="truncate">Stalled</span></span>;
+        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="truncate">On Track</span></span>;
       },
     },
     {
@@ -156,7 +160,7 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       size: 130,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
         return <PriorityPill priority={r.priority} />;
       },
     },
@@ -177,13 +181,21 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
         } else {
           person = r.personContactId ? contactById.get(r.personContactId) : undefined;
         }
-        if (!person) return <span className="text-[12px] text-[var(--text-tertiary)]">--</span>;
+        if (!person) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-extrabold text-white flex-shrink-0" style={{ background: getAvatarColor(person.id, person.avatarColor) }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="rounded-full flex items-center justify-center font-extrabold text-white flex-shrink-0 leading-none"
+              style={{
+                width: 'var(--grid-avatar, 24px)',
+                height: 'var(--grid-avatar, 24px)',
+                fontSize: 'var(--grid-avatar-font, 9px)',
+                background: getAvatarColor(person.id, person.avatarColor),
+              }}
+            >
               {initials(person.name)}
             </div>
-            <span className="text-[12px] text-[var(--text-primary)] truncate">{person.name}</span>
+            <span className="text-[length:var(--grid-font)] text-[var(--text-primary)] truncate min-w-0">{person.name}</span>
           </div>
         );
       },
@@ -205,13 +217,21 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
         } else {
           org = r.orgContactId ? contactById.get(r.orgContactId) : undefined;
         }
-        if (!org) return <span className="text-[12px] text-[var(--text-tertiary)]">--</span>;
+        if (!org) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-[4px] flex items-center justify-center text-[9px] font-extrabold text-white flex-shrink-0" style={{ background: getAvatarColor(org.id, org.avatarColor) }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="rounded-[4px] flex items-center justify-center font-extrabold text-white flex-shrink-0 leading-none"
+              style={{
+                width: 'var(--grid-avatar, 24px)',
+                height: 'var(--grid-avatar, 24px)',
+                fontSize: 'var(--grid-avatar-font, 9px)',
+                background: getAvatarColor(org.id, org.avatarColor),
+              }}
+            >
               {initials(org.name)}
             </div>
-            <span className="text-[12px] text-[var(--text-primary)] truncate">{org.name}</span>
+            <span className="text-[length:var(--grid-font)] text-[var(--text-primary)] truncate min-w-0">{org.name}</span>
           </div>
         );
       },
@@ -223,8 +243,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       size: 130,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[13px] font-bold text-[var(--text-primary)]">{fmtMoney(r.amount)}</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return <span className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)]">{fmtMoney(r.amount)}</span>;
       },
     },
     {
@@ -235,8 +255,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       enableSorting: false,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return r.lastCommunication ? <CommPill comm={r.lastCommunication} /> : <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return r.lastCommunication ? <CommPill comm={r.lastCommunication} /> : <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
       },
     },
     {
@@ -246,8 +266,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       size: 190,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)]">{fmtDate(r.expectedCloseDate)}</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{fmtDate(r.expectedCloseDate)}</span>;
       },
     },
     {
@@ -257,8 +277,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       size: 130,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)]">{r.source}</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{r.source}</span>;
       },
     },
     {
@@ -269,8 +289,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       enableSorting: false,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)] truncate">{r.owner}</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate">{r.owner}</span>;
       },
     },
     {
@@ -280,8 +300,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       size: 150,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)]">{fmtDate(r.createdAt)}</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{fmtDate(r.createdAt)}</span>;
       },
     },
     {
@@ -291,8 +311,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
       size: 150,
       cell: ({ row }) => {
         const r = row.original;
-        if (!isDeal(r)) return <span className="text-[11px] text-[var(--text-tertiary)]">--</span>;
-        return <span className="text-[12px] text-[var(--text-secondary)]">{fmtDate(r.lastUpdated)}</span>;
+        if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{fmtDate(r.lastUpdated)}</span>;
       },
     },
   ];
@@ -307,7 +327,7 @@ function PriorityPill({ priority }: { priority: DealPriority }) {
   return (
     <span
       title={meta.label}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold truncate min-w-0"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
       style={{ background: c.bg, color: c.color, border: `1px solid ${c.color}` }}
     >
       <Warning size={10} weight="fill" className="flex-shrink-0" /> <span className="truncate">{meta.label}</span>
@@ -322,7 +342,7 @@ function CommPill({ comm }: { comm: { type: CommType; date: string } }) {
   const c = dc(meta, isDark);
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold truncate min-w-0"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
       style={{ background: c.bg, color: c.color, border: `1px solid ${c.color}` }}
       title={`${comm.type} · ${fmtDate(comm.date)}`}
     >
@@ -498,7 +518,7 @@ export default function SalesDataGrid() {
                   router.push(`/sales/new?personId=${t.person.id}${t.org ? `&orgId=${t.org.id}` : ''}`);
                 }}
                 aria-label="Create lead from tagged contact"
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold text-white bg-[var(--brand-primary)] border-none cursor-pointer hover:opacity-90 whitespace-nowrap"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[length:var(--grid-font)] font-bold text-white bg-[var(--brand-primary)] border-none cursor-pointer hover:opacity-90 whitespace-nowrap"
               >
                 Create lead
               </button>
@@ -655,13 +675,13 @@ export function SalesGridToolbar() {
       <div className="relative" ref={viewsRef}>
         <button
           onClick={() => setViewsOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[length:var(--grid-font)] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <FloppyDisk size={14} weight="bold" /> View: {activeView?.name || 'Default'}
         </button>
         {viewsOpen && (
           <div className="absolute left-0 top-full mt-1 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg z-50 w-[240px] p-2">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1 px-1">Saved views</div>
+            <div className="text-[length:var(--grid-font)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1 px-1">Saved views</div>
             <button
               onClick={() => {
                 setActiveSavedViewId(null);
@@ -669,7 +689,7 @@ export function SalesGridToolbar() {
                 setColumnOrder(['name', 'stage', 'priority', 'person', 'org', 'amount', 'lastComm', 'expectedCloseDate', 'source', 'owner', 'createdAt', 'lastUpdated', 'actions']);
                 setViewsOpen(false);
               }}
-              className="flex items-center gap-2 w-full px-2 py-1.5 text-[12px] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] rounded bg-transparent border-none cursor-pointer text-left"
+              className="flex items-center gap-2 w-full px-2 py-1.5 text-[length:var(--grid-font)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] rounded bg-transparent border-none cursor-pointer text-left"
             >
               {!activeSavedViewId && <Check size={12} weight="bold" className="text-[var(--brand-primary)]" />}
               <span className={!activeSavedViewId ? 'font-bold' : ''}>Default</span>
@@ -678,7 +698,7 @@ export function SalesGridToolbar() {
               <div key={v.id} className="flex items-center gap-1">
                 <button
                   onClick={() => applyView(v)}
-                  className="flex items-center gap-2 flex-1 px-2 py-1.5 text-[12px] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] rounded bg-transparent border-none cursor-pointer text-left"
+                  className="flex items-center gap-2 flex-1 px-2 py-1.5 text-[length:var(--grid-font)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] rounded bg-transparent border-none cursor-pointer text-left"
                 >
                   {activeSavedViewId === v.id && <Check size={12} weight="bold" className="text-[var(--brand-primary)]" />}
                   <span className={activeSavedViewId === v.id ? 'font-bold' : ''}>{v.name}</span>
@@ -699,12 +719,12 @@ export function SalesGridToolbar() {
                 onChange={(e) => setNewViewName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); }}
                 placeholder="Name this view..."
-                className="flex-1 h-7 px-2 text-[11px] bg-[var(--surface-bg)] border border-[var(--border)] rounded text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
+                className="flex-1 h-7 px-2 text-[length:var(--grid-font)] bg-[var(--surface-bg)] border border-[var(--border)] rounded text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
               />
               <button
                 onClick={handleSaveView}
                 disabled={!newViewName.trim()}
-                className="px-2 h-7 text-[11px] font-bold text-white bg-[var(--brand-primary)] border-none rounded cursor-pointer hover:opacity-90 disabled:opacity-50"
+                className="px-2 h-7 text-[length:var(--grid-font)] font-bold text-white bg-[var(--brand-primary)] border-none rounded cursor-pointer hover:opacity-90 disabled:opacity-50"
               >
                 Save
               </button>
@@ -717,13 +737,13 @@ export function SalesGridToolbar() {
       <div className="relative" ref={colRef}>
         <button
           onClick={() => setColOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[length:var(--grid-font)] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <Columns size={14} weight="bold" /> Columns
         </button>
         {colOpen && (
           <div className="absolute left-0 top-full mt-1 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg z-50 w-[260px] p-2">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1 px-1">Show / hide -- drag to reorder</div>
+            <div className="text-[length:var(--grid-font)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1 px-1">Show / hide -- drag to reorder</div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDropdownDragEnd}>
               <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
                 {orderedIds.map((id) => {
@@ -748,13 +768,13 @@ export function SalesGridToolbar() {
       {/* Reset */}
       <button
         onClick={handleReset}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[length:var(--grid-font)] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
       >
         <ArrowClockwise size={14} weight="bold" /> Reset
       </button>
 
       {/* Count (right) */}
-      <span className="ml-auto text-[11px] font-semibold text-[var(--text-tertiary)]">
+      <span className="ml-auto text-[length:var(--grid-font)] font-semibold text-[var(--text-tertiary)]">
         {totalDeals} {totalDeals === 1 ? 'deal' : 'deals'}
         {taggedCount > 0 && <> · <span className="text-[var(--warning)]">{taggedCount} tagged</span></>}
       </span>
@@ -804,7 +824,7 @@ function SalesColumnDropdownRow({ id, label, visible, onToggle }: { id: string; 
       >
         <DotsSixVertical size={14} weight="bold" />
       </button>
-      <label className="flex items-center gap-2 flex-1 text-[12px] text-[var(--text-primary)] cursor-pointer">
+      <label className="flex items-center gap-2 flex-1 text-[length:var(--grid-font)] text-[var(--text-primary)] cursor-pointer">
         <input
           type="checkbox"
           checked={visible}

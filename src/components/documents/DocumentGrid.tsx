@@ -58,8 +58,8 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
         const doc = row.original;
         return (
           <div className="min-w-0">
-            <div className="text-[13px] font-bold text-[var(--text-primary)] truncate">{doc.name}</div>
-            <div className="text-[10px] text-[var(--text-tertiary)] truncate">{doc.fileName}</div>
+            <div className="text-[length:var(--grid-font)] font-bold text-[var(--text-primary)] truncate">{doc.name}</div>
+            <div className="text-[length:var(--grid-font)] text-[var(--text-tertiary)] truncate">{doc.fileName}</div>
           </div>
         );
       },
@@ -77,7 +77,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
         return (
           <span
             title={ext}
-            className="px-1.5 py-0.5 rounded-full text-[10px] font-bold truncate min-w-0 inline-flex"
+            className="px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0 inline-flex"
             style={{ background: isDark ? getExtBgColor(doc.fileName, doc.fileFamily) : `color-mix(in srgb, ${color} 12%, white)`, color, border: `1px solid ${color}` }}
           >
             {ext}
@@ -91,7 +91,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       header: 'Category',
       size: 150,
       cell: ({ getValue }) => (
-        <span className="text-[12px] text-[var(--text-secondary)] capitalize truncate block">
+        <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] capitalize truncate block">
           {getValue() as string}
         </span>
       ),
@@ -102,7 +102,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       header: 'Size',
       size: 110,
       cell: ({ row }) => (
-        <span className="text-[12px] text-[var(--text-secondary)] truncate block">
+        <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">
           {formatFileSize(row.original.size)}
         </span>
       ),
@@ -113,7 +113,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       header: 'Uploaded',
       size: 140,
       cell: ({ getValue }) => (
-        <span className="text-[12px] text-[var(--text-secondary)] truncate block">
+        <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">
           {fmtDate(getValue() as string)}
         </span>
       ),
@@ -124,7 +124,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       header: 'Uploaded By',
       size: 170,
       cell: ({ getValue }) => (
-        <span className="text-[12px] text-[var(--text-secondary)] truncate block">
+        <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">
           {(getValue() as string) || '\u2014'}
         </span>
       ),
@@ -135,7 +135,7 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       header: 'Description',
       size: 250,
       cell: ({ getValue }) => (
-        <span className="text-[12px] text-[var(--text-secondary)] truncate block">
+        <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">
           {(getValue() as string) || '\u2014'}
         </span>
       ),
@@ -148,15 +148,15 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       enableSorting: false,
       cell: ({ row }) => {
         const tags = row.original.tags || [];
-        if (tags.length === 0) return <span className="text-[12px] text-[var(--text-tertiary)]">{'\u2014'}</span>;
+        if (tags.length === 0) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">{'\u2014'}</span>;
         return (
           <div className="flex items-center gap-1 flex-nowrap min-w-0 overflow-hidden">
             {tags.slice(0, 2).map((t) => (
-              <span key={t} title={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold min-w-0 truncate border" style={(() => { const p = dc(getTagPillData(t), isDark); return { background: p.bg, color: p.color, borderColor: p.color }; })()}>
+              <span key={t} title={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold min-w-0 truncate border" style={(() => { const p = dc(getTagPillData(t), isDark); return { background: p.bg, color: p.color, borderColor: p.color }; })()}>
                 {(() => { const Icon = getTagIcon(t); return <Icon size={9} weight="fill" className="flex-shrink-0" />; })()}<span className="truncate">{t}</span>
               </span>
             ))}
-            {tags.length > 2 && <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0">+{tags.length - 2}</span>}
+            {tags.length > 2 && <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)] flex-shrink-0">+{tags.length - 2}</span>}
           </div>
         );
       },
@@ -170,12 +170,12 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
       cell: ({ row: r }) => {
         const doc = r.original;
         const name = doc.contactId ? contactNames.get(doc.contactId) : undefined;
-        if (!name) return <span className="text-[12px] text-[var(--text-tertiary)]">{'\u2014'}</span>;
+        if (!name) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">{'\u2014'}</span>;
         return (
           <a
             href={`/contacts/${doc.contactId}?tab=documents`}
             onClick={(e) => e.stopPropagation()}
-            className="text-[12px] text-[var(--brand-primary)] no-underline hover:underline truncate block"
+            className="text-[length:var(--grid-font)] text-[var(--brand-primary)] no-underline hover:underline truncate block"
           >
             {name}
           </a>
