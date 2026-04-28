@@ -892,18 +892,34 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   line-height: 1 !important;
 }
 
-/* Hard cap row height at 8px — the most aggressive density preset
-   in any production CRM we benchmarked (Airtable Short = 24, Excel
-   default ≈17). Below 12 the avatar circle becomes the limiter, so
-   we hide it in compact mode (the contact name still renders to its
-   left position and stays readable). Pills, badges, icons all clip
-   to 8px. Text at 8px / line-height 1 fits exactly. */
+/* Hard cap row height at 8px. In HTML tables, ALL cells in a row stretch
+   to the tallest cell's content height — so capping the row requires
+   capping every cell AND every cell's children. The css below clamps
+   each layer. The action-column buttons (right-pinned, opacity-0 by
+   default, only visible on hover) were the last hidden offender —
+   they're invisible but their natural ~20px height was forcing rows
+   open. We now max-height: 8px every td and every direct child. */
 [data-density="compact"] tbody tr {
   height: 8px;
-}
-[data-density="compact"] tbody td {
   max-height: 8px;
-  height: 8px;
+}
+[data-density="compact"] tbody td,
+[data-density="compact"] tbody tr > td {
+  height: 8px !important;
+  max-height: 8px !important;
+  overflow: hidden;
+  vertical-align: middle;
+}
+[data-density="compact"] tbody td > * {
+  max-height: 8px;
+  overflow: hidden;
+}
+/* Action toolbar buttons in the right-pinned cell — they ship at
+   ~20px natural height but are opacity-0 until hover, so they're
+   invisible AND row-bloating. Force them to 8px regardless. */
+[data-density="compact"] tbody td button,
+[data-density="compact"] tbody td a {
+  max-height: 8px !important;
 }
 
 /* Hide the avatar circle in the contact name cell when the grid is
