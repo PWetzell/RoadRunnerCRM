@@ -690,14 +690,15 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         />
 
         {/* Brand strip — wordmark only. mt-12 adds 48px of negative
-             space above the title to mirror the mb-12 the feature
-             stack already has below "Smart duplicate detection",
-             keeping the panel visually balanced top-to-bottom. */}
-        <div className="relative z-10 mt-12">
+             space above the title; transform translateY(-20px) shifts
+             this whole element up 20px visually without changing its
+             layout box (so the hero stack and copyright below stay
+             positioned correctly). */}
+        <div className="relative z-10 mt-12" style={{ transform: 'translateY(-20px)' }}>
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
-        <div className="relative z-10 flex flex-col gap-0 max-w-[760px]">
+        <div className="relative z-10 flex flex-col gap-0 max-w-[760px]" style={{ transform: 'translateY(-20px)' }}>
           {/* translate(-20px) shifts the bird's visual position up 20px
                WITHOUT changing its layout box — siblings below (the
                headline, paragraph, bullets) stay put. Margin would
