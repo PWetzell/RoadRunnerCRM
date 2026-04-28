@@ -752,12 +752,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                cropping the bird. */}
           <div className="flex flex-col gap-4 -mt-12">
             <h1 className="text-white text-[44px] font-black leading-[1.05] tracking-[-0.02em]">
-              Contact creation,{' '}
-              <span className="bg-gradient-to-r from-white via-white to-[#B8DAFF] bg-clip-text text-transparent">
-                reimagined
-                <br />
-                with intelligent AI.
-              </span>
+              Contact creation,
+              <br />
+              reimagined with intelligent AI.
             </h1>
             <p className="text-white/70 text-[15px] leading-relaxed font-medium max-w-md">
               The modern CRM for teams that move fast. Auto-enriched profiles, smart duplicate detection, and a pipeline that thinks ahead.
