@@ -495,8 +495,14 @@ export default function SalesDataGrid() {
         countLabel="deals"
         onRowClick={(r) => {
           if (!isDeal(r)) {
+            // Tagged lead row click → open the contact detail view.
+            // Creating the lead is an explicit action (the "Create lead"
+            // button rendered in the actions column) so the row itself
+            // shouldn't shortcut into the new-deal form. Paul wanted
+            // clicking the row to behave the same as clicking a name
+            // in the contacts grid.
             const t = r as TaggedLead;
-            router.push(`/sales/new?personId=${t.person.id}${t.org ? `&orgId=${t.org.id}` : ''}`);
+            router.push(`/contacts/${t.person.id}`);
           } else {
             router.push(`/sales/${(r as Deal).id}`);
           }
