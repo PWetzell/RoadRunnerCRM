@@ -80,9 +80,9 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
   };
 
   return (
-    <div className="bg-[var(--surface-card)] border-b border-[var(--border)] px-6" style={{ paddingTop: 'var(--detail-header-py, 16px)', paddingBottom: 'calc(var(--detail-header-py, 16px) - 4px)' }}>
+    <div className="bg-[var(--surface-card)] border-b border-[var(--border)] px-6" style={{ paddingTop: 'var(--detail-header-py, 12px)', paddingBottom: 'calc(var(--detail-header-py, 12px) - 3px)' }}>
       {/* Breadcrumb */}
-      <div className="text-[13px] text-[var(--text-tertiary)] mb-3">
+      <div className="text-[10px] text-[var(--text-tertiary)] mb-2">
         <button onClick={onBack} className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit">
           Contacts
         </button>
@@ -90,9 +90,9 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
       </div>
 
       {/* Hero */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <div
-          className="w-[52px] h-[52px] flex items-center justify-center text-lg font-extrabold text-white flex-shrink-0"
+          className="w-[40px] h-[40px] flex items-center justify-center text-[13px] font-extrabold text-white flex-shrink-0"
           style={{
             background: getAvatarColor(c.id, c.avatarColor),
             borderRadius: isOrg ? 'var(--radius-lg)' : 'var(--radius-full)',
@@ -104,7 +104,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
         <div className="flex-1">
           {/* Name + Privacy Badge */}
           <div className="flex items-center gap-2">
-            <h2 className="text-[22px] font-extrabold text-[var(--text-primary)] leading-tight">{c.name}</h2>
+            <h2 className="text-[16px] font-extrabold text-[var(--text-primary)] leading-tight">{c.name}</h2>
             {c.isPrivate && (
               <span className="text-[var(--danger)]" title="Private Contact">
                 <EyeSlash size={20} weight="bold" />
@@ -113,7 +113,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
           </div>
 
           {/* Detail Metadata Line */}
-          <div className="text-[11px] text-[var(--text-tertiary)] mt-1 flex items-center gap-1 flex-wrap">
+          <div className="text-[9px] text-[var(--text-tertiary)] mt-1 flex items-center gap-1 flex-wrap">
             {c.assignedTo && (
               <>
                 <span>Assigned To</span>
@@ -155,7 +155,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
 
           {/* All Tags — status + contact tags on one row */}
           <div className="flex gap-1.5 items-center mt-2 flex-wrap">
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${
               isOrg ? 'bg-[var(--success-bg)] text-[var(--success)] border-[var(--success)]' : 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
             }`}>
               {isOrg ? <Buildings size={12} /> : <User size={12} />}
@@ -172,7 +172,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
                 return (
                   <span
                     title="All required fields are filled in"
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]"
                   >
                     <CheckCircle size={12} /> Complete
                   </span>
@@ -181,14 +181,14 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
               return (
                 <span
                   title={`Missing: ${missing.join(', ')}`}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]"
                 >
                   <Warning size={12} /> Incomplete · {missing.length} missing
                 </span>
               );
             })()}
             {c.aiStatus === 'new' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]">
                 <Sparkle size={12} weight="duotone" /> AI
               </span>
             )}
@@ -200,7 +200,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
             {contactTags.map((tag) => {
               const colors = getContactTagColor(tag);
               return (
-                <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+                <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
                   style={{ background: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}>
                   <Tag size={11} weight="bold" />
                   {tag}
@@ -215,7 +215,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
             <div className="relative">
               <button
                 onClick={() => setShowTagPicker(!showTagPicker)}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
+                className="flex items-center gap-1.5 text-[9px] font-bold text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
               >
                 <span className="w-4 h-4 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
                   <Plus size={10} weight="bold" className="text-white" />
@@ -227,7 +227,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
                 <div className="absolute left-0 top-7 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg z-50 w-[220px] animate-[fadeUp_0.15s_ease-out]">
                   <div className="p-2">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase">Add Tags</span>
+                      <span className="text-[8.5px] font-bold text-[var(--text-tertiary)] uppercase">Add Tags</span>
                       <button onClick={() => { setShowTagPicker(false); setTagSearch(''); }} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] bg-transparent border-none cursor-pointer p-0.5">
                         <XIcon size={12} />
                       </button>
@@ -238,7 +238,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
                         value={tagSearch}
                         onChange={(e) => setTagSearch(e.target.value)}
                         placeholder="Filter by text"
-                        className="w-full h-7 pl-6 pr-2 text-[11px] bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                        className="w-full h-7 pl-6 pr-2 text-[9px] bg-[var(--surface-raised)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
                         autoFocus
                       />
                     </div>
@@ -248,11 +248,11 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
                         if (filteredTags.length === 0) return null;
                         return (
                           <div key={cat.name}>
-                            <div className="text-[10px] font-bold uppercase tracking-wider px-1 py-1 flex items-center gap-1" style={{ color: cat.color }}>
+                            <div className="text-[8.5px] font-bold uppercase tracking-wider px-1 py-1 flex items-center gap-1" style={{ color: cat.color }}>
                               <span className="w-2.5 h-2.5 rounded-sm" style={{ background: cat.color }} /> {cat.name}
                             </div>
                             {filteredTags.map((tag) => (
-                              <label key={tag} className="flex items-center gap-2 px-1 py-1 text-[12px] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] rounded cursor-pointer">
+                              <label key={tag} className="flex items-center gap-2 px-1 py-1 text-[9.5px] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] rounded cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={contactTags.includes(tag)}
@@ -270,7 +270,7 @@ export default function DetailHeader({ contact: c, onBack }: DetailHeaderProps) 
                   <div className="border-t border-[var(--border)] px-2 py-1.5">
                     <button
                       onClick={() => { setShowTagPicker(false); setTagSearch(''); }}
-                      className="text-[11px] font-semibold text-[var(--text-tertiary)] flex items-center gap-1 bg-transparent border-none cursor-pointer hover:text-[var(--danger)]"
+                      className="text-[9px] font-semibold text-[var(--text-tertiary)] flex items-center gap-1 bg-transparent border-none cursor-pointer hover:text-[var(--danger)]"
                     >
                       <XIcon size={12} /> Close
                     </button>

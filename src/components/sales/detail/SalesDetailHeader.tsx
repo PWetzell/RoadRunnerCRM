@@ -70,7 +70,7 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
   return (
     <div className="bg-[var(--surface-card)] border-b border-[var(--border)] px-6 pt-4 pb-3">
       {/* Breadcrumb */}
-      <div className="text-[13px] text-[var(--text-tertiary)] mb-3">
+      <div className="text-[10px] text-[var(--text-tertiary)] mb-3">
         <button
           onClick={onBack}
           className="text-[var(--brand-primary)] hover:underline bg-transparent border-none cursor-pointer font-inherit p-0"
@@ -81,9 +81,9 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
       </div>
 
       {/* Hero */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <div
-          className="w-[52px] h-[52px] flex items-center justify-center text-lg font-extrabold text-white flex-shrink-0"
+          className="w-[40px] h-[40px] flex items-center justify-center text-[13px] font-extrabold text-white flex-shrink-0"
           style={{ background: avatarColor, borderRadius: avatarShape }}
         >
           {initials(subjectName)}
@@ -91,19 +91,19 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-[22px] font-extrabold text-[var(--text-primary)] leading-tight truncate">
+            <h2 className="text-[16px] font-extrabold text-[var(--text-primary)] leading-tight truncate">
               {subjectName}
             </h2>
             <StagePill stage={deal.stage} size="md" />
           </div>
 
           {/* Subtitle */}
-          <div className="text-[13px] text-[var(--text-secondary)] mt-0.5 truncate">
+          <div className="text-[10px] text-[var(--text-secondary)] mt-0.5 truncate">
             {subtitle}
           </div>
 
           {/* Meta row */}
-          <div className="text-[11px] text-[var(--text-tertiary)] mt-1 flex items-center gap-1 flex-wrap">
+          <div className="text-[9px] text-[var(--text-tertiary)] mt-1 flex items-center gap-1 flex-wrap">
             <span>Owner</span>
             <span className="font-bold text-[var(--text-secondary)]">{deal.owner}</span>
             <span className="mx-1">·</span>
@@ -120,7 +120,7 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
           {/* Type + Completeness */}
           <div className="flex gap-1.5 items-center mt-2 flex-wrap">
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${
                 isPerson
                   ? 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
                   : 'bg-[var(--success-bg)] text-[var(--success)] border-[var(--success)]'
@@ -131,11 +131,11 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
             </span>
 
             {isComplete ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)]">
                 <CheckCircle size={12} weight="fill" /> Complete
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
                 <Warning size={12} weight="bold" /> Incomplete
               </span>
             )}
@@ -150,7 +150,7 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
               <button
                 type="button"
                 onClick={() => setShowMissing((v) => !v)}
-                className="text-[11px] font-bold text-[var(--text-secondary)] bg-transparent border-none p-0 cursor-pointer hover:text-[var(--text-primary)] inline-flex items-center gap-1"
+                className="text-[9px] font-bold text-[var(--text-secondary)] bg-transparent border-none p-0 cursor-pointer hover:text-[var(--text-primary)] inline-flex items-center gap-1"
                 aria-expanded={showMissing}
               >
                 <Sparkle size={12} weight="duotone" className="text-[var(--ai)]" />
@@ -160,7 +160,7 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
                 </span>
               </button>
               {completeness.missing.length > 0 && (
-                <span className="text-[10px] font-semibold text-[var(--text-tertiary)]">
+                <span className="text-[8.5px] font-semibold text-[var(--text-tertiary)]">
                   {showMissing ? 'hide' : 'show'} missing
                 </span>
               )}
@@ -175,7 +175,7 @@ export default function SalesDetailHeader({ deal, person, org, completeness, onB
               />
             </div>
             {showMissing && completeness.missing.length > 0 && (
-              <ul className="mt-2 text-[11px] text-[var(--text-secondary)] flex flex-wrap gap-x-3 gap-y-0.5">
+              <ul className="mt-2 text-[9px] text-[var(--text-secondary)] flex flex-wrap gap-x-3 gap-y-0.5">
                 {completeness.missing.map((m) => (
                   <li key={m} className="inline-flex items-center gap-1">
                     <span className="w-1 h-1 rounded-full bg-[var(--text-tertiary)]" /> {m}

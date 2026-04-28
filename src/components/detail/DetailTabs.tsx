@@ -35,13 +35,13 @@ export default function DetailTabs({ activeTab, onTabChange }: DetailTabsProps) 
   }, [showDensityMenu]);
 
   return (
-    <div className="flex items-center gap-4 px-6 bg-[var(--surface-card)] border-b border-[var(--border)]">
-      <div className="flex gap-6">
+    <div className="flex items-center gap-3 px-6 bg-[var(--surface-card)] border-b border-[var(--border)]">
+      <div className="flex gap-4">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`py-2.5 px-0.5 text-sm font-semibold border-b-2 transition-all duration-150 bg-transparent cursor-pointer ${
+            className={`py-1.5 px-0.5 text-[10.5px] font-semibold border-b-2 transition-all duration-150 bg-transparent cursor-pointer ${
               activeTab === tab.id
                 ? 'text-[var(--brand-primary)] border-[var(--brand-primary)] font-bold'
                 : 'text-[var(--text-tertiary)] border-transparent hover:text-[var(--text-secondary)]'
@@ -55,10 +55,10 @@ export default function DetailTabs({ activeTab, onTabChange }: DetailTabsProps) 
       <div className="relative" ref={densityMenuRef}>
         <button
           onClick={() => setShowDensityMenu(!showDensityMenu)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
           title="Detail density"
         >
-          <Rows size={14} weight="bold" /> Density
+          <Rows size={12} weight="bold" /> Density
         </button>
         {showDensityMenu && (
           <div className="absolute left-0 top-8 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg z-[70] w-[240px] py-2 animate-[fadeUp_0.15s_ease-out]">

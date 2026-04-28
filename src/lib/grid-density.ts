@@ -159,13 +159,14 @@ export interface DetailDensityConfig {
   headerPy: number;
 }
 
-// Same shift: previous "comfortable" became the new "spacious"
-// (the everyday default for detail-page reading), and "comfortable"
-// is now a true middle-ground.
+// Tightened ~25% on 2026-04-28 per Paul: cards on Overview/Details
+// were too sprawling — every spacing/padding token cut to give more
+// data density at every density preset, with the biggest effect on
+// `compact` (now genuinely spreadsheet-tight).
 export const DETAIL_DENSITY: Record<GridDensity, DetailDensityConfig> = {
-  compact:     { pagePx: 160, pagePy: 10, sectionGap: 10, stackGap: 8,  cardPx: 12, cardPy: 8,  headerPy: 8  },
-  comfortable: { pagePx: 112, pagePy: 15, sectionGap: 13, stackGap: 12, cardPx: 14, cardPy: 10, headerPy: 10 },
-  spacious:    { pagePx: 64,  pagePy: 20, sectionGap: 16, stackGap: 16, cardPx: 16, cardPy: 12, headerPy: 12 },
+  compact:     { pagePx: 120, pagePy: 8,  sectionGap: 8,  stackGap: 6,  cardPx: 9,  cardPy: 6, headerPy: 6 },
+  comfortable: { pagePx: 84,  pagePy: 11, sectionGap: 10, stackGap: 9,  cardPx: 10, cardPy: 8, headerPy: 8 },
+  spacious:    { pagePx: 48,  pagePy: 15, sectionGap: 12, stackGap: 12, cardPx: 12, cardPy: 9, headerPy: 9 },
 };
 
 export function detailDensityStyle(density: GridDensity): React.CSSProperties {

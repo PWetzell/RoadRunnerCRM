@@ -93,13 +93,13 @@ export default function SectionCard({
         }
       }}
     >
-      <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)]">
-        <span className="text-[13px] font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-          <DotsSixVertical size={16} weight="bold" className="text-[var(--text-secondary)] cursor-grab hover:text-[var(--brand-primary)] transition-colors" />
+      <div className="px-3 py-2 flex items-center justify-between border-b border-[var(--border-subtle)]">
+        <span className="text-[10.5px] font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+          <DotsSixVertical size={13} weight="bold" className="text-[var(--text-secondary)] cursor-grab hover:text-[var(--brand-primary)] transition-colors" />
           {icon} {title}
           {incomplete && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
-              <Info size={11} /> Incomplete
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
+              <Info size={9} /> Incomplete
             </span>
           )}
         </span>

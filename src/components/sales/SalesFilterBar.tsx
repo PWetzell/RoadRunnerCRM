@@ -90,9 +90,9 @@ export default function SalesFilterBar({ onAddLead }: { onAddLead: () => void })
       <button
         data-tour="sales-new-lead"
         onClick={onAddLead}
-        className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--brand-primary)] text-white text-[12px] font-bold border-none cursor-pointer hover:opacity-90"
+        className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold border-none cursor-pointer hover:opacity-90"
       >
-        <Plus size={14} weight="bold" /> {LABELS.newDeal}
+        <Plus size={11} weight="bold" /> {LABELS.newDeal}
       </button>
     </div>
   );
