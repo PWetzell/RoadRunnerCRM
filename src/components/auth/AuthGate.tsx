@@ -934,17 +934,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             <>
               {/* Button group — Log in / Create account share an inner
                   edge with a single visible divider, brand-fill on the
-                  active half. Replaces the earlier segmented-control
-                  (pills-in-padded-container) look per Paul's request.
-                  Same pattern as Stripe's "Pay" / "Save card" toggle and
-                  Linear's billing-period switch.
-                  mb-2 carves out a touch more breathing room above the
-                  "Take a look around" header below — the parent
-                  flex-gap was running them flush. */}
+                  active half. Compact width (max-w-[200px]) — half of
+                  the panel's max-width — so the toggle reads as a
+                  utility control, not the page's primary action. */}
               <div
                 role="tablist"
                 aria-label="Authentication"
-                className="flex border border-[var(--border)] rounded-lg overflow-hidden mb-2"
+                className="flex border border-[var(--border)] rounded-lg overflow-hidden mb-2 max-w-[200px]"
               >
                 <ButtonGroupTab
                   active={mode === 'login'}
@@ -986,9 +982,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                     type="button"
                     onClick={handleTryDemo}
                     disabled={demoLoading || submitting}
-                    className="h-11 text-[14px] font-bold rounded-lg bg-[var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer transition-all flex items-center justify-center gap-2 shadow-sm border-none"
+                    className="h-9 text-[12.5px] font-bold rounded-lg bg-[var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer transition-all flex items-center justify-center gap-2 shadow-sm border-none"
                   >
-                    <Sparkle size={15} weight="fill" />
+                    <Sparkle size={13} weight="fill" />
                     {demoLoading ? 'Loading demo…' : 'Launch Demo'}
                   </button>
                   <p className="text-center text-[11px] text-[var(--text-tertiary)] -mt-2 leading-relaxed">
@@ -1056,9 +1052,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                     <button
                       type="submit"
                       disabled={!loginReady || submitting}
-                      className="h-11 text-[13px] font-bold rounded-lg border-2 border-[var(--brand-primary)] bg-[var(--surface-card)] text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2 mb-2"
+                      className="h-9 text-[12px] font-bold rounded-lg border-2 border-[var(--brand-primary)] bg-[var(--surface-card)] text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2 mb-2"
                     >
-                      <SignIn size={15} weight="bold" />
+                      <SignIn size={13} weight="bold" />
                       {submitting ? 'Logging in…' : 'Log in to your account'}
                     </button>
                   </form>
@@ -1196,7 +1192,7 @@ function ButtonGroupTab({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`flex-1 h-10 text-[12px] font-bold border-none cursor-pointer transition-all ${
+      className={`flex-1 h-8 text-[11px] font-bold border-none cursor-pointer transition-all ${
         position === 'left' ? 'border-r border-[var(--border)]' : ''
       } ${
         active
