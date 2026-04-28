@@ -25,7 +25,7 @@ import { Paperclip } from '@phosphor-icons/react';
 // ─── Helpers ───
 function IncompletePill() {
   return (
-    <span title="Incomplete" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0">
+    <span title="Incomplete" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0">
       <Warning size={10} className="flex-shrink-0" /> <span className="truncate">Incomplete</span>
     </span>
   );
@@ -73,7 +73,7 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
   const showAI = c.aiStatus === 'new';
 
   if (!showAI && userTags.length === 0) {
-    return <span className="text-[12px] text-[var(--text-tertiary)]">—</span>;
+    return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">—</span>;
   }
 
   type Chip = { key: string; node: React.ReactNode; label: string };
@@ -87,7 +87,7 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
         <span
           key="ai"
           title="Added by AI"
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]"
         >
           <Sparkle size={9} weight="duotone" /> AI
         </span>
@@ -104,7 +104,7 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
         <span
           key={`tag-${tag}`}
           title={tag}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold border"
           style={{ background: colors.bg, color: colors.text, borderColor: colors.border }}
         >
           <Tag size={9} weight="bold" /> {tag}
@@ -123,7 +123,7 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
       {overflow.length > 0 && (
         <span
           title={overflow.map((c) => c.label).join(', ')}
-          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
         >
           +{overflow.length}
         </span>
@@ -134,9 +134,9 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
 
 function entryCell(val: string | undefined, isLink?: boolean) {
   if (!val) return <IncompletePill />;
-  if (isLink && val.includes('@')) return <a href={`mailto:${val}`} className="text-[12px] text-[var(--brand-primary)] no-underline hover:underline truncate block">{val}</a>;
-  if (isLink) return <span className="text-[12px] text-[var(--brand-primary)] truncate block">{val}</span>;
-  return <span className="text-[12px] text-[var(--text-secondary)] truncate block">{val}</span>;
+  if (isLink && val.includes('@')) return <a href={`mailto:${val}`} className="text-[length:var(--grid-font)] text-[var(--brand-primary)] no-underline hover:underline truncate block">{val}</a>;
+  if (isLink) return <span className="text-[length:var(--grid-font)] text-[var(--brand-primary)] truncate block">{val}</span>;
+  return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">{val}</span>;
 }
 
 const TAG_PALETTE = [
@@ -172,7 +172,7 @@ function getTagIcon(tag: string) {
 function textOrIncomplete(val: unknown) {
   const s = typeof val === 'string' ? val : '';
   if (!s) return <IncompletePill />;
-  return <span className="text-[12px] text-[var(--text-secondary)] truncate block">{s}</span>;
+  return <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate block">{s}</span>;
 }
 
 /** Derive unique entry types from contacts data */
@@ -260,7 +260,7 @@ function buildColumns(
             {totalUnreadAttachments > 0 ? (
               <span
                 aria-label={`${totalUnreadAttachments} new emails with attachments`}
-                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--success)] text-white text-[10px] font-bold leading-none"
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--success)] text-white text-[length:var(--grid-font)] font-bold leading-none"
               >
                 {totalUnreadAttachments}
               </span>
@@ -268,7 +268,7 @@ function buildColumns(
               totalAttachments > 0 && (
                 <span
                   aria-label={`${totalAttachments} total attachments`}
-                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] text-[10px] font-bold leading-none"
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] text-[length:var(--grid-font)] font-bold leading-none"
                 >
                   {totalAttachments}
                 </span>
@@ -350,7 +350,7 @@ function buildColumns(
         const hasUnreadAttachment = unreadAttachmentCount > 0;
 
         if (!hasAttachment) {
-          return <span className="text-[11px] text-[var(--text-tertiary)]">—</span>;
+          return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">—</span>;
         }
         // Final shape per Paul (2026-04-28): the column shows ONLY the
         // attachment-count indicator. Total attachments across all
@@ -379,7 +379,7 @@ function buildColumns(
                   ? `${unreadAttachmentCount} unread email${unreadAttachmentCount === 1 ? '' : 's'} with attachments`
                   : `${attachmentCount} email${attachmentCount === 1 ? '' : 's'} with attachments — all read`
               }
-              className={`inline-flex items-center gap-0.5 px-1.5 h-[18px] rounded-full text-[10px] font-bold leading-none flex-shrink-0 ${
+              className={`inline-flex items-center gap-0.5 px-1.5 h-[18px] rounded-full text-[length:var(--grid-font)] font-bold leading-none flex-shrink-0 ${
                 hasUnreadAttachment
                   ? 'bg-[var(--success)] text-white border border-[var(--success)]'
                   : 'bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]'
@@ -435,7 +435,7 @@ function buildColumns(
       cell: ({ getValue }) => {
         const t = getValue() as string;
         return (
-          <span title={t === 'org' ? 'Organization' : 'Person'} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border truncate min-w-0 ${
+          <span title={t === 'org' ? 'Organization' : 'Person'} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold border truncate min-w-0 ${
             t === 'org' ? 'bg-[var(--success-bg)] text-[var(--success)] border-[var(--success)]' : 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
           }`}>
             {t === 'org' ? <Buildings size={10} className="flex-shrink-0" /> : <User size={10} className="flex-shrink-0" />}
@@ -471,7 +471,7 @@ function buildColumns(
           return (
             <span
               title="All required fields are filled in"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"
             >
               <CheckCircle size={10} className="flex-shrink-0" />
               <span className="truncate">Complete</span>
@@ -481,7 +481,7 @@ function buildColumns(
         return (
           <span
             title={`Missing: ${missing.join(', ')}`}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"
           >
             <Warning size={10} className="flex-shrink-0" />
             <span className="truncate">Incomplete · {missing.length}</span>
@@ -517,9 +517,9 @@ function buildColumns(
       size: 95,
       cell: ({ getValue }) => {
         const v = getValue() as string;
-        if (v === 'new') return <span title="AI Suggestion" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-dark)] truncate min-w-0"><Sparkle size={10} className="flex-shrink-0" /> AI</span>;
-        if (v === 'stale') return <span className="text-[11px] text-[var(--text-tertiary)]">—</span>;
-        return <span className="text-[11px] text-[var(--success)]">Verified</span>;
+        if (v === 'new') return <span title="AI Suggestion" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-dark)] truncate min-w-0"><Sparkle size={10} className="flex-shrink-0" /> AI</span>;
+        if (v === 'stale') return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">—</span>;
+        return <span className="text-[length:var(--grid-font)] text-[var(--success)]">Verified</span>;
       },
     },
     {
@@ -630,14 +630,14 @@ function buildColumns(
       accessorKey: 'lastUpdated',
       header: 'Last Activity',
       size: 150,
-      cell: ({ getValue }) => <span className="text-[12px] text-[var(--text-secondary)]">{fmtDate(getValue() as string)}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{fmtDate(getValue() as string)}</span>,
     },
     {
       id: 'createdBy',
       accessorKey: 'createdBy',
       header: 'Created By',
       size: 150,
-      cell: ({ getValue }) => <span className="text-[12px] text-[var(--text-secondary)]">{getValue() as string || '—'}</span>,
+      cell: ({ getValue }) => <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)]">{getValue() as string || '—'}</span>,
     },
     // ── Addresses Group ──
     ...(expandedGroups.has('addresses') ? (() => { const types = getUniqueEntryTypes(contacts, 'addresses'); return types.map((atype, i) => ({
