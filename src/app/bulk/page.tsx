@@ -432,51 +432,51 @@ function BulkBatchCard({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); }
       }}
-      className="group bulk-card-hover animate-batch-card relative text-left bg-[var(--surface-card)] border border-[var(--border)] rounded-lg p-3.5 cursor-pointer hover:border-[var(--brand-primary)]"
+      className="group bulk-card-hover animate-batch-card relative text-left bg-[var(--surface-card)] border border-[var(--border)] rounded-lg p-2.5 cursor-pointer hover:border-[var(--brand-primary)]"
       style={{ ['--card-delay' as string]: `${delayMs}ms` } as React.CSSProperties}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <Users size={13} weight="fill" className="text-[var(--brand-primary)] flex-shrink-0" />
-            <h3 className="text-[13.5px] font-bold text-[var(--text-primary)] truncate">
+          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+            <Users size={11} weight="fill" className="text-[var(--brand-primary)] flex-shrink-0" />
+            <h3 className="text-[12px] font-bold text-[var(--text-primary)] truncate">
               {batch.subject || '(no subject)'}
             </h3>
             {batch.templateName && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--brand-bg)] text-[var(--brand-primary)] border border-[var(--brand-primary)] flex-shrink-0">
-                <FileText size={9} weight="fill" />
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--brand-bg)] text-[var(--brand-primary)] border border-[var(--brand-primary)] flex-shrink-0">
+                <FileText size={8} weight="fill" />
                 {batch.templateName}
               </span>
             )}
             {batch.attachments && batch.attachments.length > 0 && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
                 title={`${batch.attachments.length} attachment${batch.attachments.length === 1 ? '' : 's'}`}
               >
-                <Paperclip size={9} weight="bold" />
+                <Paperclip size={8} weight="bold" />
                 {batch.attachments.length}
               </span>
             )}
           </div>
-          <p className="text-[11.5px] text-[var(--text-tertiary)] truncate mb-1.5">
+          <p className="text-[10.5px] text-[var(--text-tertiary)] truncate mb-1">
             {batch.bodyPreview}
           </p>
           {/* Compact summary line — replaces the noisy progress bar.
               Shows just the counts so the feed stays scannable. */}
-          <div className="flex items-center gap-3 text-[10.5px] font-semibold">
+          <div className="flex items-center gap-2.5 text-[9.5px] font-semibold">
             <span className="text-[var(--success)]">
-              <CheckCircle size={10} weight="fill" className="inline -mt-0.5 mr-0.5" />
+              <CheckCircle size={9} weight="fill" className="inline -mt-0.5 mr-0.5" />
               {sum.sent} sent
             </span>
             {sum.failed > 0 && (
               <span className="text-[var(--danger)]">
-                <Warning size={10} weight="fill" className="inline -mt-0.5 mr-0.5" />
+                <Warning size={9} weight="fill" className="inline -mt-0.5 mr-0.5" />
                 {sum.failed} failed
               </span>
             )}
             {sum.pending > 0 && (
               <span className="text-[var(--text-tertiary)]">
-                <CircleNotch size={10} className="inline -mt-0.5 mr-0.5 animate-spin" />
+                <CircleNotch size={9} className="inline -mt-0.5 mr-0.5 animate-spin" />
                 {sum.pending} pending
               </span>
             )}
@@ -485,8 +485,8 @@ function BulkBatchCard({
             </span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <span className="text-[10.5px] font-bold text-[var(--text-tertiary)]">{dateLabel}</span>
+        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+          <span className="text-[9.5px] font-bold text-[var(--text-tertiary)]">{dateLabel}</span>
           <div className="flex items-center gap-1">
             {/* Hover-revealed delete button. Stops propagation so the
                 row's onClick (open detail) doesn't also fire. */}
@@ -494,11 +494,11 @@ function BulkBatchCard({
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               title="Delete this batch from history"
               aria-label="Delete batch"
-              className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)] bg-transparent border-none cursor-pointer transition-opacity"
+              className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)] bg-transparent border-none cursor-pointer transition-opacity"
             >
-              <Trash size={12} weight="bold" />
+              <Trash size={11} weight="bold" />
             </button>
-            <Eye size={11} className="text-[var(--text-tertiary)]" />
+            <Eye size={10} className="text-[var(--text-tertiary)]" />
           </div>
         </div>
       </div>
