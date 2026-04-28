@@ -8,34 +8,11 @@ interface ColumnPinning {
   right: string[];
 }
 
-export interface GridSort {
-  id: string;
-  desc: boolean;
-}
-
-export interface SavedGridView {
-  id: string;
-  name: string;
-  columnOrder: string[];
-  columnWidths: Record<string, number>;
-  columnVisibility: Record<string, boolean>;
-  sorting: GridSort[];
-}
-
 interface GridLayout {
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
   columnWidths: Record<string, number>;
   columnPinning: ColumnPinning;
-  /**
-   * Sort state — persisted so a user-applied sort survives a refresh.
-   * Empty array means "use the grid's defaultSorting prop instead".
-   */
-  sorting: GridSort[];
-  /** User-saved view definitions (named snapshots of grid state). */
-  savedViews: SavedGridView[];
-  /** Currently active saved view; null when the grid is in default/Custom mode. */
-  activeViewId: string | null;
 }
 
 interface GridLayoutStore {
@@ -46,71 +23,38 @@ interface GridLayoutStore {
   setColumnWidths: (gridId: string, widths: Record<string, number>) => void;
   updateColumnWidth: (gridId: string, colId: string, width: number) => void;
   setColumnPinning: (gridId: string, pinning: ColumnPinning) => void;
-  setSorting: (gridId: string, sorting: GridSort[]) => void;
-  setSavedViews: (gridId: string, views: SavedGridView[]) => void;
-  setActiveViewId: (gridId: string, id: string | null) => void;
   resetGrid: (gridId: string) => void;
 }
 
-const EMPTY_LAYOUT: GridLayout = {
-  columnOrder: [],
-  columnVisibility: {},
-  columnWidths: {},
-  columnPinning: { left: [], right: [] },
-  sorting: [],
-  savedViews: [],
-  activeViewId: null,
-};
-
-/**
- * Defensive hydration: older persisted layouts may be missing newer fields
- * (columnPinning was added later, then sorting / savedViews / activeViewId).
- * We backfill defaults so existing users don't crash on read after upgrade.
- */
-function hydrate(g: Partial<GridLayout> | undefined): GridLayout {
-  if (!g) return EMPTY_LAYOUT;
-  return {
-    columnOrder: g.columnOrder ?? [],
-    columnVisibility: g.columnVisibility ?? {},
-    columnWidths: g.columnWidths ?? {},
-    columnPinning: g.columnPinning ?? { left: [], right: [] },
-    sorting: g.sorting ?? [],
-    savedViews: g.savedViews ?? [],
-    activeViewId: g.activeViewId ?? null,
-  };
-}
+const EMPTY_LAYOUT: GridLayout = { columnOrder: [], columnVisibility: {}, columnWidths: {}, columnPinning: { left: [], right: [] } };
 
 export const useGridLayoutStore = create<GridLayoutStore>()(
   persist(
     (set, get) => ({
       grids: {},
-      getGrid: (gridId) => hydrate(get().grids[gridId]),
+      getGrid: (gridId) => {
+        const g = get().grids[gridId];
+        if (!g) return EMPTY_LAYOUT;
+        // Defensive hydration: older persisted layouts may predate columnPinning.
+        return g.columnPinning ? g : { ...g, columnPinning: { left: [], right: [] } };
+      },
       setColumnOrder: (gridId, order) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), columnOrder: order } },
+        grids: { ...s.grids, [gridId]: { ...(s.grids[gridId] || EMPTY_LAYOUT), columnOrder: order } },
       })),
       setColumnVisibility: (gridId, vis) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), columnVisibility: vis } },
+        grids: { ...s.grids, [gridId]: { ...(s.grids[gridId] || EMPTY_LAYOUT), columnVisibility: vis } },
       })),
       setColumnWidths: (gridId, widths) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), columnWidths: widths } },
+        grids: { ...s.grids, [gridId]: { ...(s.grids[gridId] || EMPTY_LAYOUT), columnWidths: widths } },
       })),
       updateColumnWidth: (gridId, colId, width) => set((s) => {
-        const grid = hydrate(s.grids[gridId]);
+        const grid = s.grids[gridId] || EMPTY_LAYOUT;
         return {
           grids: { ...s.grids, [gridId]: { ...grid, columnWidths: { ...grid.columnWidths, [colId]: width } } },
         };
       }),
       setColumnPinning: (gridId, pinning) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), columnPinning: pinning } },
-      })),
-      setSorting: (gridId, sorting) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), sorting } },
-      })),
-      setSavedViews: (gridId, views) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), savedViews: views } },
-      })),
-      setActiveViewId: (gridId, id) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), activeViewId: id } },
+        grids: { ...s.grids, [gridId]: { ...(s.grids[gridId] || EMPTY_LAYOUT), columnPinning: pinning } },
       })),
       resetGrid: (gridId) => set((s) => {
         const next = { ...s.grids };
@@ -118,6 +62,6 @@ export const useGridLayoutStore = create<GridLayoutStore>()(
         return { grids: next };
       }),
     }),
-    { name: 'roadrunner-grid-layouts', version: 2 }
+    { name: 'roadrunner-grid-layouts' }
   )
 );
