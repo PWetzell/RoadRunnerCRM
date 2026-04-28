@@ -690,11 +690,12 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         />
 
         {/* Brand strip — wordmark only. mt-12 adds 48px of negative
-             space above the title; transform translateY(-20px) shifts
-             this whole element up 20px visually without changing its
-             layout box (so the hero stack and copyright below stay
-             positioned correctly). */}
-        <div className="relative z-10 mt-12" style={{ transform: 'translateY(-20px)' }}>
+             space above the title. The translateY(-20px) was removed
+             per Paul's request — title is now back at its natural
+             flex position (20px lower than the previous commit), while
+             the hero stack below still has its own translateY(-20px)
+             keeping it in place. */}
+        <div className="relative z-10 mt-12">
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
