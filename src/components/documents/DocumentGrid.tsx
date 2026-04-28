@@ -47,18 +47,20 @@ function buildColumns(contactNames: Map<string, string>, dealNames: Map<string, 
     },
     {
       id: 'name',
-      accessorKey: 'name',
+      accessorKey: 'fileName',
       header: 'Name',
       size: 420,
-      // Name cell — file-type icon removed (it duplicated the dedicated
-      // Type column's PDF/DOCX/etc pill). Cleaner row, single source of
-      // truth for "what type of file is this." Applies in light + dark
-      // mode, demo + personal accounts since the renderer is shared.
+      // Name cell renders the actual file name (e.g.
+      // "sofia-restrepo-resume-2026.pdf") rather than the display title.
+      // Paul wanted the literal filename in the NAME column since the
+      // preview pane already shows the friendly title. Sort key was
+      // updated from `name` → `fileName` so column sort matches the
+      // visible value.
       cell: ({ row }) => {
         const doc = row.original;
         return (
           <div className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate min-w-0">
-            {doc.name}
+            {doc.fileName}
           </div>
         );
       },
