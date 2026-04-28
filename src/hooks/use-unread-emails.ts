@@ -37,18 +37,37 @@ export function useUnreadCountForContact(contactId: string): number {
 }
 
 /**
- * Reactive total unread count across every contact in the seed. Used for
- * the column-header badge on the contacts grid — lets the user see the
- * global inbox pressure at a glance, same pattern as Gmail's left-rail
- * "Inbox · 12" label.
+ * Reactive total unread count, scoped to contacts that are ACTUALLY in
+ * the user's contact store. Used for the column-header badge on the
+ * contacts grid — lets the user see global inbox pressure at a glance,
+ * same pattern as Gmail's left-rail "Inbox · 12".
+ *
+ * Bug Paul caught on 2026-04-27: the previous version iterated every
+ * seed-unread id regardless of whether the contact existed in the
+ * store, so a real user with 3 Gmail-imported contacts saw "60 unread"
+ * — leaking demo data into a real-account view. Now we intersect with
+ * the live contact-store ids before counting, so the badge reflects
+ * only the contacts on screen.
  */
 export function useTotalUnreadCount(): number {
   const overrides = useReadOverridesSet();
+  const contacts = useContactStore((s) => s.contacts);
   return useMemo(() => {
+    const liveIds = new Set(contacts.map((c) => c.id));
     let total = 0;
-    for (const ids of getSeedUnreadIdsMap().values()) {
+    // Seed-derived unread (demo contacts).
+    for (const [contactId, ids] of getSeedUnreadIdsMap().entries()) {
+      if (!liveIds.has(contactId)) continue;
       for (const id of ids) if (!overrides.has(id)) total++;
     }
+    // Live unread count from /api/contacts (real Gmail-synced contacts).
+    // Adds to the seed-derived count above so a workspace with both
+    // demo + real data gets a unified total in the column-header
+    // badge.
+    for (const c of contacts) {
+      const live = c.recentEmail?.unreadCount;
+      if (typeof live === 'number') total += live;
+    }
     return total;
-  }, [overrides]);
+  }, [overrides, contacts]);
 }

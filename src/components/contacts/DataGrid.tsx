@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Buildings, User, EyeSlash, Sparkle, Warning, CheckCircle,
@@ -18,7 +18,7 @@ import { initials, getAvatarColor, fmtDate } from '@/lib/utils';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import SharedDataGrid, { ColumnDef } from '@/components/ui/SharedDataGrid';
 import { toast } from '@/lib/toast';
-import { getUnreadCountForContact, hasSeedAttachmentForContact, hasRecentSeedEmailForContact } from '@/lib/data/seed-emails';
+import { getUnreadCountForContact, hasSeedAttachmentForContact, hasRecentSeedEmailForContact, getSeedAttachmentCountForContact, getSeedUnreadAttachmentCountForContact } from '@/lib/data/seed-emails';
 import { useReadOverridesSet, useTotalUnreadCount } from '@/hooks/use-unread-emails';
 import { Paperclip } from '@phosphor-icons/react';
 
@@ -189,6 +189,10 @@ function buildColumns(
   favIds: Set<string>,
   readOverrides: ReadonlySet<string>,
   totalUnread: number,
+  totalAttachments: number,
+  totalUnreadAttachments: number,
+  attachmentSortMode: 0 | 1 | 2,
+  cycleAttachmentSort: () => void,
 ): ColumnDef<ContactWithEntries, any>[] {
   return [
     {
@@ -209,85 +213,181 @@ function buildColumns(
       ),
     },
     {
-      // Dedicated Unread column. Sortable is the key — without it the
-      // user can't surface every contact with inbox pressure to the top
-      // in a single click (same move as Gmail's "Unread first" and
-      // HubSpot's activity-based sort). Accessor returns the numeric
-      // count so table sort is natural (desc-first so the hottest rows
-      // land at the top). Header carries a badge with the global unread
-      // total — mirrors Gmail's left-rail "Inbox · 12".
-      id: 'unread',
-      accessorFn: (row) => getUnreadCountForContact(row.id, readOverrides),
-      header: () => (
-        <span
-          title={`${totalUnread} unread email${totalUnread === 1 ? '' : 's'} across all contacts`}
-          className="inline-flex items-center justify-center w-full gap-1"
-        >
-          <EnvelopeSimple size={13} weight="bold" />
-          {totalUnread > 0 && (
-            <span
-              aria-label={`${totalUnread} total unread`}
-              className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold leading-none"
-            >
-              {totalUnread}
-            </span>
-          )}
-        </span>
-      ),
-      meta: { label: 'Unread' },
-      // Bumped from 80 → 120 to fit up to three indicators side-by-side
-      // (New pill + unread count + paperclip) without crushing them.
+      // Attachments column. Sort accessor is the per-contact attachment
+      // count (live + seed fallback) so clicking the header surfaces
+      // contacts-with-files at the top — useful "where's the
+      // signed contract email?" type lookups. Header badge shows the
+      // global total across every visible contact.
+      //
+      // Renamed from "unread" to "attachments" on 2026-04-28 (Paul:
+      // "only show the icon for total count for attachments in the
+      // email thread" + "the 1 in the header is wrong"). The cells
+      // now render only paperclip + count, so the header icon must
+      // match — was an envelope, now it's the paperclip.
+      id: 'attachments',
+      // Sort key composition: contacts with UNREAD emails-with-attachments
+      // (the green-badge rows that need attention) always rank above the
+      // gray-badge rows (already-read), then within each group rank by
+      // count desc. Multiplying unread by 100k guarantees the priority
+      // tier holds even at maximum realistic counts (no contact has
+      // tens of thousands of attached emails). Click the column header
+      // once → Paul gets a clean "what needs my attention first?"
+      // ranking, identical to how Pipedrive's Labels column orders
+      // attention-state-first then count-desc.
+      accessorFn: (row) => {
+        const live = row.recentEmail;
+        const totalAttached = live?.attachmentCount
+          ?? (hasSeedAttachmentForContact(row.id) ? getSeedAttachmentCountForContact(row.id) : 0);
+        const unreadAttached = live?.unreadAttachmentCount
+          ?? getSeedUnreadAttachmentCountForContact(row.id, readOverrides);
+        return unreadAttached * 100000 + totalAttached;
+      },
+      header: () => {
+        const modeLabel =
+          attachmentSortMode === 0 ? 'New attachments first'
+          : attachmentSortMode === 1 ? 'Existing attachments first'
+          : 'No attachments first';
+        // No inline onClick here — the cycle is wired through the
+        // column's meta.onSortClick, which fires when the user clicks
+        // anywhere on the header (paperclip, badge, arrow,
+        // whitespace). Same click surface as every other column.
+        return (
+          <span
+            title={`${modeLabel} (click to cycle: New → Existing → None)`}
+            className="inline-flex items-center justify-center w-full gap-1"
+          >
+            <Paperclip size={13} weight="bold" />
+            {totalUnreadAttachments > 0 ? (
+              <span
+                aria-label={`${totalUnreadAttachments} new emails with attachments`}
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--success)] text-white text-[10px] font-bold leading-none"
+              >
+                {totalUnreadAttachments}
+              </span>
+            ) : (
+              totalAttachments > 0 && (
+                <span
+                  aria-label={`${totalAttachments} total attachments`}
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] text-[10px] font-bold leading-none"
+                >
+                  {totalAttachments}
+                </span>
+              )
+            )}
+          </span>
+        );
+      },
+      meta: {
+        label: 'Attachments',
+        // Custom click handler — replaces TanStack's default sort
+        // toggle. SharedDataGrid invokes this with the column object
+        // when ANYWHERE on the header is clicked (paperclip, badge,
+        // arrow, whitespace — all of it). Behavior:
+        //   1. Cycle attachmentSortMode 0 → 1 → 2 → 0
+        //   2. Force sort to desc on this column (keeps the down-arrow
+        //      indicator rendering and overrides any other column's
+        //      sort the user previously clicked).
+        // Same down-arrow visual + click target as every other column.
+        onSortClick: (column: { toggleSorting: (desc: boolean) => void }) => {
+          cycleAttachmentSort();
+          column.toggleSorting(true);
+        },
+      },
       size: 120,
+      // Sorting IS enabled at the TanStack level so the standard
+      // down-arrow indicator renders (parity with every other column).
+      // But the click handler in the header above forces toggleSorting(true)
+      // every click instead of letting TanStack's natural toggle cycle
+      // through asc/desc — we always render desc and cycle the
+      // attachmentSortMode separately to get 3 distinct orderings.
       enableSorting: true,
       enableColumnFilter: false,
       sortDescFirst: true,
-      cell: ({ row, getValue }) => {
+      // sortingFn computes a numeric tier per current mode. Reads
+      // `attachmentSortMode` from the closure (column rebuilds when
+      // the mode changes via the columns useMemo deps). Three modes,
+      // each with a tier mapping that puts the desired category at
+      // the top under DESC sort:
+      //   Mode 0: green=2, gray=1, em=0  (greens first)
+      //   Mode 1: gray=2, green=1, em=0  (grays first)
+      //   Mode 2: em=2, gray=1, green=0  (em-dashes first)
+      // Score = tier * 1_000_000 + count, so within-tier ordering is
+      // by attachment count desc.
+      sortingFn: (a, b) => {
+        const computeKey = (c: ContactWithEntries): number => {
+          const live = c.recentEmail;
+          const totalAttached = live?.attachmentCount
+            ?? (hasSeedAttachmentForContact(c.id) ? getSeedAttachmentCountForContact(c.id) : 0);
+          const unreadAttached = live?.unreadAttachmentCount
+            ?? getSeedUnreadAttachmentCountForContact(c.id, readOverrides);
+          const isGreen = unreadAttached > 0;
+          const isGray = !isGreen && totalAttached > 0;
+          const isEm = !isGreen && !isGray;
+          let tier = 0;
+          if (attachmentSortMode === 0) tier = isGreen ? 2 : isGray ? 1 : 0;
+          else if (attachmentSortMode === 1) tier = isGray ? 2 : isGreen ? 1 : 0;
+          else tier = isEm ? 2 : isGray ? 1 : 0;
+          const count = isGreen ? unreadAttached : totalAttached;
+          return tier * 1_000_000 + count;
+        };
+        return computeKey(a.original) - computeKey(b.original);
+      },
+      cell: ({ row }) => {
         const c = row.original;
         const id = c.id;
-        const unread = (getValue() as number) ?? 0;
-        // Live signals from /api/contacts when present (Paul's real
-        // Gmail-synced contacts), seed-based fallback when undefined
-        // (demo contacts). The two sources never overlap — a contact
-        // either has a `recentEmail` summary from the API or it's a
-        // seed contact whose emails live client-side. OR'ing the two
-        // gives us a single signal for the indicator regardless of
-        // origin.
-        const hasAttachment = c.recentEmail?.hasAttachment ?? hasSeedAttachmentForContact(id);
-        const isNew = c.recentEmail?.hasNew ?? hasRecentSeedEmailForContact(id);
+        // Live signals from /api/contacts when present (real Gmail-synced
+        // contacts), seed-based fallback when undefined (demo contacts).
+        // `??` picks live first, falls back.
+        const attachmentCount = c.recentEmail?.attachmentCount ?? getSeedAttachmentCountForContact(id);
+        const hasAttachment = attachmentCount > 0;
+        // Subset count: attachments on emails that are still unread.
+        // Drives the green-vs-gray paperclip styling — green flags
+        // "fresh file from this person waiting for you," gray means
+        // "files exist but you've already seen them all."
+        const unreadAttachmentCount =
+          c.recentEmail?.unreadAttachmentCount
+          ?? getSeedUnreadAttachmentCountForContact(id, readOverrides);
+        const hasUnreadAttachment = unreadAttachmentCount > 0;
 
-        if (unread === 0 && !hasAttachment && !isNew) {
+        if (!hasAttachment) {
           return <span className="text-[11px] text-[var(--text-tertiary)]">—</span>;
         }
+        // Final shape per Paul (2026-04-28): the column shows ONLY the
+        // attachment-count indicator. Total attachments across all
+        // email threads with this contact, surfaced as a small gray
+        // 📎 N badge. Unread / new state isn't conveyed here — the
+        // contact's detail page handles that. Em-dash placeholder
+        // when the contact has zero attachment-bearing emails.
+        // Display number rule (Paul, 2026-04-28: "it says 5 new emails
+        // but on her overview page it says 2"):
+        //   • Green badge: count of UNREAD emails with attachments — same
+        //     number the detail-page tab badge shows. "5 new emails with
+        //     attachments" reads consistently with "● 5" on the tab.
+        //   • Gray badge: count of all emails with attachments (none
+        //     unread) — "you've seen all the files this person sent."
+        const displayCount = hasUnreadAttachment ? unreadAttachmentCount : attachmentCount;
         return (
           <span className="inline-flex items-center gap-1">
-            {isNew && (
-              <span
-                aria-label="New email synced recently"
-                title="New email synced in the last 10 minutes"
-                className="inline-flex items-center gap-0.5 px-1.5 h-[18px] rounded-full bg-[var(--success)] text-white text-[9.5px] font-bold leading-none"
-              >
-                <span aria-hidden="true" className="w-1 h-1 rounded-full bg-white" />
-                New
-              </span>
-            )}
-            {unread > 0 && (
-              <span
-                aria-label={`${unread} unread email${unread === 1 ? '' : 's'}`}
-                title={`${unread} unread email${unread === 1 ? '' : 's'}`}
-                className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold leading-none"
-              >
-                <EnvelopeSimple size={10} weight="fill" />
-                {unread}
-              </span>
-            )}
-            {hasAttachment && (
-              <Paperclip
-                size={12}
-                weight="bold"
-                className="text-[var(--text-secondary)] flex-shrink-0"
-                aria-label="Has email with attachment"
-              />
-            )}
+            <span
+              aria-label={
+                hasUnreadAttachment
+                  ? `${unreadAttachmentCount} unread email${unreadAttachmentCount === 1 ? '' : 's'} with attachments`
+                  : `${attachmentCount} email${attachmentCount === 1 ? '' : 's'} with attachments`
+              }
+              title={
+                hasUnreadAttachment
+                  ? `${unreadAttachmentCount} unread email${unreadAttachmentCount === 1 ? '' : 's'} with attachments`
+                  : `${attachmentCount} email${attachmentCount === 1 ? '' : 's'} with attachments — all read`
+              }
+              className={`inline-flex items-center gap-0.5 px-1.5 h-[18px] rounded-full text-[10px] font-bold leading-none flex-shrink-0 ${
+                hasUnreadAttachment
+                  ? 'bg-[var(--success)] text-white border border-[var(--success)]'
+                  : 'bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]'
+              }`}
+            >
+              <Paperclip size={10} weight="bold" />
+              {displayCount}
+            </span>
           </span>
         );
       },
@@ -577,6 +677,32 @@ export default function DataGrid() {
 
   const [deleteTarget, setDeleteTarget] = useState<ContactWithEntries | null>(null);
 
+  // One-time migration: clear any persisted grid state that references
+  // the old `unread` column id (renamed to `attachments` on 2026-04-28).
+  // Without this, saved sort/column state in localStorage points at a
+  // column that no longer exists, and TanStack silently ignores user
+  // clicks on the new id. Sort appears broken even though the
+  // accessor + sortingFn are correct. Running once at mount;
+  // SHARED_DATA_GRID_MIGRATION_KEY guards against re-running across
+  // refreshes once the migration has happened.
+  useEffect(() => {
+    const MIGRATION_KEY = 'roadrunner.gridMigration.20260428.attachmentsRename';
+    if (typeof window === 'undefined') return;
+    try {
+      if (localStorage.getItem(MIGRATION_KEY) === 'done') return;
+      Object.keys(localStorage).forEach((k) => {
+        if (!k.includes('grid') && !k.includes('view') && !k.includes('column')) return;
+        const v = localStorage.getItem(k);
+        if (v && (v.includes('"id":"unread"') || v.includes('"unread":'))) {
+          localStorage.removeItem(k);
+        }
+      });
+      localStorage.setItem(MIGRATION_KEY, 'done');
+    } catch {
+      /* localStorage unavailable in private mode — no-op */
+    }
+  }, []);
+
   // Column group expansion
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const toggleGroup = (group: string) => {
@@ -596,9 +722,58 @@ export default function DataGrid() {
   // drives the column-header badge.
   const readOverrides = useReadOverridesSet();
   const totalUnread = useTotalUnreadCount();
+  // Total attachments across every visible contact — used for the
+  // column-header badge tooltip. Live `recentEmail.attachmentCount`
+  // from the API takes precedence; demo contacts contribute via the
+  // seed helper.
+  const totalAttachments = useMemo(() => {
+    let total = 0;
+    for (const c of contacts) {
+      const live = c.recentEmail?.attachmentCount;
+      if (typeof live === 'number') {
+        total += live;
+      } else {
+        total += getSeedAttachmentCountForContact(c.id);
+      }
+    }
+    return total;
+  }, [contacts]);
+
+  // Total UNREAD-attachment emails — drives the green column-header
+  // badge that signals "you have N new files waiting." Per Paul's
+  // 2026-04-28 spec ("show all the new messages sorted at the top of
+  // the list with a green badge count in the column header"), this
+  // is the prominent number, while totalAttachments stays in the
+  // tooltip as auxiliary context.
+  const totalUnreadAttachments = useMemo(() => {
+    let total = 0;
+    for (const c of contacts) {
+      const live = c.recentEmail?.unreadAttachmentCount;
+      if (typeof live === 'number') {
+        total += live;
+      } else {
+        total += getSeedUnreadAttachmentCountForContact(c.id, readOverrides);
+      }
+    }
+    return total;
+  }, [contacts, readOverrides]);
+
+  // Three-state click cycle for the 📎 column (Paul's spec, 2026-04-28):
+  //   0 → greens first (new emails with attachments)
+  //   1 → grays first (existing emails with attachments)
+  //   2 → em-dashes first (no attachments at all)
+  // Clicks cycle 0 → 1 → 2 → 0 → ... TanStack's natural sort can't
+  // express 3 distinct orderings of the same column, so we bypass
+  // it for this column and pre-sort the data array ourselves below.
+  const [attachmentSortMode, setAttachmentSortMode] = useState<0 | 1 | 2>(0);
+  const cycleAttachmentSort = () => {
+    setAttachmentSortMode((m) => ((m + 1) % 3) as 0 | 1 | 2);
+  };
+
   const columns = useMemo(
-    () => buildColumns(expandedGroups, contacts, favIds, readOverrides, totalUnread),
-    [expandedGroups, contacts, favIds, readOverrides, totalUnread],
+    () => buildColumns(expandedGroups, contacts, favIds, readOverrides, totalUnread, totalAttachments, totalUnreadAttachments, attachmentSortMode, cycleAttachmentSort),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [expandedGroups, contacts, favIds, readOverrides, totalUnread, totalAttachments, totalUnreadAttachments, attachmentSortMode],
   );
 
   // Filter data
@@ -626,6 +801,10 @@ export default function DataGrid() {
     if (privateOnly) {
       result = result.filter((c) => c.isPrivate);
     }
+    // Note: attachment-mode sort is handled by TanStack via the
+    // 📎 column's sortingFn (which reads attachmentSortMode). No
+    // pre-sort here — keeps the data array stable so TanStack can
+    // sort by any active column.
     return result;
   }, [contacts, filter, search, listId, favOnly, privateOnly, memberships]);
 
@@ -636,7 +815,12 @@ export default function DataGrid() {
         columns={columns}
         gridId="contacts"
         onRowClick={(c) => router.push(`/contacts/${c.id}`)}
-        defaultSorting={[{ id: 'name', desc: false }]}
+        // Default to attachments-mode-0 sort (greens at top) on first
+        // load so the user lands on "what needs my attention" without
+        // clicking. The down-arrow indicator renders on the 📎 header
+        // because enableSorting:true on the column. Clicking other
+        // columns overrides this; clicking 📎 again forces it back.
+        defaultSorting={[{ id: 'attachments', desc: true }]}
         countLabel="contacts"
         onToggleGroup={toggleGroup}
         renderActions={(c) => (

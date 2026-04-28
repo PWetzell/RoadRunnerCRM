@@ -158,7 +158,23 @@ export default function EmailsPanel({ contact }: { contact: ContactWithEntries }
           const filtered = showArchived ? seeded : seeded.filter((e) => !e.archivedAt);
           setEmails(filtered);
         } else {
-          setEmails(live);
+          // Apply local "user has read this" overrides on top of the
+          // live API response. The API's `readAt` reflects Gmail's
+          // UNREAD label, which doesn't update when the user reads the
+          // message inside Roadrunner — only when they read it inside
+          // Gmail itself. Without this overlay, expanding an unread
+          // email cleared the pill momentarily but it would snap back
+          // on the next refetch (every sync, every mount), since the
+          // API still saw UNREAD on the Gmail row. Once we send a
+          // proper "remove UNREAD label" request to Gmail on read,
+          // this overlay can go away — until then it's the source of
+          // truth for "Paul has seen this in the CRM."
+          const merged = live.map((e) =>
+            e.readAt == null && readOverrides.has(e.id)
+              ? { ...e, readAt: new Date().toISOString() }
+              : e,
+          );
+          setEmails(merged);
         }
       })
       .catch(() => {
@@ -259,6 +275,20 @@ export default function EmailsPanel({ contact }: { contact: ContactWithEntries }
     // surface without a navigate-away-and-back.
   }, [fetchEmails, lastSyncAt]);
 
+  // Track which threads have been expanded to show their earlier messages.
+  // Separate from `expandedId` (which controls whether a single email's
+  // body is open for reading) — a user can show a thread's history AND
+  // have one of those messages open at the same time.
+  const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set());
+  const toggleThread = useCallback((threadId: string) => {
+    setExpandedThreadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(threadId)) next.delete(threadId);
+      else next.add(threadId);
+      return next;
+    });
+  }, []);
+
   const filteredEmails = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return emails.filter((e) => {
@@ -276,6 +306,50 @@ export default function EmailsPanel({ contact }: { contact: ContactWithEntries }
       return hay.includes(q);
     });
   }, [emails, searchQuery, tagFilter]);
+
+  /**
+   * Group filtered emails by `threadId` so the timeline collapses reply
+   * chains into single rows by default. The latest message in each
+   * thread becomes the visible "head" — that's the one with the
+   * relevant snippet, the most recent timestamp, and any unread/new
+   * indicators. Earlier messages stay hidden behind a "Show N earlier
+   * in thread" toggle until the user expands the chain.
+   *
+   * Industry pattern: HubSpot, Salesforce, Pipedrive, Gmail itself —
+   * all collapse threads by default with the latest message
+   * prominent. Without this, a long back-and-forth on Holly's record
+   * looks like 15 separate timeline events instead of 1 conversation.
+   *
+   * Sort within a thread: chronological ascending (earliest first), so
+   * when the user expands the thread the messages read top-to-bottom
+   * naturally. Sort BETWEEN threads: pinned-first, then by the latest
+   * message's timestamp descending — keeps the existing surface
+   * priority of "what just happened" at the top.
+   */
+  type ThreadGroup = { threadId: string; messages: EmailRow[]; latest: EmailRow };
+  const threadGroups = useMemo<ThreadGroup[]>(() => {
+    const map = new Map<string, EmailRow[]>();
+    for (const e of filteredEmails) {
+      const arr = map.get(e.threadId) ?? [];
+      arr.push(e);
+      map.set(e.threadId, arr);
+    }
+    const groups: ThreadGroup[] = Array.from(map.entries()).map(([threadId, msgs]) => {
+      const sorted = [...msgs].sort(
+        (a, b) => Date.parse(a.receivedAt) - Date.parse(b.receivedAt),
+      );
+      return { threadId, messages: sorted, latest: sorted[sorted.length - 1] };
+    });
+    groups.sort((a, b) => {
+      const aPinned = a.messages.some((m) => m.pinnedAt);
+      const bPinned = b.messages.some((m) => m.pinnedAt);
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      const aLatest = Date.parse(a.latest.pinnedAt || a.latest.receivedAt);
+      const bLatest = Date.parse(b.latest.pinnedAt || b.latest.receivedAt);
+      return bLatest - aLatest;
+    });
+    return groups;
+  }, [filteredEmails]);
 
   const toggleTagFilter = useCallback((t: string) => {
     setTagFilter((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
@@ -356,11 +430,13 @@ export default function EmailsPanel({ contact }: { contact: ContactWithEntries }
               : `${emails.length} ${emails.length === 1 ? 'email' : 'emails'}`}
           </div>
           {/* Unread count — Gmail/HubSpot pattern. A small pill with a
-              leading dot, solid brand color so it reads as the focal point
-              of the header. Hidden entirely at 0 (no zero-state noise). */}
+              leading dot, solid GREEN fill (Paul's color choice on
+              2026-04-28: unread state across the app uses green
+              instead of brand-blue). Hidden entirely at 0 (no
+              zero-state noise). */}
           {unreadCount > 0 && (
             <span
-              className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-full text-[10px] font-bold bg-[var(--brand-primary)] text-white"
+              className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-full text-[10px] font-bold bg-[var(--success)] text-white"
               title={`${unreadCount} unread ${unreadCount === 1 ? 'email' : 'emails'}`}
               aria-label={`${unreadCount} unread`}
             >
@@ -479,46 +555,83 @@ export default function EmailsPanel({ contact }: { contact: ContactWithEntries }
       )}
 
       <div className="flex flex-col gap-2 p-3">
-        {filteredEmails.map((row, idx) => {
-          const prev = filteredEmails[idx - 1];
-          const wasPinned = !!prev?.pinnedAt;
-          const isPinned = !!row.pinnedAt;
-          // Divider between the pinned section and the rest.
+        {threadGroups.map((group, groupIdx) => {
+          const prevGroup = threadGroups[groupIdx - 1];
+          const wasPinned = prevGroup ? prevGroup.messages.some((m) => !!m.pinnedAt) : false;
+          const isPinned = group.messages.some((m) => !!m.pinnedAt);
           const showUnpinnedDivider = wasPinned && !isPinned;
-          // Pinned-section header above the first pinned row.
-          const showPinnedHeader = idx === 0 && isPinned;
+          const showPinnedHeader = groupIdx === 0 && isPinned;
+
+          const isThreadExpanded = expandedThreadIds.has(group.threadId);
+          // When the thread is expanded we render the EARLIER messages
+          // (everything except the head) in chronological order ABOVE
+          // the head. Gmail's pattern: latest stays prominent at the
+          // bottom of the chain so the user's eye lands on "what just
+          // happened" while still being able to scroll up for context.
+          const earlier = isThreadExpanded ? group.messages.slice(0, -1) : [];
+          const moreCount = group.messages.length - 1;
+
+          // Helper to render any message in the group with the same
+          // wiring used to live inline before threading. Defined inline
+          // so it closes over the contact + handler scope.
+          const renderRow = (row: EmailRow) => (
+            <EmailRowItem
+              key={row.id}
+              row={row}
+              contactId={contact.id}
+              contactName={contact.name}
+              expanded={expandedId === row.id}
+              viewed={viewedIds.has(row.id)}
+              onToggle={() => {
+                const willExpand = expandedId !== row.id;
+                if (willExpand && row.direction === 'from' && row.readAt == null) {
+                  markRead(row.id);
+                }
+                if (willExpand) markViewed(row.id);
+                setExpandedId(expandedId === row.id ? null : row.id);
+              }}
+              onArchive={() => archiveEmail(row.id, !row.archivedAt)}
+              onPin={() => pinEmail(row.id, !row.pinnedAt)}
+              onUpdateTags={(next) => updateTags(row.id, next)}
+              onCreateTask={() => createTaskFromEmail(row)}
+              suggestions={tagSuggestions}
+              hasTask={taskedEmailIds.has(row.id)}
+              justTasked={justTasked.has(row.id)}
+            />
+          );
+
           return (
-            <div key={row.id} className="flex flex-col gap-2">
+            <div key={group.threadId} className="flex flex-col gap-2">
               {showPinnedHeader && <SectionLabel icon={<PushPin size={10} weight="fill" />} label="Pinned" />}
               {showUnpinnedDivider && <SectionLabel label="Earlier" />}
-              <EmailRowItem
-                row={row}
-                contactId={contact.id}
-                contactName={contact.name}
-                expanded={expandedId === row.id}
-                viewed={viewedIds.has(row.id)}
-                onToggle={() => {
-                  // Expanding an unread incoming email flips it to read —
-                  // standard mail-client behavior. Collapsing does not
-                  // re-mark unread (once read, stays read).
-                  const willExpand = expandedId !== row.id;
-                  if (willExpand && row.direction === 'from' && row.readAt == null) {
-                    markRead(row.id);
-                  }
-                  // Stamp the persisted "viewed" set on the very first
-                  // expand so the green "New" pill stays gone after the
-                  // user closes the row again or reloads the page.
-                  if (willExpand) markViewed(row.id);
-                  setExpandedId(expandedId === row.id ? null : row.id);
-                }}
-                onArchive={() => archiveEmail(row.id, !row.archivedAt)}
-                onPin={() => pinEmail(row.id, !row.pinnedAt)}
-                onUpdateTags={(next) => updateTags(row.id, next)}
-                onCreateTask={() => createTaskFromEmail(row)}
-                suggestions={tagSuggestions}
-                hasTask={taskedEmailIds.has(row.id)}
-                justTasked={justTasked.has(row.id)}
-              />
+
+              {/* Earlier-in-thread messages (only visible when expanded). */}
+              {earlier.length > 0 && (
+                <div className="flex flex-col gap-2 pl-3 border-l-2 border-[var(--border)]">
+                  {earlier.map(renderRow)}
+                </div>
+              )}
+
+              {/* The thread head — the latest message. Always visible. */}
+              {renderRow(group.latest)}
+
+              {/* Show / hide N earlier messages in this thread.
+                  Only renders when the thread has more than one message.
+                  Subtle button — sits under the head as a secondary
+                  affordance, not a primary CTA. */}
+              {moreCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => toggleThread(group.threadId)}
+                  className="self-start inline-flex items-center gap-1 px-2 py-0.5 -mt-1 ml-1 text-[10.5px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] bg-transparent border-none cursor-pointer transition-colors"
+                  title={isThreadExpanded ? 'Collapse this thread' : 'Show earlier messages in this thread'}
+                >
+                  <span aria-hidden="true">{isThreadExpanded ? '▾' : '▸'}</span>
+                  {isThreadExpanded
+                    ? `Hide ${moreCount} earlier message${moreCount === 1 ? '' : 's'}`
+                    : `Show ${moreCount} earlier message${moreCount === 1 ? '' : 's'} in thread`}
+                </button>
+              )}
             </div>
           );
         })}
@@ -554,28 +667,28 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
   hasTask: boolean;
   justTasked: boolean;
 }) {
-  // Direction is labeled from the CONTACT's POV when viewing their
-  // record, not from the logged-in user's POV. Industry split:
-  // HubSpot/Salesforce/Pipedrive use user-POV; Folk uses contact-POV
-  // in the activity panel. Paul's mental model on 2026-04-27: "I'm
-  // looking at Paul & Cindy's record, an email I sent TO them should
-  // read 'Received' (received by them), not 'Sent'." So we flip.
+  // Direction is labeled from the LOGGED-IN USER's POV — matches
+  // HubSpot/Salesforce/Pipedrive convention, the Activity Log
+  // timeline in this same app, AND Gmail's own Sent / Inbox folders.
+  // (Earlier flipped to contact-POV based on a misread; the result
+  // was an email you sent showing as "Received" on the contact's
+  // record, contradicting both Gmail and the Activity Log. Reverted
+  // 2026-04-27.)
   //
-  // Mapping (data → contact-POV label):
-  //   row.direction === 'from'   contact sent it → "Sent"   ↗ outgoing from contact
-  //   row.direction !== 'from'   contact received → "Received" ↙ incoming to contact
+  // Mapping (data → user-POV label):
+  //   row.direction === 'from'   someone sent it TO me  → "Received"  ↙
+  //   row.direction !== 'from'   I sent it              → "Sent"      ↗
   //
-  // The unread concept still belongs to the LOGGED-IN user — only
-  // contact-sent messages can be unread by the user. Contact-received
-  // (i.e., user-sent) messages are always "read" by the sender.
-  const contactSent = row.direction === 'from';
+  // Unread concept also belongs to the user — sent mail is always
+  // "read" by the sender; only received mail can be unread.
+  const incoming = row.direction === 'from';
   const date = new Date(row.receivedAt);
   const when = formatWhen(date);
   const archived = !!row.archivedAt;
   const pinned = !!row.pinnedAt;
   const tags = row.tags || [];
   const attachments = row.attachments || [];
-  const unread = contactSent && row.readAt == null && !archived;
+  const unread = incoming && row.readAt == null && !archived;
   // "New" indicator — orthogonal to unread. Fires for any email (sent
   // OR received) that arrived within the last 10 minutes and hasn't
   // been clicked open by the user yet. Mirrors Slack-style "new since
@@ -592,18 +705,18 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
   const ageMs = Date.now() - date.getTime();
   const isNew = !viewed && !archived && ageMs >= 0 && ageMs < NEW_WINDOW_MS;
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
-  // `who` describes the OTHER party from the contact's POV.
-  //   contact sent (contactSent=true)    → recipient is shown ("To pwentzell64…")
-  //   contact received (contactSent=false) → sender is shown   ("From pwentzell64…")
-  const who = contactSent
-    ? `To ${row.toEmails[0] || 'unknown'}${row.toEmails.length > 1 ? ` +${row.toEmails.length - 1}` : ''}`
-    : (row.fromName || row.fromEmail || 'Unknown');
+  // `who` describes the OTHER party from the user's POV.
+  //   incoming (received) → show sender    (e.g. "Holly Bajar")
+  //   outgoing (sent)     → show recipient (e.g. "To paulcindywentzell@gmail.com")
+  const who = incoming
+    ? (row.fromName || row.fromEmail || 'Unknown')
+    : `To ${row.toEmails[0] || 'unknown'}${row.toEmails.length > 1 ? ` +${row.toEmails.length - 1}` : ''}`;
 
   return (
     <div
       className={`group relative w-full text-left border rounded-lg cursor-pointer transition-colors ${
-        pinned ? 'border-[var(--brand-primary)]' : unread ? 'border-[var(--brand-primary)]' : 'border-[var(--border)]'
-      } ${unread ? 'bg-[var(--brand-bg)]' : 'bg-[var(--surface-card)]'} hover:border-[var(--brand-primary)] ${
+        pinned ? 'border-[var(--brand-primary)]' : unread ? 'border-[var(--success)]' : 'border-[var(--border)]'
+      } ${unread ? 'bg-[var(--success-bg)]' : 'bg-[var(--surface-card)]'} hover:border-[var(--brand-primary)] ${
         archived ? 'opacity-60' : ''
       } ${tagEditorOpen ? 'z-40' : ''}`}
     >
@@ -620,11 +733,11 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
       className="w-full text-left bg-transparent border-none cursor-pointer px-3 py-2 rounded-lg"
     >
       <div className="flex items-center gap-2 mb-0.5">
-        {contactSent
-          ? <ArrowUpRight size={12} weight="bold" className="text-[var(--brand-primary)]" />
-          : <ArrowDownLeft size={12} weight="bold" className="text-[var(--text-secondary)]" />}
+        {incoming
+          ? <ArrowDownLeft size={12} weight="bold" className="text-[var(--brand-primary)]" />
+          : <ArrowUpRight size={12} weight="bold" className="text-[var(--text-secondary)]" />}
         <span className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          {contactSent ? 'Sent' : 'Received'}
+          {incoming ? 'Received' : 'Sent'}
         </span>
         <span className="text-[10.5px] text-[var(--text-tertiary)]">· {when}</span>
         {isNew && (
@@ -639,7 +752,7 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
         )}
         {unread && (
           <span
-            className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--brand-primary)] text-white"
+            className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--success)] text-white"
             title="You haven't opened this email yet"
             aria-label="Unread email"
           >
@@ -679,14 +792,14 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
             <Paperclip size={8} weight="bold" /> {attachments.length}
           </span>
         )}
-        {/* Open/click pixels only fire on emails the user sent — i.e.
-            from contact's POV, the messages they RECEIVED. So !contactSent. */}
-        {!contactSent && (row.openCount ?? 0) > 0 && (
+        {/* Open/click tracking pixels only fire on emails the user
+            sent — i.e. outgoing, i.e. !incoming. */}
+        {!incoming && (row.openCount ?? 0) > 0 && (
           <span className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--success-bg,#e7f5ec)] text-[var(--success,#1f7a3a)] border border-[var(--success,#1f7a3a)]">
             <Eye size={8} weight="fill" /> Opened {row.openCount! > 1 ? `${row.openCount}×` : ''}
           </span>
         )}
-        {!contactSent && (row.clickCount ?? 0) > 0 && (
+        {!incoming && (row.clickCount ?? 0) > 0 && (
           <span className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--brand-bg)] text-[var(--brand-primary)] border border-[var(--brand-primary)]">
             <CursorClick size={8} weight="fill" /> {row.clickCount}× click
           </span>

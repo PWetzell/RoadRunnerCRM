@@ -299,14 +299,37 @@ export async function GET(
     }
   }
 
+  const userEmailLower = (user.email || '').toLowerCase();
   const emails = filtered
     .map((row) => {
-      const sent = Array.isArray(row.label_ids) && row.label_ids.includes('SENT');
+      // Direction logic — receiver-perspective:
+      //   • If the user's address is in to_emails / cc_emails / bcc_emails
+      //     → "Received" (the user is a recipient)
+      //   • Otherwise (user is only the sender) → "Sent"
+      //
+      // This matches Paul's mental model: "if I'm in the To field, I
+      // received it; if I'm not, I sent it." Handles self-sends
+      // correctly — when Paul sends from his own account TO himself
+      // (test emails), the message appears as RECEIVED on the
+      // contact's timeline because the user is a recipient. Handles
+      // sends from secondary accounts correctly too — if from another
+      // mailbox to this one, the user is a recipient → RECEIVED.
+      //
+      // Previous attempts used Gmail's SENT label or `from_email ===
+      // user.email`. Both labeled self-sends as "Sent," which Paul
+      // flagged repeatedly on 2026-04-27 as wrong for his use case.
+      const userInTo = (row.to_emails || []).some(
+        (e) => (e || '').toLowerCase() === userEmailLower,
+      );
+      const userInCc = (row.cc_emails || []).some(
+        (e) => (e || '').toLowerCase() === userEmailLower,
+      );
+      const userIsRecipient = !!userEmailLower && (userInTo || userInCc);
       let direction: 'from' | 'to' | 'cc' | 'bcc';
-      if (sent) {
-        direction = emailParam && row.cc_emails?.includes(emailParam) ? 'cc' : 'to';
-      } else {
+      if (userIsRecipient) {
         direction = 'from';
+      } else {
+        direction = emailParam && row.cc_emails?.includes(emailParam) ? 'cc' : 'to';
       }
       const dto = toEmailDto(row, direction);
       // If the DB had nothing but Gmail did, splice in the live results.

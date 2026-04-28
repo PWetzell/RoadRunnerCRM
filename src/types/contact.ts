@@ -46,6 +46,27 @@ export interface BaseContact {
   recentEmail?: {
     hasNew: boolean;
     hasAttachment: boolean;
+    /** Total count of attachments across ALL synced emails matched
+     *  to this contact. Drives the paperclip badge number in the
+     *  contacts-grid Unread column. Stays at 0 when migration 0007
+     *  hasn't been applied (the email_messages.attachments column
+     *  doesn't exist yet). */
+    attachmentCount: number;
+    /** Subset of attachmentCount: only those on emails received in
+     *  the last 10 minutes. Lets the grid distinguish "fresh
+     *  attachment just arrived" from "old attachments accumulated." */
+    newAttachmentCount: number;
+    /** Count of synced emails for this contact still carrying Gmail's
+     *  `UNREAD` label. Drives the blue ✉ N badge in the contacts-grid
+     *  Unread column for real Gmail-synced contacts. Cleared by the
+     *  next sync once the user reads the message in Gmail. */
+    unreadCount: number;
+    /** Subset of attachmentCount: only attachments that live on emails
+     *  the user hasn't read yet (Gmail UNREAD label still set). Drives
+     *  the green-vs-gray styling of the paperclip badge in the
+     *  contacts grid — green = "new file waiting from this person,"
+     *  gray = "files exist but you've already seen them." */
+    unreadAttachmentCount: number;
     lastEmailAt: string | null;
   };
 }

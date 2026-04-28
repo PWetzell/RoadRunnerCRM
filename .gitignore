@@ -52,9 +52,12 @@ Thumbs.db
 Desktop.ini
 
 # Binary design files — too heavy for a source repo, users don't need them to
-# run the app. The PNG exports in `ai UI/` stay committed for case-study use.
+# run the app.
 *.fig
 *.sketch
+
+# Local design references / screenshots — stay on disk, not in source control.
+/ai UI/
 
 # Docx transcripts from earlier sessions (kept as .md equivalents)
 *.docx

@@ -827,3 +827,212 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   font-style: italic;
   padding: 6pt 0;
 }
+
+/* =====================================================================
+   BULK EMAIL — Page-level micro-interactions
+   These are scoped utilities used by /bulk: panel slide, backdrop fade,
+   stat-card stagger, card hover lifts, attachment zoom, recipient row
+   stagger, etc. All animations honor `prefers-reduced-motion: reduce`.
+   ===================================================================== */
+
+/* Backdrop fade for the modal-style detail panel */
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-backdrop-fade {
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+/* Slide-in side panel — overshoots ~12px then settles, gives the panel
+   a tactile "click into place" feel rather than a flat translate. */
+@keyframes panelSlideIn {
+  0%   { transform: translateX(105%); opacity: 0; }
+  60%  { transform: translateX(-8px); opacity: 1; }
+  85%  { transform: translateX(2px); }
+  100% { transform: translateX(0);    opacity: 1; }
+}
+.animate-panel-slide {
+  animation: panelSlideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Stat-card entrance — fades up with a tiny scale, staggered via delay
+   variable set per-card. Inspired by Linear's dashboard cards. */
+@keyframes statCardIn {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.animate-stat-card {
+  animation: statCardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--stat-delay, 0ms);
+}
+
+/* Batch-card entrance — same family, slightly slower and with no scale
+   so the longer feed list doesn't feel "jittery". */
+@keyframes batchCardIn {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-batch-card {
+  animation: batchCardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--card-delay, 0ms);
+}
+
+/* Hover lift — cards rise 2px and gain a subtle shadow. The shadow
+   token falls back to a soft default if the brand shadow isn't set. */
+.bulk-card-hover {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s ease,
+              border-color 0.2s ease;
+  will-change: transform;
+}
+.bulk-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -8px rgba(15, 23, 42, 0.18);
+}
+.bulk-card-hover:active {
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+/* Recipient-row stagger inside the detail panel — slides each row in
+   from the right by 8px after the panel itself has landed. */
+@keyframes rowSlideInPanel {
+  0%   { opacity: 0; transform: translateX(8px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.animate-recipient-row {
+  animation: rowSlideInPanel 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--row-delay, 0ms);
+}
+
+/* Delivery progress bar — width grows from 0 to its final percentage.
+   The fill segments inherit `--bar-fill-target-{sent,failed}` set via
+   inline style so each bar can animate to a different end-state. */
+@keyframes deliverySentFill {
+  from { width: 0; }
+  to   { width: var(--bar-sent, 0%); }
+}
+@keyframes deliveryFailedFill {
+  from { width: 0; }
+  to   { width: var(--bar-failed, 0%); }
+}
+.animate-delivery-sent {
+  animation: deliverySentFill 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+.animate-delivery-failed {
+  animation: deliveryFailedFill 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 220ms;
+}
+
+/* Attachment thumbnail — gentle zoom on hover, harder zoom + brand
+   border on focus. Image inside scales separately for a subtle
+   parallax-like depth effect. */
+.attachment-thumb {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
+  will-change: transform;
+}
+.attachment-thumb:hover {
+  transform: scale(1.04) rotate(-0.5deg);
+  box-shadow: 0 8px 22px -6px rgba(15, 23, 42, 0.22);
+}
+.attachment-thumb:hover img {
+  transform: scale(1.06);
+}
+.attachment-thumb img {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Lightbox — fullscreen image preview when an attachment thumb is
+   clicked. Backdrop fades and the image zooms from a small scale. */
+@keyframes lightboxZoomIn {
+  0%   { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-lightbox-image {
+  animation: lightboxZoomIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* CTA button — press feedback via scale-down + brightness tap. Used
+   on the primary "+ New bulk send" and the AI generate button. */
+.cta-press {
+  transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.12s ease;
+  will-change: transform;
+}
+.cta-press:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 4px 14px -4px rgba(25, 85, 166, 0.45);
+}
+.cta-press:active {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+}
+
+/* Sort dropdown caret — when the user changes sort, the result count
+   chip pulses briefly to confirm the change took effect. */
+@keyframes resultPulse {
+  0%   { color: var(--brand-primary); transform: scale(1.06); }
+  100% { color: var(--text-tertiary); transform: scale(1); }
+}
+.animate-result-pulse {
+  animation: resultPulse 0.5s ease-out;
+}
+
+/* Subtle gentle float for empty-state icons — just enough motion to
+   make an empty page feel alive without distracting. */
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.animate-gentle-float {
+  animation: gentleFloat 3.6s ease-in-out infinite;
+}
+
+/* Numeric count-up — paired with a JS hook that ticks the value;
+   this just adds a subtle text shimmer while the number is changing. */
+@keyframes countUpShimmer {
+  0%   { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+.animate-count-up {
+  animation: countUpShimmer 0.5s ease-out;
+}
+
+/* Trash button reveal — fades in with a tiny rotation on hover so the
+   icon doesn't feel like it just popped into existence. */
+@keyframes trashWiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-8deg); }
+  75%      { transform: rotate(8deg); }
+}
+.bulk-card-hover .trash-on-hover:hover {
+  animation: trashWiggle 0.4s ease-in-out;
+}
+
+/* Honor the user's reduced-motion preference — disables all the
+   bulk-page motion utilities so animations don't trigger vestibular
+   issues. (Static instant-state still renders correctly.) */
+@media (prefers-reduced-motion: reduce) {
+  .animate-backdrop-fade,
+  .animate-panel-slide,
+  .animate-stat-card,
+  .animate-batch-card,
+  .animate-recipient-row,
+  .animate-delivery-sent,
+  .animate-delivery-failed,
+  .animate-lightbox-image,
+  .animate-result-pulse,
+  .animate-gentle-float,
+  .animate-count-up {
+    animation: none !important;
+  }
+  .bulk-card-hover:hover,
+  .attachment-thumb:hover,
+  .cta-press:hover,
+  .cta-press:active {
+    transform: none !important;
+  }
+}

@@ -21,6 +21,7 @@ import {
 import { useGridLayoutStore } from '@/stores/grid-layout-store';
 import { useUserStore } from '@/stores/user-store';
 import { densityStyle, DENSITY_LABELS, DENSITY_HINTS, GridDensity } from '@/lib/grid-density';
+import SearchInput from '@/components/ui/SearchInput';
 
 export type { ColumnDef, SortingState } from '@tanstack/react-table';
 
@@ -125,7 +126,27 @@ function SortableHeader({ header, columnWidths, onResize, onToggleGroup, pinStyl
           {...attributes}
           {...listeners}
           className={`flex items-center gap-1 cursor-grab min-w-0 ${canSort ? 'hover:text-[var(--text-primary)]' : ''}`}
-          onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+          // If the column provides a custom `onSortClick` in its
+          // metadata, use that instead of TanStack's default
+          // toggleSorting handler. Lets the column manage its own
+          // multi-state sort cycle (e.g. the contacts grid 📎 column
+          // which has 3 modes — greens-first / grays-first /
+          // em-dashes-first — that don't fit asc/desc). The custom
+          // handler receives the column object so it can call
+          // column.toggleSorting(true) itself to keep the down-arrow
+          // indicator rendering.
+          onClick={
+            canSort
+              ? (e) => {
+                  const meta = header.column.columnDef.meta as { onSortClick?: (column: typeof header.column) => void } | undefined;
+                  if (meta?.onSortClick) {
+                    meta.onSortClick(header.column);
+                  } else {
+                    header.column.getToggleSortingHandler()?.(e);
+                  }
+                }
+              : undefined
+          }
         >
           <DotsSixVertical
             size={12}
@@ -181,16 +202,18 @@ function SortableHeader({ header, columnWidths, onResize, onToggleGroup, pinStyl
         )}
       </div>
 
-      {/* Inline column filter */}
+      {/* Inline column filter — uses the shared SearchInput so filtering
+           a column has the same clear-X affordance as page-level search. */}
       {isFiltering && (
-        <div className="mt-1.5">
-          <input
+        <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+          <SearchInput
             value={(header.column.getFilterValue() as string) || ''}
-            onChange={(e) => header.column.setFilterValue(e.target.value || undefined)}
+            onChange={(next) => header.column.setFilterValue(next || undefined)}
             placeholder="Filter..."
-            className="w-full h-6 px-2 text-[10px] bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] font-normal normal-case tracking-normal"
+            ariaLabel={`Filter ${typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : 'column'}`}
+            size="xs"
             autoFocus
-            onClick={(e) => e.stopPropagation()}
+            stopKeyPropagation
           />
         </div>
       )}
@@ -440,6 +463,14 @@ export default function SharedDataGrid<T>({
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     onColumnPinningChange: setColumnPinning,
+    // Disable the 3rd-click "no sort" state across every grid using
+    // this shared component. Without this, TanStack's default sort-
+    // toggle cycle is desc → asc → no-sort, and on the 3rd click the
+    // column falls back to the data array's natural (often mixed)
+    // order — which Paul hit on 2026-04-28 and read as "sort broken
+    // on the third click." With removal disabled, click cycles
+    // cleanly between desc and asc forever.
+    enableSortingRemoval: false,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

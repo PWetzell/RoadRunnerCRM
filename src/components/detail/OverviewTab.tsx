@@ -743,7 +743,7 @@ export default function OverviewTab({ contact: c, onNavigateToDetails }: Overvie
               {unreadEmailCount > 0 && (
                 <span
                   aria-label={`${unreadEmailCount} unread email${unreadEmailCount === 1 ? '' : 's'}`}
-                  className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded-full bg-[var(--brand-primary)] text-white text-[10px] font-bold leading-none"
+                  className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded-full bg-[var(--success)] text-white text-[10px] font-bold leading-none"
                 >
                   <span className="w-1 h-1 rounded-full bg-white" />
                   {unreadEmailCount}

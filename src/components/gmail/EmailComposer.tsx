@@ -9,6 +9,14 @@ import {
 import { useToastStore } from '@/stores/toast-store';
 import { splitDraft } from '@/lib/ai/email-prompts';
 import { useDocumentStore } from '@/stores/document-store';
+import { useUserStore } from '@/stores/user-store';
+import { useContactStore } from '@/stores/contact-store';
+import {
+  useTemplateStore,
+  applyTemplateVariables,
+  buildTemplateContext,
+  type EmailTemplate,
+} from '@/stores/template-store';
 import { formatFileSize, getExtColor, type CrmDocument } from '@/types/document';
 
 /**
@@ -75,6 +83,47 @@ export default function EmailComposer({
   const [attachedDocs, setAttachedDocs] = useState<CrmDocument[]>([]);
   const [attachPickerOpen, setAttachPickerOpen] = useState(false);
   const attachButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Template-picker state. Templates live in their own Zustand store
+  // (persisted to localStorage so user-saved drafts survive reloads),
+  // and the picker is an inline panel above the body field — same
+  // pattern as the AI Draft panel right below it. Variables get
+  // substituted at apply-time using the current contact + signed-in
+  // user, so the user sees the merged result immediately rather than
+  // {{firstName}} placeholders mid-edit.
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const templates = useTemplateStore((s) => s.templates);
+  const seedDefaultsIfEmpty = useTemplateStore((s) => s.seedDefaultsIfEmpty);
+  const trackTemplateUsage = useTemplateStore((s) => s.trackUsage);
+  const user = useUserStore((s) => s.user);
+  const allContacts = useContactStore((s) => s.contacts);
+  // Seed once per app lifetime when the composer first opens — avoids
+  // shipping defaults that overwrite user-edited templates on reload.
+  useEffect(() => {
+    if (open) seedDefaultsIfEmpty();
+  }, [open, seedDefaultsIfEmpty]);
+
+  const applyTemplate = (tmpl: EmailTemplate) => {
+    const c = contactId ? allContacts.find((x) => x.id === contactId) : null;
+    const ctx = buildTemplateContext({
+      contactName: c?.name ?? recipientName,
+      contactType: c?.type,
+      orgName: c && 'orgName' in c ? c.orgName : undefined,
+      title: c && 'title' in c ? c.title : undefined,
+      email: to || initialTo,
+      userName: user?.name,
+      userEmail: user?.email,
+    });
+    setSubject(applyTemplateVariables(tmpl.subject, ctx));
+    setBody(applyTemplateVariables(tmpl.body, ctx));
+    setTemplatePickerOpen(false);
+    trackTemplateUsage(tmpl.id);
+    pushToast({
+      severity: 'success',
+      title: `Template "${tmpl.name}" applied`,
+      duration: 1800,
+    });
+  };
 
   useEffect(() => {
     if (open) {
@@ -360,6 +409,65 @@ export default function EmailComposer({
               />
             </FieldRow>
 
+            {templatePickerOpen && (
+              <div className="px-3.5 py-2.5 border-b border-[var(--border)] bg-[var(--surface-raised)]">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <FileText size={12} weight="fill" className="text-[var(--text-secondary)]" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Templates</span>
+                  <button
+                    onClick={() => setTemplatePickerOpen(false)}
+                    className="ml-auto text-[10.5px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] bg-transparent border-none cursor-pointer"
+                  >
+                    Hide
+                  </button>
+                </div>
+                {templates.length === 0 ? (
+                  <p className="text-[11.5px] text-[var(--text-tertiary)] py-1">
+                    No templates yet. Default templates will load on first use.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-1 max-h-[180px] overflow-y-auto">
+                    {/* Sort by usageCount desc — most-used templates surface
+                        to the top. Same UX as HubSpot/Outreach. */}
+                    {[...templates]
+                      .sort((a, b) => {
+                        const ua = a.usageCount ?? 0;
+                        const ub = b.usageCount ?? 0;
+                        if (ub !== ua) return ub - ua;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => applyTemplate(t)}
+                        title={`Apply "${t.name}" — replaces current subject and body${(t.usageCount ?? 0) > 0 ? ` · used ${t.usageCount} time${t.usageCount === 1 ? '' : 's'}` : ''}`}
+                        className="text-left px-2 py-1.5 rounded-md bg-[var(--surface-card)] border border-[var(--border)] hover:border-[var(--brand-primary)] hover:bg-[var(--brand-bg)] cursor-pointer transition-colors flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[12px] font-bold text-[var(--text-primary)] truncate">
+                            {t.name}
+                          </div>
+                          <div className="text-[10.5px] text-[var(--text-tertiary)] truncate">
+                            {t.subject || '(no subject)'}
+                          </div>
+                        </div>
+                        {(t.usageCount ?? 0) > 0 && (
+                          <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9.5px] font-bold bg-[var(--brand-bg)] text-[var(--brand-primary)] border border-[var(--brand-primary)]">
+                            {t.usageCount}×
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-[var(--text-tertiary)] mt-1.5 italic">
+                  Variables like <code className="font-mono">{'{{firstName}}'}</code>,
+                  <code className="font-mono"> {'{{company}}'}</code>,
+                  <code className="font-mono"> {'{{senderName}}'}</code> auto-fill from the contact and your account.
+                </p>
+              </div>
+            )}
+
             {aiOpen && (
               <div className="px-3.5 py-2.5 border-b border-[var(--border)] bg-[var(--brand-bg)]">
                 <div className="flex items-center gap-1.5 mb-1.5">
@@ -465,7 +573,24 @@ export default function EmailComposer({
                 )}
               </button>
               <button
-                onClick={() => setAiOpen(true)}
+                onClick={() => { setTemplatePickerOpen((v) => !v); setAiOpen(false); }}
+                title="Insert a saved template (variables auto-fill)"
+                aria-expanded={templatePickerOpen}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11.5px] font-bold bg-transparent border cursor-pointer hover:bg-[var(--brand-bg)] ${
+                  templatePickerOpen
+                    ? 'text-[var(--brand-primary)] border-[var(--brand-primary)]'
+                    : 'text-[var(--text-secondary)] border-[var(--border)]'
+                }`}
+              >
+                <FileText size={11} weight="bold" /> Templates
+                {templates.length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[9.5px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]">
+                    {templates.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => { setAiOpen(true); setTemplatePickerOpen(false); }}
                 title={contactId ? 'Draft with AI' : 'Open from a contact to use AI'}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11.5px] font-bold bg-transparent text-[var(--brand-primary)] border border-[var(--brand-primary)] cursor-pointer hover:bg-[var(--brand-bg)]"
               >

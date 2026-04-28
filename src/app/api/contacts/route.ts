@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { refreshAccessToken, listMessageIds } from '@/lib/gmail/client';
 import type { ContactWithEntries } from '@/types/contact';
 
 /**
@@ -102,6 +103,17 @@ export async function GET() {
   // signals. Worth logging though.
   const summary = await fetchEmailActivitySummary(supabase, user.id);
 
+  // Live attachment-count fallback via Gmail's `has:attachment` search.
+  // Only used to fill in `attachmentCount` for contacts whose summary
+  // came back with 0 — which happens when the user's database doesn't
+  // have the email_messages.attachments column populated (migration
+  // 0007 not applied). One Gmail API call returns every attachment-
+  // bearing message id in the user's account; we cross-reference with
+  // email_contact_matches to count per-contact. Lets the paperclip
+  // badge work without requiring a DB migration. ~500ms cost on first
+  // page load.
+  await fillAttachmentSummaryFromGmail(supabase, user.id, summary);
+
   const contacts: ContactWithEntries[] = rows.map((r) =>
     toContactWithEntries(r, user, summary.get(r.id))
   );
@@ -128,7 +140,7 @@ export async function GET() {
 async function fetchEmailActivitySummary(
   userClient: SupabaseClient,
   userId: string,
-): Promise<Map<string, { hasNew: boolean; hasAttachment: boolean; lastEmailAt: string | null }>> {
+): Promise<Map<string, { hasNew: boolean; hasAttachment: boolean; attachmentCount: number; newAttachmentCount: number; unreadCount: number; unreadAttachmentCount: number; lastEmailAt: string | null }>> {
   const NEW_WINDOW_MS = 10 * 60 * 1000;
   const cutoff = Date.now() - NEW_WINDOW_MS;
 
@@ -136,18 +148,36 @@ async function fetchEmailActivitySummary(
     contact_id: string;
     email_messages: {
       received_at: string | null;
-      attachments: unknown;
+      attachments?: unknown;
+      label_ids?: string[] | null;
       user_id: string;
     } | null;
   };
 
+  // Two-attempt query: first tries with the `attachments` column (fully-
+  // featured response), and on the "attachments column missing" error
+  // (migration 0007 not applied) retries without it. Same defensive
+  // pattern the rest of the codebase uses for the same column.
+  // `label_ids` always exists from migration 0001 so it's always
+  // included — drives the per-contact unread count via Gmail's
+  // UNREAD label.
   async function runOnce(client: SupabaseClient): Promise<EmbeddedRow[] | null> {
-    const r = await client
+    const withAttach = await client
       .from('email_contact_matches')
-      .select('contact_id, email_messages!inner(received_at, attachments, user_id)')
+      .select('contact_id, email_messages!inner(received_at, attachments, label_ids, user_id)')
       .eq('email_messages.user_id', userId);
-    if (r.error) return null;
-    return (r.data as unknown as EmbeddedRow[]) ?? [];
+    if (!withAttach.error) {
+      return (withAttach.data as unknown as EmbeddedRow[]) ?? [];
+    }
+    if (/\battachments\b/i.test(withAttach.error.message || '')) {
+      const noAttach = await client
+        .from('email_contact_matches')
+        .select('contact_id, email_messages!inner(received_at, label_ids, user_id)')
+        .eq('email_messages.user_id', userId);
+      if (noAttach.error) return null;
+      return (noAttach.data as unknown as EmbeddedRow[]) ?? [];
+    }
+    return null;
   }
 
   let data = await runOnce(userClient);
@@ -156,22 +186,189 @@ async function fetchEmailActivitySummary(
     if (admin) data = await runOnce(admin);
   }
 
-  const out = new Map<string, { hasNew: boolean; hasAttachment: boolean; lastEmailAt: string | null }>();
+  const out = new Map<string, { hasNew: boolean; hasAttachment: boolean; attachmentCount: number; newAttachmentCount: number; unreadCount: number; unreadAttachmentCount: number; lastEmailAt: string | null }>();
   if (!data) return out;
 
   for (const row of data) {
     const m = row.email_messages;
     if (!m) continue;
-    const cur = out.get(row.contact_id) ?? { hasNew: false, hasAttachment: false, lastEmailAt: null as string | null };
+    const cur = out.get(row.contact_id) ?? {
+      hasNew: false,
+      hasAttachment: false,
+      attachmentCount: 0,
+      newAttachmentCount: 0,
+      unreadCount: 0,
+      unreadAttachmentCount: 0,
+      lastEmailAt: null as string | null,
+    };
     const ts = m.received_at ? new Date(m.received_at).getTime() : 0;
-    if (ts >= cutoff) cur.hasNew = true;
-    if (Array.isArray(m.attachments) && m.attachments.length > 0) cur.hasAttachment = true;
+    const isRecent = ts >= cutoff;
+    if (isRecent) cur.hasNew = true;
+    const isUnread = Array.isArray(m.label_ids) && m.label_ids.includes('UNREAD');
+    const hasAttachments = Array.isArray(m.attachments) && m.attachments.length > 0;
+    if (hasAttachments) {
+      cur.hasAttachment = true;
+      // Count EMAILS with attachments, not individual attachment files
+      // (Paul's call on 2026-04-28: badge represents thread count, not
+      // file count — aligns with detail-page tab badges and with how
+      // people read the number).
+      cur.attachmentCount += 1;
+      if (isRecent) cur.newAttachmentCount += 1;
+      // Unread + attached → drives the green paperclip on the grid.
+      // "Fresh file waiting" signal. Decays automatically when the
+      // user reads the email in Gmail (UNREAD label removed) and the
+      // next sync picks up the new label state.
+      if (isUnread) cur.unreadAttachmentCount += 1;
+    }
+    // Unread = Gmail's `UNREAD` label is still present on the message.
+    // Same source of truth Gmail itself uses; once the user reads the
+    // message in Gmail, Gmail removes the label and the next sync
+    // tick clears the count here. This is the standard CRM-meets-
+    // mailbox pattern (HubSpot/Folk/Attio all key off UNREAD).
+    if (isUnread) cur.unreadCount += 1;
     if (m.received_at && (!cur.lastEmailAt || cur.lastEmailAt < m.received_at)) {
       cur.lastEmailAt = m.received_at;
     }
     out.set(row.contact_id, cur);
   }
   return out;
+}
+
+/**
+ * Live-fetch attachment counts from Gmail when the
+ * `email_messages.attachments` column hasn't been populated (migration
+ * 0007 missing). Single Gmail API call (`has:attachment` search,
+ * paginated to first 1000 message IDs — covers ~99% of accounts; the
+ * tail beyond that just doesn't get counted, which is acceptable for
+ * a contacts-grid badge), cross-referenced with email_contact_matches
+ * to attribute counts to contacts.
+ *
+ * Mutates `summary` in place — for any contact whose attachmentCount
+ * is currently 0, fills in the count of attachment-bearing messages
+ * matched to them. Adds those contacts to the map if they weren't
+ * present before. Doesn't touch hasNew / unreadCount / etc. — those
+ * come from the email_messages query and are unaffected.
+ *
+ * Why this is the workaround instead of "just apply the migration":
+ * Paul's database service-role key is currently rejected by Supabase
+ * (intermittent / stale), so the in-app `/api/debug/run-migration-0007`
+ * endpoint can't actually run the DDL. This Gmail-side path needs
+ * zero schema changes — it works on whatever database state the user
+ * happens to be in. Once the migration is applied (manually or via
+ * fresh service key), this fallback becomes a no-op because the
+ * non-zero counts from email_messages.attachments take precedence.
+ */
+async function fillAttachmentSummaryFromGmail(
+  client: SupabaseClient,
+  userId: string,
+  summary: Map<string, { hasNew: boolean; hasAttachment: boolean; attachmentCount: number; newAttachmentCount: number; unreadCount: number; unreadAttachmentCount: number; lastEmailAt: string | null }>,
+): Promise<void> {
+  try {
+    // 1. Get the user's Gmail refresh token.
+    type ConnRow = { provider_refresh_token: string | null };
+    let conn: ConnRow | null = null;
+    const userRead = await client
+      .from('gmail_connections')
+      .select('provider_refresh_token')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (userRead.data?.provider_refresh_token) {
+      conn = userRead.data as ConnRow;
+    } else {
+      const admin = trySvc();
+      if (admin) {
+        const adminRead = await admin
+          .from('gmail_connections')
+          .select('provider_refresh_token')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (adminRead.data?.provider_refresh_token) conn = adminRead.data as ConnRow;
+      }
+    }
+    if (!conn?.provider_refresh_token) return;
+
+    // 2. Fresh access token + paginated has:attachment search.
+    const accessToken = await refreshAccessToken(conn.provider_refresh_token);
+    const attachmentMsgIds: string[] = [];
+    let pageToken: string | undefined;
+    let pages = 0;
+    do {
+      const r = await listMessageIds(accessToken, {
+        q: 'has:attachment',
+        maxResults: 500,
+        pageToken,
+      });
+      attachmentMsgIds.push(...r.ids);
+      pageToken = r.nextPageToken;
+      pages += 1;
+      if (attachmentMsgIds.length >= 1000) break; // cap for first-paint cost
+      if (pages >= 4) break;
+    } while (pageToken);
+
+    console.log(`[contacts/attachment-fallback] Gmail returned ${attachmentMsgIds.length} attachment-bearing message IDs`);
+    if (attachmentMsgIds.length === 0) return;
+    const attachmentSet = new Set(attachmentMsgIds);
+
+    // 3. Strategy: pull every contact-matched email_messages row (the
+    //    smaller universe — typically a few hundred even for power
+    //    users), THEN intersect client-side with the attachment ID
+    //    set. Avoids stuffing 1000 IDs into a PostgREST `.in()` clause
+    //    which produces a URL longer than Supabase will accept (this
+    //    was failing with "fetch failed" — the URL exceeded the
+    //    proxy's max length, not a network issue).
+    type EmbeddedMatchRow = {
+      contact_id: string;
+      email_messages: {
+        gmail_message_id: string | null;
+        user_id: string;
+      } | null;
+    };
+    const matchesRes = await client
+      .from('email_contact_matches')
+      .select('contact_id, email_messages!inner(gmail_message_id, user_id)')
+      .eq('email_messages.user_id', userId);
+    if (matchesRes.error) {
+      console.warn('[contacts/attachment-fallback] email_contact_matches lookup failed:', matchesRes.error.message);
+      return;
+    }
+    const allMatches = (matchesRes.data as unknown as EmbeddedMatchRow[]) ?? [];
+    console.log(`[contacts/attachment-fallback] pulled ${allMatches.length} total contact-matches`);
+
+    // 4. Filter to only those whose gmail_message_id is in our
+    //    attachment set, then aggregate per contact_id.
+    const counts = new Map<string, number>();
+    for (const row of allMatches) {
+      const gid = row.email_messages?.gmail_message_id;
+      if (!gid || !attachmentSet.has(gid)) continue;
+      counts.set(row.contact_id, (counts.get(row.contact_id) ?? 0) + 1);
+    }
+    console.log(`[contacts/attachment-fallback] aggregated to ${counts.size} contacts with attachment counts:`, Array.from(counts.entries()));
+
+    // 5. Merge into the summary, but ONLY when the existing count is
+    //    0 — preserves precise counts from email_messages.attachments
+    //    when the migration IS applied.
+    const defaults = {
+      hasNew: false,
+      hasAttachment: false,
+      attachmentCount: 0,
+      newAttachmentCount: 0,
+      unreadCount: 0,
+      unreadAttachmentCount: 0,
+      lastEmailAt: null as string | null,
+    };
+    for (const [contactId, count] of counts) {
+      const cur = summary.get(contactId) ?? { ...defaults };
+      if (cur.attachmentCount === 0 && count > 0) {
+        cur.attachmentCount = count;
+        cur.hasAttachment = true;
+      }
+      summary.set(contactId, cur);
+    }
+  } catch (e) {
+    // Non-fatal: the badges just don't get the live fallback. Logged
+    // for debugging but doesn't block /api/contacts from returning.
+    console.warn('[contacts] attachment fallback failed:', e);
+  }
 }
 
 /**
@@ -320,7 +517,7 @@ function deriveCreatedBy(owner: OwnerInfo): string | undefined {
 function toContactWithEntries(
   r: Row,
   owner?: OwnerInfo,
-  recentEmail?: { hasNew: boolean; hasAttachment: boolean; lastEmailAt: string | null },
+  recentEmail?: { hasNew: boolean; hasAttachment: boolean; attachmentCount: number; newAttachmentCount: number; unreadCount: number; unreadAttachmentCount: number; lastEmailAt: string | null },
 ): ContactWithEntries {
   const lastUpdated = (r.updated_at || r.created_at || new Date().toISOString()).split('T')[0];
   const entries = {

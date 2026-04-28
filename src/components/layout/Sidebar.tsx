@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users, Buildings, ChartBar, ClockCounterClockwise,
   ShieldCheck, Gear, House, CurrencyDollar, UsersFour,
-  Files, ChartPieSlice, UserCircleGear, CaretLeft, List, Warning, Clock, Bookmark,
+  Files, ChartPieSlice, UserCircleGear, CaretLeft, List, Warning, Clock, Bookmark, ListNumbers, PaperPlaneTilt,
+  EnvelopeSimple, CaretDown, CaretRight,
 } from '@phosphor-icons/react';
 import { useContactStore } from '@/stores/contact-store';
 import { useSalesStore } from '@/stores/sales-store';
@@ -17,14 +18,36 @@ import { LIST_ENTITY_META } from '@/types/list';
 import PinListsDropdown from '@/components/lists/PinListsDropdown';
 import { LABELS } from '@/lib/vertical/hr-staffing';
 
-const NAV_ITEMS = [
-  { href: '/dashboard', icon: House, label: 'Dashboard' },
-  { href: '/contacts', icon: Users, label: 'Contacts', badgeKey: 'contacts' as const },
-  { href: '/sales', icon: CurrencyDollar, label: LABELS.navSales, badgeKey: 'sales' as const },
-  { href: '/recruiting', icon: UsersFour, label: 'Recruiting', badgeKey: 'recruiting' as const },
-  { href: '/documents', icon: Files, label: 'Documents', badgeKey: 'documents' as const },
-  { href: '/reporting', icon: ChartPieSlice, label: 'Reporting' },
-  { href: '/admin', icon: UserCircleGear, label: 'Admin' },
+/**
+ * Top-level nav. The `Manage Emails` entry is a parent that expands to
+ * show its two children (Bulk + Sequencing). Keeping bulk + sequences
+ * grouped under one heading mirrors HubSpot's `Marketing > Email`
+ * sub-routes and Outreach's `Sequences + Sends` cluster — both surface
+ * outbound-email actions together so users learn one mental model.
+ */
+type NavChild = { href: string; icon: typeof House; label: string };
+type NavItem =
+  | { kind: 'link'; href: string; icon: typeof House; label: string; badgeKey?: 'contacts' | 'sales' | 'recruiting' | 'documents' }
+  | { kind: 'group'; id: string; icon: typeof House; label: string; children: NavChild[] };
+
+const NAV_ITEMS: NavItem[] = [
+  { kind: 'link', href: '/dashboard', icon: House, label: 'Dashboard' },
+  { kind: 'link', href: '/contacts', icon: Users, label: 'Contacts', badgeKey: 'contacts' },
+  {
+    kind: 'group',
+    id: 'manage-emails',
+    icon: EnvelopeSimple,
+    label: 'Manage Emails',
+    children: [
+      { href: '/bulk', icon: PaperPlaneTilt, label: 'Bulk' },
+      { href: '/sequences', icon: ListNumbers, label: 'Sequencing' },
+    ],
+  },
+  { kind: 'link', href: '/sales', icon: CurrencyDollar, label: LABELS.navSales, badgeKey: 'sales' },
+  { kind: 'link', href: '/recruiting', icon: UsersFour, label: 'Recruiting', badgeKey: 'recruiting' },
+  { kind: 'link', href: '/documents', icon: Files, label: 'Documents', badgeKey: 'documents' },
+  { kind: 'link', href: '/reporting', icon: ChartPieSlice, label: 'Reporting' },
+  { kind: 'link', href: '/admin', icon: UserCircleGear, label: 'Admin' },
 ];
 
 /** 14 days in ms — deals idle longer than this are "stalled" */
@@ -111,6 +134,16 @@ export default function Sidebar() {
       {/* Navigation */}
       <div data-tour="sidebar-nav" className={`flex flex-col gap-0.5 flex-1 overflow-y-auto ${collapsed ? 'px-1 py-2' : 'px-2 py-2'}`}>
         {NAV_ITEMS.map((item) => {
+          if (item.kind === 'group') {
+            return (
+              <NavGroup
+                key={item.id}
+                item={item}
+                collapsed={collapsed}
+                pathname={pathname ?? ''}
+              />
+            );
+          }
           const isActive = pathname?.startsWith(item.href);
           const Icon = item.icon;
           const badgeKey = item.badgeKey;
@@ -271,5 +304,135 @@ export default function Sidebar() {
         anchorRect={pinAnchor}
       />
     </aside>
+  );
+}
+
+/**
+ * Expandable nav group. Renders the parent row + indented children when
+ * open. Auto-opens when the user is on any child route so the active
+ * page is always visible. Mirrors HubSpot's left-nav expand pattern.
+ *
+ * Collapsed sidebar: parent shows just the icon, clicking it routes to
+ * the first child (so users on a 60px sidebar can still reach pages).
+ */
+
+function NavGroup({
+  item,
+  collapsed,
+  pathname,
+}: {
+  item: Extract<NavItem, { kind: 'group' }>;
+  collapsed: boolean;
+  pathname: string;
+}) {
+  const childActive = item.children.some((c) => pathname.startsWith(c.href));
+  const [open, setOpen] = useState<boolean>(childActive);
+
+  // Re-open the group when navigation lands on one of its children —
+  // covers both first-paint and runtime route changes (e.g. user clicks
+  // an in-page link that takes them to /sequences from /bulk).
+  // Doesn't auto-COLLAPSE on leave so the user's manual toggle sticks.
+  useEffect(() => {
+    if (childActive) setOpen(true);
+  }, [childActive]);
+
+  const Icon = item.icon;
+
+  if (collapsed) {
+    // Collapsed sidebar — render just the parent icon, link it to the
+    // first child so the section is still reachable. Active dot when
+    // any child is current.
+    const firstChild = item.children[0];
+    return (
+      <Link
+        href={firstChild.href}
+        title={item.label}
+        className="flex items-center justify-center px-0 py-2.5 rounded-[var(--radius-md)] no-underline transition-all duration-150 relative"
+        style={childActive
+          ? { background: '#1955A6', color: '#FFFFFF' }
+          : { color: 'var(--sidebar-text)' }
+        }
+        onMouseEnter={(e) => {
+          if (!childActive) {
+            e.currentTarget.style.background = 'var(--sidebar-hover)';
+            e.currentTarget.style.color = '#FFFFFF';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!childActive) {
+            e.currentTarget.style.background = '';
+            e.currentTarget.style.color = 'var(--sidebar-text)';
+          }
+        }}
+      >
+        <Icon size={20} weight={childActive ? 'fill' : 'regular'} style={childActive ? { color: '#FFFFFF' } : {}} />
+      </Link>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[var(--radius-md)] transition-all duration-150 bg-transparent border-none cursor-pointer"
+        style={childActive && !open
+          ? { color: '#FFFFFF' }
+          : { color: 'var(--sidebar-text)' }
+        }
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--sidebar-hover)';
+          e.currentTarget.style.color = '#FFFFFF';
+          const ic = e.currentTarget.querySelector('svg.group-icon') as unknown as HTMLElement;
+          if (ic) ic.style.color = '#FFFFFF';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = '';
+          e.currentTarget.style.color = childActive && !open ? '#FFFFFF' : 'var(--sidebar-text)';
+          const ic = e.currentTarget.querySelector('svg.group-icon') as unknown as HTMLElement;
+          if (ic) ic.style.color = '';
+        }}
+      >
+        <Icon size={20} weight={childActive ? 'fill' : 'regular'} className="group-icon flex-shrink-0" />
+        <span className="text-[13px] font-semibold flex-1 text-left">{item.label}</span>
+        {open
+          ? <CaretDown size={12} weight="bold" />
+          : <CaretRight size={12} weight="bold" />
+        }
+      </button>
+      {open && (
+        <div className="flex flex-col gap-0.5 pl-3 mt-0.5">
+          {item.children.map((child) => {
+            const ChildIcon = child.icon;
+            const childIsActive = pathname.startsWith(child.href);
+            return (
+              <Link
+                key={child.href}
+                href={child.href}
+                className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] no-underline transition-all duration-150"
+                style={childIsActive
+                  ? { background: '#1955A6', color: '#FFFFFF' }
+                  : { color: 'var(--sidebar-text)' }
+                }
+                onMouseEnter={(e) => {
+                  if (!childIsActive) {
+                    e.currentTarget.style.background = 'var(--sidebar-hover)';
+                    e.currentTarget.style.color = '#FFFFFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!childIsActive) {
+                    e.currentTarget.style.background = '';
+                    e.currentTarget.style.color = 'var(--sidebar-text)';
+                  }
+                }}
+              >
+                <ChildIcon size={16} weight={childIsActive ? 'fill' : 'regular'} className="flex-shrink-0" />
+                <span className="text-[12.5px] font-semibold">{child.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

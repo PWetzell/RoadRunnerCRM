@@ -1089,6 +1089,53 @@ export function hasSeedAttachmentForContact(contactId: string): boolean {
 }
 
 /**
+ * Counts the number of EMAILS this contact has that carry at least one
+ * attachment. Drives the gray paperclip badge in the contacts grid.
+ *
+ * Counts emails (messages), not individual attachments — Paul's call
+ * on 2026-04-28: an email with 3 files attached should count as 1,
+ * not 3, because the badge represents "how many email threads have
+ * files" not "how many individual files." Aligns with the detail-
+ * page tab badge which counts emails, not attachments.
+ */
+export function getSeedAttachmentCountForContact(contactId: string): number {
+  let total = 0;
+  for (const e of SEED_EMAILS) {
+    if (e.contactId === contactId && Array.isArray(e.attachments) && e.attachments.length > 0) {
+      total += 1;
+    }
+  }
+  return total;
+}
+
+/**
+ * Counts UNREAD emails (messages) for this contact that carry at
+ * least one attachment. Drives the green paperclip badge in the
+ * contacts grid — flags "you have new files waiting from this
+ * person." Same number you'd see in the green Emails-tab badge on
+ * the contact's detail page (when those unread emails happen to be
+ * the ones with attachments).
+ *
+ * Counts emails, not individual attachments — see
+ * `getSeedAttachmentCountForContact` rationale.
+ */
+export function getSeedUnreadAttachmentCountForContact(
+  contactId: string,
+  readOverrides: ReadonlySet<string>,
+): number {
+  let total = 0;
+  for (const e of SEED_EMAILS) {
+    if (e.contactId !== contactId) continue;
+    if (!Array.isArray(e.attachments) || e.attachments.length === 0) continue;
+    // Only count if the email is still unread (readAt null AND not in
+    // the user's read-override set).
+    const stillUnread = e.readAt == null && !readOverrides.has(e.id);
+    if (stillUnread) total += 1;
+  }
+  return total;
+}
+
+/**
  * `true` if this contact has any seed email received within the last
  * `withinMs` milliseconds. Same caveats as `hasSeedAttachmentForContact`
  * — seed-only signal until the API extension lands.

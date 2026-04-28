@@ -253,7 +253,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           // (Holly et al.) keep displaying "Created by Unknown" forever
           // because the stale local copy shadows the corrected cloud
           // value the API now provides.
-          const merged = body.contacts.map((cloud: { id: string; createdBy?: string; recentEmail?: { hasNew: boolean; hasAttachment: boolean; lastEmailAt: string | null } }) => {
+          const merged = body.contacts.map((cloud: { id: string; createdBy?: string; recentEmail?: { hasNew: boolean; hasAttachment: boolean; attachmentCount: number; newAttachmentCount: number; unreadCount: number; unreadAttachmentCount: number; lastEmailAt: string | null } }) => {
             const local = localById.get(cloud.id);
             if (!local) return cloud;
             return {
@@ -927,11 +927,52 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
               {/* ─── LOG IN ─── */}
               {mode === 'login' && (
                 <>
+                  {/* DEMO (top of stack) — most visitors come from
+                      Paul's portfolio and want a one-click look at the
+                      product, not a credentials prompt. Promoting the
+                      demo above the password form matches what
+                      Linear/Attio/Notion do on their try-it-now sites
+                      whenever the primary audience is evaluators
+                      rather than returning users. The button now uses
+                      the brand-primary fill (vs. the previous outlined
+                      tertiary look) since it's the headline action. */}
                   <div className="flex flex-col gap-1">
                     <h2 className="text-[24px] font-black text-[var(--text-primary)] tracking-tight leading-tight">
-                      Welcome back.
+                      Take a look around.
                     </h2>
                     <p className="text-[13px] text-[var(--text-tertiary)]">
+                      Jump straight into the demo — no signup, no email.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleTryDemo}
+                    disabled={demoLoading || submitting}
+                    className="h-11 text-[14px] font-bold rounded-lg bg-[var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer transition-all flex items-center justify-center gap-2 shadow-sm border-none"
+                  >
+                    <Sparkle size={15} weight="fill" />
+                    {demoLoading ? 'Loading demo…' : 'Launch Demo'}
+                  </button>
+                  <p className="text-center text-[11px] text-[var(--text-tertiary)] -mt-2 leading-relaxed">
+                    Pre-loaded with 170 contacts, AI insights, and sample pipelines.
+                  </p>
+
+                  {/* OR divider — separates the headline demo path from
+                      the returning-user login below. */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="flex-1 h-px bg-[var(--border-subtle)]" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">OR</span>
+                    <span className="flex-1 h-px bg-[var(--border-subtle)]" />
+                  </div>
+
+                  {/* RETURNING-USER LOG IN — kept its own header so the
+                      switch in mental model from "evaluator" to
+                      "owner" is explicit. */}
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-[18px] font-black text-[var(--text-primary)] tracking-tight leading-tight">
+                      Welcome back.
+                    </h2>
+                    <p className="text-[12.5px] text-[var(--text-tertiary)]">
                       Log in to pick up where you left off.
                     </p>
                   </div>
@@ -969,39 +1010,20 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                       }
                     />
                     {error && <div className="text-[11px] font-semibold text-[var(--danger)]">{error}</div>}
-                    <PrimaryButton type="submit" loading={submitting} disabled={!loginReady}>
-                      <SignIn size={15} weight="bold" /> Log in
-                    </PrimaryButton>
+                    {/* Personal-account login is the *secondary* CTA on
+                        this layout, so it renders as an outlined
+                        button (rather than the brand-primary fill the
+                        Launch Demo button uses) to set the visual
+                        priority correctly. */}
+                    <button
+                      type="submit"
+                      disabled={!loginReady || submitting}
+                      className="h-11 text-[13px] font-bold rounded-lg border-2 border-[var(--brand-primary)] bg-[var(--surface-card)] text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2"
+                    >
+                      <SignIn size={15} weight="bold" />
+                      {submitting ? 'Logging in…' : 'Log in to your account'}
+                    </button>
                   </form>
-
-                  {/* "Try the demo" — one-click signs into the shared
-                      demo account that ships with the full 170-contact
-                      dataset. Lives only on the Log in screen (not
-                      Create-account) so it doesn't compete with the
-                      genuine signup CTA for new users. Visually
-                      separated by a divider with "OR" so it reads as a
-                      distinct path, not a tertiary action under the form.
-                      Used by every Linear / Attio / Notion auth screen
-                      to let visitors evaluate the product without
-                      committing. */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <span className="flex-1 h-px bg-[var(--border-subtle)]" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">OR</span>
-                    <span className="flex-1 h-px bg-[var(--border-subtle)]" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleTryDemo}
-                    disabled={demoLoading || submitting}
-                    className="h-11 text-[13px] font-bold rounded-lg border-2 border-[var(--border)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-primary)] disabled:opacity-60 disabled:cursor-wait cursor-pointer transition-all flex items-center justify-center gap-2"
-                  >
-                    <Sparkle size={14} weight="fill" />
-                    {demoLoading ? 'Loading demo…' : 'Try the demo (no signup)'}
-                  </button>
-                  <p className="text-center text-[11px] text-[var(--text-tertiary)] -mt-2 leading-relaxed">
-                    Pre-loaded with 170 contacts, AI insights, and sample pipelines.
-                    No email required.
-                  </p>
                 </>
               )}
 
