@@ -742,7 +742,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             />
           </div>
 
-          <div className="flex flex-col gap-4">
+          {/* -mt-12 pulls the headline + paragraph up into the bottom
+               whitespace of the bird's 200x200 container, eliminating the
+               visual gap between the graphic and the copy without
+               cropping the bird. */}
+          <div className="flex flex-col gap-4 -mt-12">
             <h1 className="text-white text-[44px] font-black leading-[1.05] tracking-[-0.02em]">
               Contact intelligence,
               <br />
