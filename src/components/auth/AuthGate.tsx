@@ -697,7 +697,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
-        <div className="relative z-10 flex flex-col gap-0 max-w-[520px]">
+        <div className="relative z-10 flex flex-col gap-0 max-w-[760px]">
           {/* translate(-20px) shifts the bird's visual position up 20px
                WITHOUT changing its layout box — siblings below (the
                headline, paragraph, bullets) stay put. Margin would
@@ -756,7 +756,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
               <br />
               reimagined with intelligent AI.
             </h1>
-            <p className="text-white/70 text-[15px] leading-relaxed font-medium max-w-md">
+            <p className="text-white/70 text-[15px] leading-relaxed font-medium">
               The modern CRM for teams that move fast. Auto-enriched profiles, smart duplicate detection, and a pipeline that thinks ahead.
             </p>
           </div>
