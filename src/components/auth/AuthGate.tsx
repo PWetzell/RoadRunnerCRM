@@ -759,7 +759,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-md mb-12">
+          {/* mt-12 pushes the feature bullets down 48px from the
+               paragraph above, restoring breathing room after the
+               headline block was pulled up into the bird's whitespace
+               with -mt-12. */}
+          <div className="flex flex-col gap-3 max-w-md mt-12 mb-12">
             <FeatureLine icon={<Sparkle size={16} weight="fill" />} label="AI-assisted contact enrichment" />
             <FeatureLine icon={<Lightning size={16} weight="fill" />} label="Real-time pipeline insights" />
             <FeatureLine icon={<ShieldCheck size={16} weight="fill" />} label="Smart duplicate detection" />
