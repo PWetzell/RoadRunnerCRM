@@ -698,7 +698,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="relative z-10 flex flex-col gap-0 max-w-[520px]">
-          <div className="relative w-[200px] h-[200px]">
+          {/* translate(-20px) shifts the bird's visual position up 20px
+               WITHOUT changing its layout box — siblings below (the
+               headline, paragraph, bullets) stay put. Margin would
+               have dragged the entire stack up; transform doesn't. */}
+          <div className="relative w-[200px] h-[200px]" style={{ transform: 'translateY(-20px)' }}>
             {/* Spotlight flash behind the bird — radial gradient anchored
                 at the geometric center of the bird container. Animation
                 stays hidden during the run-in, bursts when the bird
