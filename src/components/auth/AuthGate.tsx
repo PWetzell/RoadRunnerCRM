@@ -668,7 +668,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 z-[200] bg-[var(--surface-bg)] flex overflow-auto">
       {/* ═══ LEFT — BRAND HERO ═══ */}
       <div
-        className="hidden md:flex relative flex-1 min-h-screen flex-col justify-between px-12 py-14 overflow-hidden"
+        className="hidden md:flex relative flex-1 min-h-screen flex-col justify-between px-12 py-20 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #0A2540 0%, #1955A6 55%, #2E7BD6 100%)',
         }}
@@ -689,10 +689,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        {/* Brand strip — wordmark only. The big bird animation below is
-             the hero; a duplicate logo here just diluted it. */}
+        {/* Brand strip — wordmark only. Bumped to 22px so it reads as
+             the panel's primary mark rather than a tiny breadcrumb;
+             the big bird animation below is the hero. */}
         <div className="relative z-10">
-          <span className="text-white text-[15px] font-extrabold tracking-tight">Roadrunner CRM</span>
+          <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
         <div className="relative z-10 flex flex-col gap-10 max-w-[520px]">
