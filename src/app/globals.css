@@ -849,25 +849,32 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
 }
 
 /* Counter badges (paperclip count, unread email count, +N overflow)
-   are sized to match the `Person`/`Tag` pill height so the row reads
-   as one consistent strip rather than a mix of bigger circles next
-   to smaller rectangles. After the chip-padding override above, pills
-   land at ~10px tall (8px text + 1px border each side); badges align
-   to that. Targets BOTH td (body) and th (column header counters
-   like the "60" total-attachments badge in the paperclip column). */
+   shrunk to 8px to fit under the new row-height cap. At this size
+   2-digit numbers still legibly render with 7px font + line-height 1.
+   Targets BOTH td (body) and th (column header). */
 [data-density="compact"] td .rounded-full[class*="min-w"],
 [data-density="compact"] th .rounded-full[class*="min-w"] {
-  min-width: 10px !important;
-  height: 10px !important;
+  min-width: 8px !important;
+  height: 8px !important;
   padding-left: 3px !important;
   padding-right: 3px !important;
 }
 
-/* Cover the badge variant that uses h-[18px] without min-w- (e.g. the
-   email-count chip on some renderers). Same height target as above. */
+/* Cover the badge variant that uses h-[18px] without min-w-. */
 [data-density="compact"] td .rounded-full[class*="h-["],
 [data-density="compact"] th .rounded-full[class*="h-["] {
-  height: 10px !important;
+  height: 8px !important;
+}
+
+/* Drop pill chips (Person/Tag/Status/AI) to 8px too — same target
+   as the row floor so everything aligns flush. */
+[data-density="compact"] td .rounded-full {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+  border-width: 0 !important;
+  font-size: 7px !important;
 }
 
 /* Force line-height: 1 on every row descendant — kills the residual
@@ -885,17 +892,26 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   line-height: 1 !important;
 }
 
-/* Hard cap row height at 12px — the absolute floor before the avatar
-   becomes the limiter (10px circle + 1px border each side = 12px).
-   Pills, badges, text, and icons all clip to this height. Matches
-   Airtable's "Short" row + Excel's compact view. Below 12px we'd
-   need to remove the avatar entirely. */
+/* Hard cap row height at 8px — the most aggressive density preset
+   in any production CRM we benchmarked (Airtable Short = 24, Excel
+   default ≈17). Below 12 the avatar circle becomes the limiter, so
+   we hide it in compact mode (the contact name still renders to its
+   left position and stays readable). Pills, badges, icons all clip
+   to 8px. Text at 8px / line-height 1 fits exactly. */
 [data-density="compact"] tbody tr {
-  height: 12px;
+  height: 8px;
 }
 [data-density="compact"] tbody td {
-  max-height: 12px;
-  height: 12px;
+  max-height: 8px;
+  height: 8px;
+}
+
+/* Hide the avatar circle in the contact name cell when the grid is
+   compact — the 10px circle was the previous height limiter. Name
+   text stays visible (it's the next sibling); horizontal alignment
+   collapses gracefully because the parent is `flex items-center`. */
+[data-density="compact"] td .flex.items-center > div[style*="border-radius"]:first-child {
+  display: none;
 }
 
 /* Hide the secondary subline under contact names in compact (orgName
@@ -906,12 +922,12 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   display: none;
 }
 
-/* Shrink any inline icon (EyeSlash for private, etc.) to fit the cap.
-   Targets svg directly inside cells but skips the action toolbar in
-   the right-pinned cell (which has its own data attribute). */
+/* Shrink any inline icon (EyeSlash for private, Tag, AI Sparkle, etc.)
+   to fit under the 8px row cap. Targets svg directly inside body cells
+   but skips the action toolbar in the right-pinned cell. */
 [data-density="compact"] tbody td:not([data-actions]) svg {
-  width: 10px !important;
-  height: 10px !important;
+  width: 7px !important;
+  height: 7px !important;
 }
 
 /* =====================================================================
