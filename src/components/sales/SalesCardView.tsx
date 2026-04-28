@@ -11,9 +11,6 @@ import { initials, getAvatarColor, fmtDate } from '@/lib/utils';
 import InlineCardSettings, { useCardStyleVars, useCardHeaderColor } from '@/components/ui/InlineCardSettings';
 import SavedCardViewBar from '@/components/ui/SavedCardViewBar';
 import StagePill from './StagePill';
-import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
-import FavoriteCell from '@/components/lists/FavoriteCell';
-import { useGridLayoutStore } from '@/stores/grid-layout-store';
 
 type SalesCardSort = 'lastUpdated' | 'name' | 'amount' | 'stage' | 'probability';
 type StageFilter = 'all' | 'open' | 'won' | 'lost';
@@ -22,30 +19,17 @@ export default function SalesCardView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listId = searchParams.get('list');
-  // Favorites toggle URL param — was previously not honored in card view.
-  const favOnly = searchParams.get('fav') === '1';
   const memberships = useListStore((s) => s.memberships);
   const deals = useSalesStore((s) => s.deals);
   const typeFilter = useSalesStore((s) => s.typeFilter);
   const search = useSalesStore((s) => s.search);
   const contacts = useContactStore((s) => s.contacts);
 
-  // Persisted card-view state, scope "sales".
-  const persisted = useGridLayoutStore.getState().getCardViewState('sales');
-  const setCardViewState = useGridLayoutStore((s) => s.setCardViewState);
-  const [sortBy, _setSortBy] = useState<SalesCardSort>((persisted.sortBy as SalesCardSort) || 'lastUpdated');
-  const [stageFilter, _setStageFilter] = useState<StageFilter>((persisted.stageFilter as StageFilter) || 'all');
-  const [dateFrom, _setDateFrom] = useState(String(persisted.dateFrom || ''));
-  const [dateTo, _setDateTo] = useState(String(persisted.dateTo || ''));
+  const [sortBy, setSortBy] = useState<SalesCardSort>('lastUpdated');
+  const [stageFilter, setStageFilter] = useState<StageFilter>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const writeThrough = (patch: Record<string, unknown>) => {
-    const current = useGridLayoutStore.getState().getCardViewState('sales');
-    setCardViewState('sales', { ...current, ...patch });
-  };
-  const setSortBy = (v: SalesCardSort) => { _setSortBy(v); writeThrough({ sortBy: v }); };
-  const setStageFilter = (v: StageFilter) => { _setStageFilter(v); writeThrough({ stageFilter: v }); };
-  const setDateFrom = (v: string) => { _setDateFrom(v); writeThrough({ dateFrom: v }); };
-  const setDateTo = (v: string) => { _setDateTo(v); writeThrough({ dateTo: v }); };
 
   const activeFilterCount = [stageFilter !== 'all', !!dateFrom, !!dateTo, sortBy !== 'lastUpdated'].filter(Boolean).length;
 
@@ -65,10 +49,6 @@ export default function SalesCardView() {
       const memberIds = new Set(memberships.filter((m) => m.listId === listId).map((m) => m.entityId));
       l = l.filter((d) => memberIds.has(d.id));
     }
-    if (favOnly) {
-      const favIds = new Set(memberships.filter((m) => m.listId === FAVORITES_LIST_IDS.deal).map((m) => m.entityId));
-      l = l.filter((d) => favIds.has(d.id));
-    }
     l.sort((a, b) => {
       switch (sortBy) {
         case 'name': return a.name.localeCompare(b.name);
@@ -80,7 +60,7 @@ export default function SalesCardView() {
       }
     });
     return l;
-  }, [deals, typeFilter, search, sortBy, stageFilter, dateFrom, dateTo, listId, favOnly, memberships]);
+  }, [deals, typeFilter, search, sortBy, stageFilter, dateFrom, dateTo, listId, memberships]);
 
   return (
     <div className="h-full flex flex-col gap-2">
@@ -169,9 +149,6 @@ function SalesDealCard({ deal, contacts, onOpen }: { deal: Deal; contacts: Retur
       className="group/icard relative bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-3 hover:border-[var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer flex flex-col gap-2"
     >
       {accent && <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style={{ background: accent }} />}
-      <div className="absolute top-0.5 right-8 z-10">
-        <FavoriteCell entityId={deal.id} entityType="deal" />
-      </div>
       <InlineCardSettings cardId={cardKey} title={deal.name} defaultIconName="Handbag" />
 
       <div className="flex items-center gap-2.5 pr-8">

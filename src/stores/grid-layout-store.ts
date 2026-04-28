@@ -32,12 +32,6 @@ interface GridLayout {
    * Empty array means "use the grid's defaultSorting prop instead".
    */
   sorting: GridSort[];
-  /**
-   * Per-column filter state. Persisted so that filters set via the
-   * column-header funnel icon survive a page refresh.
-   * Stored as { id, value } pairs (TanStack ColumnFiltersState shape).
-   */
-  columnFilters: Array<{ id: string; value: unknown }>;
   /** User-saved view definitions (named snapshots of grid state). */
   savedViews: SavedGridView[];
   /** Currently active saved view; null when the grid is in default/Custom mode. */
@@ -46,13 +40,6 @@ interface GridLayout {
 
 interface GridLayoutStore {
   grids: Record<string, GridLayout>;
-  /**
-   * Card-view filter / sort state, keyed by scope ("contacts", "sales",
-   * "recruiting", "documents"). Each card view stores its own JSON blob
-   * (sortBy, statusFilter, dateFrom, etc.) so the user's selections
-   * survive a refresh.
-   */
-  cardViewState: Record<string, Record<string, unknown>>;
   getGrid: (gridId: string) => GridLayout;
   setColumnOrder: (gridId: string, order: string[]) => void;
   setColumnVisibility: (gridId: string, vis: Record<string, boolean>) => void;
@@ -60,11 +47,8 @@ interface GridLayoutStore {
   updateColumnWidth: (gridId: string, colId: string, width: number) => void;
   setColumnPinning: (gridId: string, pinning: ColumnPinning) => void;
   setSorting: (gridId: string, sorting: GridSort[]) => void;
-  setColumnFilters: (gridId: string, filters: Array<{ id: string; value: unknown }>) => void;
   setSavedViews: (gridId: string, views: SavedGridView[]) => void;
   setActiveViewId: (gridId: string, id: string | null) => void;
-  setCardViewState: (scope: string, state: Record<string, unknown>) => void;
-  getCardViewState: (scope: string) => Record<string, unknown>;
   resetGrid: (gridId: string) => void;
 }
 
@@ -74,7 +58,6 @@ const EMPTY_LAYOUT: GridLayout = {
   columnWidths: {},
   columnPinning: { left: [], right: [] },
   sorting: [],
-  columnFilters: [],
   savedViews: [],
   activeViewId: null,
 };
@@ -92,7 +75,6 @@ function hydrate(g: Partial<GridLayout> | undefined): GridLayout {
     columnWidths: g.columnWidths ?? {},
     columnPinning: g.columnPinning ?? { left: [], right: [] },
     sorting: g.sorting ?? [],
-    columnFilters: g.columnFilters ?? [],
     savedViews: g.savedViews ?? [],
     activeViewId: g.activeViewId ?? null,
   };
@@ -102,12 +84,7 @@ export const useGridLayoutStore = create<GridLayoutStore>()(
   persist(
     (set, get) => ({
       grids: {},
-      cardViewState: {},
       getGrid: (gridId) => hydrate(get().grids[gridId]),
-      getCardViewState: (scope) => get().cardViewState?.[scope] ?? {},
-      setCardViewState: (scope, state) => set((s) => ({
-        cardViewState: { ...(s.cardViewState ?? {}), [scope]: state },
-      })),
       setColumnOrder: (gridId, order) => set((s) => ({
         grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), columnOrder: order } },
       })),
@@ -128,9 +105,6 @@ export const useGridLayoutStore = create<GridLayoutStore>()(
       })),
       setSorting: (gridId, sorting) => set((s) => ({
         grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), sorting } },
-      })),
-      setColumnFilters: (gridId, filters) => set((s) => ({
-        grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), columnFilters: filters } },
       })),
       setSavedViews: (gridId, views) => set((s) => ({
         grids: { ...s.grids, [gridId]: { ...hydrate(s.grids[gridId]), savedViews: views } },

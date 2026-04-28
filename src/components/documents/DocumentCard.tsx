@@ -8,7 +8,6 @@ import { useIsDark } from '@/hooks/useIsDark';
 import FileTypePreview from './FileTypePreview';
 import { getTagPillData, getTagIcon } from '@/lib/document-tag-style';
 import { dc } from '@/lib/pill-colors';
-import FavoriteCell from '@/components/lists/FavoriteCell';
 
 interface Props {
   doc: CrmDocument;
@@ -60,9 +59,6 @@ export default function DocumentCard({ doc, onPreview, onRemove }: Props) {
       onClick={() => onPreview(doc.id)}
     >
       {accent && <div className="h-1 flex-shrink-0" style={{ background: accent }} />}
-      <div className="absolute top-0.5 right-8 z-10">
-        <FavoriteCell entityId={doc.id} entityType="document" />
-      </div>
       <InlineCardSettings cardId={cardKey} title={doc.name} defaultIconName="File" />
       {/* Thumbnail area — renders real previews when possible:
            Images: <img> from previewUrl or thumbnailUrl
