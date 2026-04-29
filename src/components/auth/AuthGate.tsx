@@ -562,8 +562,15 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
    * same reasoning.
    */
   function handleTryDemo() {
+    // Guard against double-click. We do NOT setDemoLoading(true) here —
+    // the entire body of this function is synchronous (Zustand flips,
+    // seed-data calls, router.push), so a "Loading demo…" UI state was
+    // pure decoration that introduced a real bug: AuthGate doesn't
+    // fully unmount across sign-in / sign-out, so a stale `true` got
+    // stuck on the button when the user signed out and returned. Since
+    // there's nothing to actually load, the cleaner fix is to never
+    // toggle the loading state at all. Paul reported this on 2026-04-28.
     if (demoLoading || submitting) return;
-    setDemoLoading(true);
     setError('');
 
     // ─── Hydrate demo state SYNCHRONOUSLY ─────────────────────────────
