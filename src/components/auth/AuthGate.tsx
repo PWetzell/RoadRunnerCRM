@@ -562,6 +562,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     //
     // Do the Zustand state flip first, before any Supabase touch.
     signIn({ name: 'Demo User', email: DEMO_CREDENTIALS.email });
+    // Land demo users on /contacts so they arrive directly inside the
+    // wow surface the case study leads with — AI Insights bar, the
+    // 11-source duplicate-detection fan-out via +New Contact, density
+    // toggle, column pin, undo. Every numbered claim in the case study
+    // is verifiable in 1-2 clicks from here. Bare-domain visitors who
+    // didn't come via the demo button still land on /dashboard via
+    // src/app/page.tsx.
+    router.push('/contacts');
     // Seed every store the demo expects to populate. Skipping any of
     // these is what gave Paul a half-empty demo dashboard on 2026-04-27
     // (contacts populated, but Saved Lists / notification bell / deals
