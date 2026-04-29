@@ -217,6 +217,17 @@ export default function Topbar({ title = 'Contacts', children }: TopbarProps) {
                   // from a partial state during sign-out.
                   try { localStorage.removeItem('roadrunner.lastDispatchedEmail'); } catch {}
                   signOut();
+                  // Hard reload on sign-out so AuthGate mounts fresh.
+                  // The auth panel's local React state (demoLoading,
+                  // submitting, error) does NOT clear automatically
+                  // when AuthGate's JSX swaps subtrees, which left the
+                  // Launch Demo button stuck on "Loading demo…" after
+                  // a sign-out round trip. Industry pattern (Linear,
+                  // Notion, Slack): sign-out always full-reloads to
+                  // guarantee a clean slate.
+                  if (typeof window !== 'undefined') {
+                    window.location.href = '/';
+                  }
                 }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[var(--danger)] hover:bg-[var(--danger-bg)] bg-transparent border-none cursor-pointer text-left"
               >
