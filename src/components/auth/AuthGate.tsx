@@ -78,6 +78,22 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   // vice-versa).
   const [demoLoading, setDemoLoading] = useState(false);
 
+  // Reset stale form state when the user signs out and returns to the
+  // gate. AuthGate doesn't fully unmount across sign-in / sign-out (it
+  // wraps the app and only swaps which JSX subtree it renders), so
+  // setDemoLoading(true) from a prior demo launch can leave the
+  // "Loading demo…" button stuck on return. Paul reported this on
+  // 2026-04-28 — sign out from /contacts → log-in panel shows
+  // unclickable "Loading demo…" button. Same hazard applies to
+  // `submitting` and `error`.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setDemoLoading(false);
+      setSubmitting(false);
+      setError('');
+    }
+  }, [isAuthenticated]);
+
   // Email shown on the "check your inbox" / "reset link sent" screens —
   // captured at submit time so editing the field afterward doesn't change
   // the success copy.
