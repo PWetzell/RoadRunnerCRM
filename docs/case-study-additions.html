@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study Additions — v3 + Existing-Content Audit · Roadrunner CRM</title>
+<style>
+  :root {
+    --bg: #F1EFEA;
+    --surface: #FFFFFF;
+    --ink: #1C1C1C;
+    --ink-soft: #3A3A3A;
+    --ink-mute: #6F6F6F;
+    --hair: #DEDAD1;
+    --accent: #E6552A;
+    --green-bg: #EFF6EB;
+    --green-label: #3E7333;
+    --yellow-bg: #FBF4D8;
+    --yellow-label: #8B6B00;
+    --purple-bg: #ECE6F3;
+    --blue-bg: #E0ECF4;
+    --red-bg: #F4D8D8;
+    --red-label: #8B2A2A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 22px 96px;
+  }
+  .shell { max-width: 820px; margin: 0 auto; }
+  .block { padding: 26px 0 8px; }
+  .sec-label {
+    font-size: 10px; letter-spacing: 0.14em; font-weight: 800; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 12px; display: block;
+  }
+  .sec-head {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.008em; line-height: 1.2;
+    margin: 0 0 14px;
+  }
+  .body-p { margin: 0 0 14px; color: var(--ink-soft); }
+  code { font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-size: 12.5px; background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+
+  .decision { margin: 30px 0 8px; }
+  .decision .num {
+    font-size: 10px; letter-spacing: 0.14em; font-weight: 800; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .decision h3 {
+    font-size: 19px; font-weight: 800; line-height: 1.2; letter-spacing: -0.005em;
+    margin: 0 0 10px;
+  }
+  .pill-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+  .pill { padding: 12px 14px; border-radius: 8px; font-size: 14.5px; line-height: 1.55; }
+  .pill-label {
+    display: inline-block; font-size: 10px; letter-spacing: 0.14em; font-weight: 800;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 3px; margin-right: 8px;
+  }
+  .pill.finding { background: var(--blue-bg); }
+  .pill.finding .pill-label { background: #3A78A8; color: #fff; }
+  .pill.insight { background: var(--green-bg); }
+  .pill.insight .pill-label { background: #5E9B4E; color: #fff; }
+  .pill.design { background: var(--purple-bg); }
+  .pill.design .pill-label { background: #7A6BAA; color: #fff; }
+
+  .reflect-box {
+    background: var(--bg); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 22px;
+  }
+  .reflect-box h3 { margin: 0 0 8px; font-size: 16.5px; font-weight: 800; letter-spacing: -0.005em; }
+  .reflect-box p { margin: 0 0 12px; color: var(--ink-soft); }
+  .reflect-box .sig { margin-top: 14px; font-size: 13px; color: var(--ink-mute); }
+
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .thumb {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 8px;
+    padding: 22px 14px; font-size: 12.5px; color: var(--ink-soft); text-align: center;
+    aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center;
+  }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 16px 14px; text-align: center;
+  }
+  .stat-card .n { font-size: 28px; font-weight: 800; line-height: 1; color: var(--accent); margin-bottom: 6px; }
+  .stat-card .l { font-size: 11.5px; color: var(--ink-mute); line-height: 1.35; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 14px; }
+
+  .paste-instruction {
+    background: #1C1C1C; color: #fff; padding: 12px 16px; border-radius: 6px;
+    font-size: 12px; font-family: "SF Mono", Menlo, Consolas, monospace; line-height: 1.55;
+    margin: 40px 0 14px;
+  }
+  .paste-instruction strong { color: #E6552A; }
+  .paste-instruction code { background: rgba(255,255,255,0.1); color: #fff; }
+  .paste-instruction.warn { background: #8B6B00; }
+  .paste-instruction.warn strong { color: #FBF4D8; }
+  .paste-instruction.danger { background: #8B2A2A; }
+  .paste-instruction.danger strong { color: #FBF4D8; }
+  .paste-instruction.done { background: #3E7333; }
+  .paste-instruction.done strong { color: #EFF6EB; }
+  .divider { border-top: 2px dashed var(--hair); margin: 60px 0 0; }
+
+  h1.preview-title { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin: 30px 0 6px; }
+  h2.section-title { font-size: 20px; font-weight: 800; margin: 50px 0 4px; letter-spacing: -0.005em; }
+  .preview-sub { font-size: 14px; color: var(--ink-mute); margin: 0 0 30px; }
+
+  .audit-table { width: 100%; border-collapse: collapse; margin: 14px 0 30px; font-size: 13px; }
+  .audit-table th, .audit-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  .audit-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-mute); font-weight: 800; }
+  .ok { color: var(--green-label); font-weight: 700; }
+  .bad { color: var(--red-label); font-weight: 700; }
+
+  .quote {
+    background: var(--surface); border-left: 3px solid var(--ink-mute); padding: 10px 14px;
+    margin: 8px 0; font-size: 14px; color: var(--ink-soft);
+  }
+  .quote strong { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<h1 class="preview-title">Case Study Additions — v3 (voice-tightened)</h1>
+<p class="preview-sub">Two parts. <strong>Part A</strong>: revised additions with sentence-cap and one-idea-per-sentence violations fixed. <strong>Part B</strong>: audit of issues I found in the existing Framer copy while reviewing the screenshots against the criteria document.</p>
+
+<h2 class="section-title">Part A — Tightened additions for paste</h2>
+
+<table class="audit-table">
+  <thead><tr><th>v2 issue</th><th>v3 fix</th></tr></thead>
+  <tbody>
+    <tr><td>Decision 11 Insight: "the user controls the dial" was a metaphor</td><td>Replaced with "one config controls every surface" — literal, direct</td></tr>
+    <tr><td>Decision 11 Design: sentence 3 carried 3 ideas in one breath</td><td>Split into two sentences, one idea each</td></tr>
+    <tr><td>Decision 12 Finding: passive opener "treated... as actions" then a soft "because they could never find it"</td><td>Active opener "buried in a kebab menu," collapsed two sentences into one</td></tr>
+    <tr><td>Decision 12 Design: enormous middle sentence with two semicolon clauses</td><td>Trimmed to one stat row + one funnel claim, dropped the parenthetical labels</td></tr>
+    <tr><td>Addendum: redundant "pattern that held best / pattern I'd drop" closer that echoed the existing paragraph</td><td>Cut the closer; ends on the operational rule</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================
+     ADDITION 1 — lead-in
+     ============================================================ -->
+<div class="paste-instruction">
+  <strong>ADDITION 1 / 5 · Update the Design Decisions lead-in headline.</strong>
+</div>
+
+<section class="block">
+  <span class="sec-label">Design Decisions</span>
+  <h2 class="sec-head">Twelve decisions. Each one a direct response to something AI generated that experience had to correct — or something users have asked for in every product I've shipped.</h2>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================
+     ADDITION 2 — Decision 11
+     ============================================================ -->
+<div class="paste-instruction">
+  <strong>ADDITION 2 / 5 · Decision 11 — paste after Decision 10.</strong>
+</div>
+
+<div class="decision">
+  <div class="num">Decision 11</div>
+  <h3>Density at the token layer. One config. Eighty surfaces respond.</h3>
+  <div class="pill-row">
+    <div class="pill finding"><span class="pill-label">Finding</span>
+      Every grid started with hardcoded font and padding utilities — <code>text-[13px]</code>, <code>px-3</code>, <code>py-2</code> repeated across four data grids and dozens of cells. When users asked "can I fit more rows on screen," the only answer was a sprint editing every component.
+    </div>
+    <div class="pill insight"><span class="pill-label">Insight</span>
+      Density is the same architectural problem as dark mode. Bake it into components and you retrofit forever; bake it into tokens and one config controls every surface.
+    </div>
+    <div class="pill design"><span class="pill-label">Design</span>
+      I built three configs — <code>DENSITY</code>, <code>CARD_DENSITY</code>, <code>DETAIL_DENSITY</code> — that emit CSS custom properties on the page wrapper. The user picks Compact / Comfortable / Spacious, and every grid cell, card tile, and detail section retightens in one paint with no per-component edits. Compact lands at twenty-pixel rows after iterating 8 → 12 → 16 → 20.
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================
+     ADDITION 3 — Decision 12
+     ============================================================ -->
+<div class="paste-instruction">
+  <strong>ADDITION 3 / 5 · Decision 12 — paste after Decision 11.</strong>
+</div>
+
+<div class="decision">
+  <div class="num">Decision 12</div>
+  <h3>Bulk send and sequences ship as their own modules.</h3>
+  <div class="pill-row">
+    <div class="pill finding"><span class="pill-label">Finding</span>
+      My first pass buried bulk email and follow-up cadences in a kebab menu on the contact list. Recruiters at a staffing client I worked with never used the equivalent feature in their CRM because they couldn't find it.
+    </div>
+    <div class="pill insight"><span class="pill-label">Insight</span>
+      The work that earns a CRM its keep is outreach cadence, not record management. HubSpot, Outreach, and Apollo all promoted sequences to a top-level surface for the same reason.
+    </div>
+    <div class="pill design"><span class="pill-label">Design</span>
+      I built Bulk Email and Sequences as their own pages. Bulk has its own stat row and a history feed with attachment previews; Sequences has a step funnel showing drop-off between touch one and touch three. Both render inside the same density tokens — flip Compact and the funnel tightens with everything else.
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================
+     ADDITION 4 — Appendum to "What I'd Do Differently"
+     ============================================================ -->
+<div class="paste-instruction warn">
+  <strong>ADDITION 4 / 5 · APPEND to "What I'd Do Differently."</strong><br>
+  Section 6 says leave the existing paragraph as-is. Paste this as a new <code>&lt;p&gt;</code> after the existing paragraph and before <code>— Paul</code>.
+</div>
+
+<section class="block">
+  <span class="sec-label">What I'd Do Differently</span>
+  <div class="reflect-box">
+    <h3>Honest, one paragraph. <span style="color:var(--ink-mute); font-weight:600;">(existing — leave as-is)</span></h3>
+    <p style="opacity:0.6;">[the existing paragraph stays exactly where it is]</p>
+
+    <h3 style="margin-top:18px;">Addendum. <span style="color:var(--ink-mute); font-weight:600;">(new paragraph to paste)</span></h3>
+    <p>State-management refactors are not visual edits, and I should not have shipped one as if they were. I tried to make column reorder, sort, filters, and saved views all survive a refresh in one batch. The change caused an infinite render loop in the data grid; eight commits, two reverts, the work rolled back to the prior baseline. Visual-only edits I'll keep batching. State-engine changes go in one isolated commit with a browser-verified diff before push.</p>
+    <div class="sig">— Paul</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================
+     ADDITION 5 — Gallery + Outcomes
+     ============================================================ -->
+<div class="paste-instruction">
+  <strong>ADDITION 5 / 5 · Gallery + Outcomes reconciliation.</strong>
+</div>
+
+<section class="block">
+  <span class="sec-label">Project Gallery — three thumbnails to append</span>
+  <div class="gallery">
+    <div class="thumb">Bulk Email · history feed</div>
+    <div class="thumb">Sequences · step funnel</div>
+    <div class="thumb">Density · compact view</div>
+  </div>
+</section>
+
+<section class="block">
+  <span class="sec-label">Outcomes — update the existing "13 Polish decisions" tile</span>
+  <p class="body-p" style="font-size:13px;">The current Framer copy shows a "13 / Polish decisions / each with precedent" tile. With Decisions 11 and 12 added, the count of <em>numbered</em> decisions in the case study itself is now 12 — but the polish-shipped count is higher than 13 by my actual log. Two clean options:</p>
+  <div class="stat-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="stat-card"><div class="n">12</div><div class="l">Numbered decisions<br>each with precedent</div></div>
+    <div class="stat-card"><div class="n">30+</div><div class="l">Polish decisions shipped<br>across light + dark</div></div>
+  </div>
+  <p class="body-p" style="font-size:13px; color:var(--ink-mute);">Either is defensible. The 12 ties the stat directly to the numbered decisions section; the 30+ acknowledges the post-v1 polish work (density, login, stat cards, grid unification, sequences typography, etc.) that doesn't have its own numbered block. Pick one.</p>
+</section>
+
+<div class="divider" style="margin-top:80px;"></div>
+
+<!-- ============================================================
+     PART B — Audit of existing Framer content
+     ============================================================ -->
+<h2 class="section-title">Part B — Issues in the existing Framer copy</h2>
+<p class="preview-sub">Pulled from the screenshots you sent. Each item maps to a specific criterion. None of these block your additions — but they're cracks in the published case study that a hiring manager will land on inside the 8–46 second scan window.</p>
+
+<!-- ISSUE 1 -->
+<div class="paste-instruction danger">
+  <strong>ISSUE 1 · Privacy violation — Madison Resources named in public copy.</strong><br>
+  Section 7 of your criteria doc: "Madison client — Internal use only. Never name the actual client in public copy. When in doubt, use the industry or product type."
+</div>
+
+<p class="body-p">"Madison Resources" appears in at least six places in the published case study:</p>
+<div class="quote"><strong>Hero, Problem two:</strong> "...the one every CRM I shipped fought chronically at <strong>Madison Resources</strong> recruiting and PayFactors compensation..."</div>
+<div class="quote"><strong>Research / Career Inquiry header:</strong> "Dirty data was the problem at <strong>Madison Resources</strong>. Dirty data was the problem at PayFactors."</div>
+<div class="quote"><strong>Research body:</strong> "Recruiters at <strong>Madison Resources</strong> spent hours every week reconciling duplicate candidate records..."</div>
+<div class="quote"><strong>Decision 02 Insight:</strong> "Recruiters at <strong>Madison Resources</strong> asked me to remove this exact pattern years ago."</div>
+<div class="quote"><strong>Decision 06 Insight:</strong> "support-ticket patterns at PayFactors and <strong>Madison Resources</strong> — tickets spiked in week three..."</div>
+<div class="quote"><strong>Deliverable 03:</strong> "twelve years of shipped grid patterns from <strong>Madison Resources</strong>, PayFactors, and financial services..."</div>
+<p class="body-p"><strong>Suggested global replace:</strong> "Madison Resources" → <strong>"a national staffing platform"</strong> (or "a recruiting CRM I worked on"). Keep the rhetorical repetition pattern in the Research header by anonymizing both names if you want to play it safe — though PayFactors isn't on the privacy list so it can stay.</p>
+
+<!-- ISSUE 2 -->
+<div class="paste-instruction danger">
+  <strong>ISSUE 2 · Factual claim now overstated — refresh persistence.</strong><br>
+  Live demo section #3 promises something the app doesn't currently keep.
+</div>
+
+<div class="quote">"<strong>3. Customize a grid</strong> — Open the Columns dropdown, pin a column, change density, save a view. Refresh — <strong>everything stays exactly as you left it.</strong>"</div>
+<p class="body-p">Today's revert means column reorder, sort, filters, and saved views do <strong>not</strong> survive refresh. Only column widths, pinning, and density do. The current copy promises more than the app delivers — exactly the kind of detail a hiring manager who clicks the live demo will catch.</p>
+<p class="body-p"><strong>Suggested rewrite (narrows the claim):</strong></p>
+<div class="quote"><strong>3. Customize a grid</strong> — Open the Columns dropdown, pin a column, flip density. Refresh — <strong>your widths, pins, and density stay exactly as you left them.</strong></div>
+
+<!-- ISSUE 3 -->
+<div class="paste-instruction warn">
+  <strong>ISSUE 3 · Insight blocks over the 2-sentence cap.</strong><br>
+  Section 4: Insight blocks 2 sentences max. Several existing decisions ship 3.
+</div>
+
+<p class="body-p">Decisions 1, 2, 4, 6, 9, and 10 have Insight blocks over 2 sentences. The third sentence is usually a "background context" line that could move into Finding or get cut. Examples:</p>
+<div class="quote"><strong>Decision 01 Insight</strong> (3 sentences):<br>"This wasn't a data bug — it was a trust bug. Every AI feature makes an implicit claim when it fires. The claim has to be inspectable or the demo dies on the first real name."</div>
+<p class="body-p"><strong>Tightened to 2:</strong></p>
+<div class="quote">"This wasn't a data bug — it was a trust bug. Every AI claim has to be inspectable or the demo dies on the first real name."</div>
+<p class="body-p" style="font-size:13px; color:var(--ink-mute);">If you want, I can do a per-decision tightening pass and produce a side-by-side. Not blocking — flagging it because the criteria are explicit.</p>
+
+<!-- ISSUE 4 -->
+<div class="paste-instruction warn">
+  <strong>ISSUE 4 · "Eight modules" claim no longer reflects the build.</strong>
+</div>
+<div class="quote"><strong>Live demo banner:</strong> "Eight modules. Eleven free public data providers wired live..."</div>
+<div class="quote"><strong>Project Gallery headline:</strong> "Eight modules, real backend, real inbox. Every screen is live."</div>
+<p class="body-p">Bulk Email and Sequences are full top-level modules. Suggested update: <strong>"Eight modules plus Bulk + Sequences"</strong> or just <strong>"Ten modules."</strong></p>
+
+<!-- ISSUE 5 -->
+<div class="paste-instruction warn">
+  <strong>ISSUE 5 · Some sentences carry 3+ ideas.</strong><br>
+  Section 5: "Short sentences. One idea per sentence." A handful of existing sentences run 3–4 clauses with em-dashes and semicolons.
+</div>
+<div class="quote"><strong>Hero, "On this build":</strong><br>"On this build I closed the design-to-code loop with Acme and Figma MCP, and I wired real AI suggestions that prevent dirty data on entry — duplicate detection, auto-populate from eleven public sources, attribution per field. Record creation went from minutes to seconds. And this is not a Figma prototype with simulated AI states — it is a live working product, AI firing against real APIs, open for any hiring manager to click through and try to break."</div>
+<p class="body-p">Three sentences but each one is dense. Tightening lifts scannability without losing content:</p>
+<div class="quote">"I closed the design-to-code loop with Acme tokens and Figma MCP. I wired real AI suggestions on every intake surface — duplicate detection, auto-populate from eleven public sources, attribution per field. Record creation went from minutes to seconds. This is not a Figma prototype. It is a live working product. AI fires against real APIs. Any hiring manager can click through and try to break it."</div>
+<p class="body-p" style="font-size:13px; color:var(--ink-mute);">Same content. Seven short sentences instead of three long ones. Reads to the F-pattern eye in the first 8 seconds.</p>
+
+<!-- ISSUE 6 -->
+<div class="paste-instruction done">
+  <strong>STRENGTHS — keep these exactly as they are.</strong><br>
+  Per Section 6: "Don't touch sections that already show business thinking. If it's working, leave it alone." These are the lines doing the heaviest lifting:
+</div>
+<div class="quote">"<strong>One designer. Built the system. Built the app. Shipped the loop.</strong>" — exemplary voice. Four sentences, four ideas, owned.</div>
+<div class="quote">"<strong>Dirty data was the problem at [X]. Dirty data was the problem at [Y]. Every HR team lives inside it.</strong>" — rhetorical repetition; one of the strongest openings in the case study.</div>
+<div class="quote">"<strong>Design linked to code. Code linked to design. First time in twelve years that loop closed on anything I built.</strong>" — earns its pull-quote placement.</div>
+<div class="quote">The dual-column "What users ask for — Grid edition / App edition" lists. Quoted user language ("I want my layout back") is exactly the voice rule applied as content.</div>
+
+<div class="divider"></div>
+
+<div class="paste-instruction done">
+  <strong>Summary.</strong><br>
+  Part A is paste-ready. Part B has six issues in the existing copy — two are factual / privacy (worth fixing), four are voice-and-cap tightening (optional but the criteria call them out). Tell me which of Part B you want me to draft replacement copy for and I'll produce it the same way.
+</div>
+
+</div>
+</body>
+</html>
