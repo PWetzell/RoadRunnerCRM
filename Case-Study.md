@@ -216,6 +216,69 @@ The story is: *a designer who ships AI-native products, not just AI-themed decks
 
 ---
 
+## Post-v1 — what kept shipping (Apr 17 – Apr 28)
+
+The five-day sprint produced a working CRM. The next two weeks turned it into a product. Each area below was a multi-commit effort with its own rationale, not a one-off polish pass.
+
+### Real backend (Supabase + Postgres)
+v1 stored everything in browser-local Zustand. That made "real working CRM" a stretch — open in a second browser and the workspace was empty. Migrated every persisted store to Supabase Postgres with Row Level Security on every table. Built a signed `exec_sql` installer for migrations so schema pushes don't need a raw DB password in CI. Demo users still get browser-local sandbox state; real users get durable cloud state. Single codepath, branched on identity.
+
+### Gmail sync + OAuth
+A CRM that can't see a sender's email thread is a Rolodex. Wired Google OAuth with refresh-token capture, a Gmail sync worker that resolves senders to contacts and stitches threads onto every Overview timeline, and a top-sender import surface that turns the first sync into onboarding. Hourly cron initially — Vercel Hobby plan rejected anything more frequent than daily, so the schedule was rewritten and a separate `/api/debug/run-migration-NNNN` endpoint was added for ad-hoc DDL pushes.
+
+### Manage Emails (Bulk + Sequences)
+First pass treated bulk send and follow-up cadences as actions on the contact list — buried in a kebab menu. Recruiters at staffing CRMs never used the equivalent feature there because they couldn't find it. Promoted both to top-level modules:
+
+- **Bulk Email** page: four stat cards (Total sent, Bulk batches, Delivery rate, Recipients), scannable history feed with attachment previews, AI-drafted copy.
+- **Sequences** page: live performance row (Active, Completed, Reply rate, Replied), step funnel visualizing drop-off between touch one and touch three, per-enrollment due-date table.
+
+Both render inside the same density tokens as the rest of the app — flipping Compact retightens the sequence funnel along with the grids.
+
+### Density preset architecture
+Every grid started with hardcoded font and padding utilities — `text-[13px]`, `px-3`, `py-2` repeated across four grids and dozens of cells. When users asked "can I fit more rows on screen," the only answer was a sprint editing every component. Built three configs that emit CSS custom properties on the page wrapper:
+
+- `DENSITY` — driven onto the data grid root
+- `CARD_DENSITY` — driven onto the card-view root
+- `DETAIL_DENSITY` — driven onto the detail-page wrapper
+
+Every grid cell, card tile, and detail section reads `var(--grid-font)`, `var(--card-p)`, `var(--detail-card-px)`. User picks Compact / Comfortable / Spacious and the data grid, card view, and detail page all retighten in one paint with no per-component edits. Compact landed at twenty-pixel rows after iterating 8 → 12 → 16 → 20.
+
+### Help tour expansion
+Original launch had seven walkthroughs. Added tours for `/bulk`, `/sequences`, AI assistance flows, and a density-preset step in the contacts tour. Total now sits at fourteen contextual tours, all reachable from the help panel on any page — no autoplay, no install cutscenes, no buried "restart tutorial" setting.
+
+### Login / AuthGate rework
+Headline iterated to "Contact creation, reimagined with intelligent AI" with fluid responsive sizing via `clamp()`. Spotlight flash sits behind the bird (pure white, no warm tint). Bird position pulled up 20px via `translateY` so the headline fits closer to the visual anchor. Demo path: Launch Demo seeds every store synchronously (no awaited Supabase calls — they hang on second invocation) and routes to `/contacts` so the user lands inside the wow surface. Sign-out forces a clean AuthGate by resetting local React state when `isAuthenticated` flips false.
+
+### Grid styling unification
+Originally four data grids — contacts, sales, recruiting, documents — diverged in font weights, row colors, and chip styling. Pulled them all through one shared `SharedDataGrid` component reading the same density tokens. Bulk-replaced every hardcoded `text-[Npx]` row utility with `text-[length:var(--grid-font)]` so all four grids respond identically to density preset.
+
+### Visual density across the chrome
+Top-of-page banners (AI Insights, Gmail Sync), filter bars, and grid toolbars all reduced ~25% in spacing and 2px in font size to give the data more room. Sales filter pills now match contacts filter pills. Sequences page typography reduced 1.5–2px across 66 declarations. Bulk email cards tightened 25% in vertical real estate. Detail headers and tabs tightened 25% on contact + sales detail pages.
+
+### Lavender stat-card token (late add)
+The Recipients tile on `/bulk` and the Replied tile on `/sequences` needed their own color category — distinct from brand-blue / info-teal / success-green so the four cards in each performance row each read as their own bucket. Added `--lavender` / `--lavender-bg` / `--lavender-fg` semantic tokens with light + dark pairs. Existing stat cards swapped to the new tokens; no per-component work.
+
+---
+
+## What I'd do differently
+
+Honest, one paragraph.
+
+I'd wire the real providers from day one instead of letting the fake pool ship first — the rebuild was instructive but expensive. I'd put validation on every intake surface before writing a single AI feature, not after. I'd ship the Postgres backend alongside v1 instead of letting "browser-local only" be the story for a week; the sandbox framing was convenient for a portfolio sprint and wrong for a CRM. On tours, I'd write the first one by walking through the app as a new user instead of starting mid-flow — four rewrites taught the same lesson I could have gotten for free. And on state-management refactors: I'd verify the change in the browser before committing. One pass at making column reorder, sort, filters, and saved views all survive a refresh shipped a TanStack table state refactor that caused an infinite render loop in the data grid; eight commits, two reverts, the work rolled back to the prior baseline. The lesson costs nothing in retrospect: visual-only edits are safe to batch; state-engine changes go in one isolated commit with a browser-verified diff before push. The pattern that held best across the whole build was pairing every Claude-generated decision with a cited precedent from my career. The pattern I'd drop is trusting first-pass wiring on toasts, tours, or state to be complete.
+
+---
+
+## Open items
+
+These are real product gaps, not roadmap aspirations.
+
+- **Column reorder, sort, filters, and saved views don't survive refresh.** Column widths, pinning, and density do. Today's persistence-fix attempt (Apr 28) caused an infinite render loop in TanStack table and was rolled back. To revisit as one isolated, browser-verified commit.
+- **Compact-density cards on Overview / Details detail pages don't visibly tighten when the user picks Compact.** Wrapper has `data-detail-density="compact"` set, CSS vars are emitted, but several cards' internal padding ignores the vars. Multiple wire-up attempts on Apr 28 didn't visibly land; reverted. Tomorrow's first task: open DevTools side-by-side, identify which cards aren't reading the vars before writing any code.
+- **Privacy cleanup pending in published case study copy.** Madison Resources is named in 6+ places in the Framer-published case study; per portfolio criteria it should be anonymized in public copy. Suggested replacement: "a national staffing platform."
+- **Live demo claim "everything stays exactly as you left it" on refresh** overstates current behavior. Should narrow to "your widths, pins, and density stay" until the persistence work lands.
+
+---
+
 ## The velocity claim (honest)
 
 I built this using Claude Code with continuous prompting — not a one-shot prompt. Every feature was:
@@ -232,11 +295,12 @@ The velocity comes from *not typing* rather than *not thinking*. Claude Code wri
 
 ## What's next (roadmap)
 
-**Near-term (portfolio polish):**
-- Real inline PDF preview (pdf.js)
+**Near-term (the actual open list, in priority order):**
+- Compact-density cards visibly tightening on Overview / Details detail pages
+- Column reorder / sort / filter / saved-view persistence across refresh
+- Privacy cleanup in Framer case study copy
+- Real inline PDF preview (pdf.js) — long-deferred
 - AI help chat backend (connect to Claude API)
-- Framer prototype page connecting all the flows
-- Case study page on paulwentzellux.com (3-layer narrative)
 
 **If this becomes a template (Etsy / side product):**
 - Configurable terminology (swap "Deal" → "Project", "Placement" → "Sale", etc.)
