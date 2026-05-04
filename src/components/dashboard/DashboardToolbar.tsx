@@ -93,7 +93,7 @@ export default function DashboardToolbar() {
   const pendingDeleteView = views.find((v) => v.id === confirmDeleteViewId);
 
   return (
-    <div className="flex items-center gap-2 flex-wrap min-h-[36px]">
+    <div className="flex items-center gap-1.5 flex-wrap min-h-[26px]">
       {/* Inline rename of the active view */}
       {renamingActive && active && (
         <div className="inline-flex items-center gap-1">
@@ -106,7 +106,7 @@ export default function DashboardToolbar() {
             }}
             autoFocus
             placeholder="New name"
-            className="h-8 px-3 text-[12px] font-bold bg-[var(--surface-card)] border border-[var(--brand-primary)] rounded-md text-[var(--text-primary)] outline-none shadow-[0_0_0_2px_var(--brand-primary-tint)] min-w-[240px]"
+            className="h-[26px] px-2 text-[10px] font-bold bg-[var(--surface-card)] border border-[var(--brand-primary)] rounded-md text-[var(--text-primary)] outline-none shadow-[0_0_0_2px_var(--brand-primary-tint)] min-w-[240px]"
           />
           <button
             type="button"
@@ -114,19 +114,19 @@ export default function DashboardToolbar() {
             disabled={!renameVal.trim()}
             aria-label="Save name"
             title="Save (Enter)"
-            className="h-8 w-8 rounded flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer"
+            className="h-[26px] w-[26px] rounded flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer"
             style={{ background: 'var(--brand-primary)' }}
           >
-            <Check size={14} weight="bold" />
+            <Check size={12} weight="bold" />
           </button>
           <button
             type="button"
             onClick={() => { setRenamingActive(false); setRenameVal(''); }}
             aria-label="Cancel rename"
             title="Cancel (Esc)"
-            className="h-8 w-8 rounded flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] bg-transparent border border-[var(--border)] cursor-pointer"
+            className="h-[26px] w-[26px] rounded flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] bg-transparent border border-[var(--border)] cursor-pointer"
           >
-            <XIcon size={14} weight="bold" />
+            <XIcon size={12} weight="bold" />
           </button>
         </div>
       )}
@@ -137,7 +137,7 @@ export default function DashboardToolbar() {
         <button
           data-tour="dashboard-view-picker"
           onClick={() => setViewMenuOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <FloppyDisk size={14} weight="bold" />
           View: {active?.name || 'Default'}
@@ -145,7 +145,7 @@ export default function DashboardToolbar() {
         </button>
 
         {viewMenuOpen && (
-          <div className="absolute left-0 top-10 z-50 w-[280px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 animate-[fadeUp_0.15s_ease-out]">
+          <div className="absolute left-0 top-8 z-50 w-[280px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 animate-[fadeUp_0.15s_ease-out]">
             <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-1.5 pb-1">Switch view</div>
             <div className="max-h-[200px] overflow-y-auto">
               {views.map((v) => (
@@ -203,18 +203,18 @@ export default function DashboardToolbar() {
             onClick={() => { setRenameVal(active.name); setRenamingActive(true); }}
             title="Rename this dashboard"
             aria-label="Rename dashboard"
-            className="h-8 w-8 rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] bg-transparent border border-[var(--border)] cursor-pointer"
+            className="h-[26px] w-[26px] rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] bg-transparent border border-[var(--border)] cursor-pointer"
           >
-            <PencilSimple size={13} weight="bold" />
+            <PencilSimple size={12} weight="bold" />
           </button>
           <button
             type="button"
             onClick={() => setConfirmDeleteViewId(active.id)}
             title="Delete this dashboard"
             aria-label="Delete dashboard"
-            className="h-8 w-8 rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-tint)] bg-transparent border border-[var(--border)] cursor-pointer ml-1"
+            className="h-[26px] w-[26px] rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-tint)] bg-transparent border border-[var(--border)] cursor-pointer ml-1"
           >
-            <Trash size={13} weight="bold" />
+            <Trash size={12} weight="bold" />
           </button>
         </div>
       )}
@@ -225,13 +225,13 @@ export default function DashboardToolbar() {
           onClick={() => setAddMenuOpen((v) => !v)}
           data-tour="dashboard-add-widget"
           title="Add widget"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md border cursor-pointer transition-all text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)] hover:opacity-90"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-md border cursor-pointer transition-all text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)] hover:opacity-90"
         >
           <Plus size={14} weight="bold" /> Add widget
         </button>
 
         {addMenuOpen && (
-          <div className="absolute left-0 top-10 z-50 w-[420px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 max-h-[540px] overflow-y-auto animate-[fadeUp_0.15s_ease-out]">
+          <div className="absolute left-0 top-8 z-50 w-[420px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 max-h-[540px] overflow-y-auto animate-[fadeUp_0.15s_ease-out]">
             {/* Position picker */}
             <div className="mb-2 pb-2 border-b border-[var(--border-subtle)]">
               <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-1.5 pb-1">
@@ -352,7 +352,7 @@ export default function DashboardToolbar() {
                       <div className={`flex-shrink-0 relative ${alreadyAdded ? 'opacity-80' : ''}`}>
                         <WidgetPreview type="custom-report" reportId={r.id} />
                         {alreadyAdded && (
-                          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--success)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
+                          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--tag-success-bg)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
                             <Check size={10} weight="bold" />
                           </span>
                         )}
@@ -411,7 +411,7 @@ export default function DashboardToolbar() {
                         <div className={`flex-shrink-0 relative ${alreadyAdded ? 'opacity-80' : ''}`}>
                           <WidgetPreview type={m.type as WidgetType} />
                           {alreadyAdded && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--success)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
+                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--tag-success-bg)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
                               <Check size={10} weight="bold" />
                             </span>
                           )}
@@ -445,7 +445,7 @@ export default function DashboardToolbar() {
         <button
           onClick={resetActiveView}
           title="Reset this view to its preset defaults (if it was based on one)"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <ArrowClockwise size={14} weight="bold" /> Reset
         </button>

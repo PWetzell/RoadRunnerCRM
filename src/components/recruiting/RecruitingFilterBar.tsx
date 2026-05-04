@@ -38,14 +38,14 @@ export default function RecruitingFilterBar({ view, setView }: Props) {
           </button>
         </div>
 
-        {/* Single Filters button */}
+        {/* Single Filters button — matches FavoritesToggle/PrivateToggle sizing */}
         <button data-tour="recruiting-filters" onClick={() => setShowFilters(!showFilters)}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md border cursor-pointer transition-all ${
+          className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-full border cursor-pointer transition-all ${
             showFilters || activeFilterCount > 0
               ? 'text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)]'
               : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border-[var(--border)] hover:border-[var(--brand-primary)]'
           }`}>
-          <Funnel size={14} weight="bold" />
+          <Funnel size={10} weight="bold" />
           Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
         </button>
 

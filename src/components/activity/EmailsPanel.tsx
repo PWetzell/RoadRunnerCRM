@@ -436,7 +436,7 @@ export default function EmailsPanel({ contact }: { contact: ContactWithEntries }
               zero-state noise). */}
           {unreadCount > 0 && (
             <span
-              className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-full text-[10px] font-bold bg-[var(--success)] text-white"
+              className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-full text-[10px] font-bold bg-[var(--tag-success-bg)] text-white"
               title={`${unreadCount} unread ${unreadCount === 1 ? 'email' : 'emails'}`}
               aria-label={`${unreadCount} unread`}
             >
@@ -742,7 +742,7 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
         <span className="text-[10.5px] text-[var(--text-tertiary)]">· {when}</span>
         {isNew && (
           <span
-            className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--success)] text-white"
+            className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--tag-success-bg)] text-white"
             title="Synced in the last 10 minutes — clears when you open it"
             aria-label="New email"
           >
@@ -752,7 +752,7 @@ function EmailRowItem({ row, contactId, contactName, expanded, viewed, onToggle,
         )}
         {unread && (
           <span
-            className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--success)] text-white"
+            className="inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9.5px] font-bold bg-[var(--tag-success-bg)] text-white"
             title="You haven't opened this email yet"
             aria-label="Unread email"
           >

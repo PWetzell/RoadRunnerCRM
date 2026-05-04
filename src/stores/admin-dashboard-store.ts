@@ -18,6 +18,14 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'aw-4', type: 'kpi-active-contacts' as WidgetType, size: { cols: 1, rows: 1 }, title: 'Documents' },
   { id: 'aw-5', type: 'kpi-active-contacts' as WidgetType, size: { cols: 1, rows: 1 }, title: 'Roles' },
   { id: 'aw-6', type: 'kpi-active-contacts' as WidgetType, size: { cols: 1, rows: 1 }, title: 'Storage' },
+  // Quality Score split into three independently-draggable cards.
+  // Each can be hidden via the gear menu, repositioned via drag, or
+  // re-added from the Add Widget toolbar. Sizes chosen to fit content
+  // without internal scrolling — browser handles overflow at the
+  // page level.
+  { id: 'aw-score-kpis',         type: 'score-kpis'         as WidgetType, size: { cols: 4, rows: 1 } },
+  { id: 'aw-score-distribution', type: 'score-distribution' as WidgetType, size: { cols: 4, rows: 2 } },
+  { id: 'aw-scoring-rules',      type: 'scoring-rules'      as WidgetType, size: { cols: 4, rows: 6 } },
 ];
 
 const PRESET_VIEWS: AdminView[] = [
@@ -89,6 +97,10 @@ export const useAdminDashboardStore = create<AdminDashboardStore>()(
       }),
       resetLayout: () => { const s = get(); set({ views: s.views.map((v) => v.id === s.activeViewId ? { ...v, widgets: DEFAULT_WIDGETS } : v) }); },
     }),
-    { name: 'roadrunner-admin-dashboard', partialize: (s) => ({ views: s.views, activeViewId: s.activeViewId }) },
+    // v3 split the combined scoring-rules widget into three
+    // independently-draggable cards (score-kpis, score-distribution,
+    // scoring-rules). Bumping the cache name re-seeds defaults so
+    // users see the new layout instead of v2's single combined card.
+    { name: 'roadrunner-admin-dashboard-v3', partialize: (s) => ({ views: s.views, activeViewId: s.activeViewId }) },
   ),
 );

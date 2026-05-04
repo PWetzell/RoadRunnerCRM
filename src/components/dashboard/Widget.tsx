@@ -18,6 +18,16 @@ interface Props {
   /** Default Phosphor icon name for the widget type — used unless overridden by widget.iconName. */
   defaultIconName: string;
   children: React.ReactNode;
+  /**
+   * Opt-in: render this widget at content-driven height with no
+   * internal scrollbar. The widget shell's normal behavior is
+   * row-span-N + overflow-hidden + body overflow-auto, which produces
+   * a scrollbar when content overflows. With autoHeight=true we drop
+   * the row-span and the overflow rules so the widget grows naturally
+   * with its content. Used by widgets whose content size is variable
+   * and the user has explicitly asked for "no scrollbars on cards".
+   */
+  autoHeight?: boolean;
 }
 
 const COL_CLASS: Record<1 | 2 | 3 | 4, string> = {
@@ -26,10 +36,13 @@ const COL_CLASS: Record<1 | 2 | 3 | 4, string> = {
   3: 'md:col-span-3',
   4: 'md:col-span-4',
 };
-const ROW_CLASS: Record<1 | 2 | 3, string> = {
+const ROW_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
   1: 'row-span-1',
   2: 'row-span-2',
   3: 'row-span-3',
+  4: 'row-span-4',
+  5: 'row-span-5',
+  6: 'row-span-6',
 };
 
 const ALIGN_CLASS = {
@@ -46,7 +59,7 @@ const TEXT_SIZE_VAR = {
   xxl: '1.6',
 } as const;
 
-const SIZE_PRESETS: { cols: 1 | 2 | 3 | 4; rows: 1 | 2 | 3; label: string; shortLabel: string }[] = [
+const SIZE_PRESETS: { cols: 1 | 2 | 3 | 4; rows: 1 | 2 | 3 | 4 | 5 | 6; label: string; shortLabel: string }[] = [
   { cols: 1, rows: 1, label: 'Compact', shortLabel: 'S' },
   { cols: 2, rows: 2, label: 'Medium',  shortLabel: 'M' },
   { cols: 4, rows: 2, label: 'Wide',    shortLabel: 'W' },
@@ -60,7 +73,7 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-export default function Widget({ widget, title, defaultIconName, children }: Props) {
+export default function Widget({ widget, title, defaultIconName, children, autoHeight }: Props) {
   // Use context store actions if provided (Reporting/Admin dashboards),
   // otherwise fall back to the main dashboard store.
   const ctxActions = useWidgetStoreActionsOptional();
@@ -182,7 +195,7 @@ export default function Widget({ widget, title, defaultIconName, children }: Pro
     <section
       ref={setNodeRef}
       style={style}
-      className={`@container relative group/widget ${COL_CLASS[widget.size.cols]} ${ROW_CLASS[widget.size.rows]} bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden flex flex-col transition-colors hover:border-[var(--border-strong)]`}
+      className={`@container relative group/widget ${COL_CLASS[widget.size.cols]} ${autoHeight ? '' : ROW_CLASS[widget.size.rows]} bg-[var(--surface-card)] border border-[var(--border)] rounded-xl ${autoHeight ? '' : 'overflow-hidden'} flex flex-col transition-colors hover:border-[var(--border-strong)]`}
     >
       {accent && <div className="h-1 flex-shrink-0" style={{ background: accent }} aria-hidden />}
       <header
@@ -247,7 +260,7 @@ export default function Widget({ widget, title, defaultIconName, children }: Pro
         </button>
       </header>
 
-      <div className={`flex-1 px-3 py-2.5 @md:px-4 @md:py-3 @xl:px-5 @xl:py-4 overflow-auto ${ALIGN_CLASS[align]}`}>
+      <div className={`flex-1 px-3 py-2.5 @md:px-4 @md:py-3 @xl:px-5 @xl:py-4 ${autoHeight ? '' : 'overflow-auto'} ${ALIGN_CLASS[align]}`}>
         {children}
       </div>
 
@@ -298,7 +311,7 @@ export default function Widget({ widget, title, defaultIconName, children }: Pro
             const dCols = Math.round((lastClientX - startX) / GRID_COL_PX);
             const dRows = Math.round((lastClientY - startY + scrollDy) / GRID_ROW_PX);
             const newCols = clamp(startCols + dCols, 1, 4) as 1 | 2 | 3 | 4;
-            const newRows = clamp(startRows + dRows, 1, 3) as 1 | 2 | 3;
+            const newRows = clamp(startRows + dRows, 1, 6) as 1 | 2 | 3 | 4 | 5 | 6;
             resizeWidget(widget.id, { cols: newCols, rows: newRows });
           };
 

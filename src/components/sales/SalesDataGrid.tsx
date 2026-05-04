@@ -10,6 +10,7 @@ import { useSalesStore, SalesSavedView } from '@/stores/sales-store';
 import { useContactStore } from '@/stores/contact-store';
 import { useGridLayoutStore } from '@/stores/grid-layout-store';
 import { fmtDate, getAvatarColor, initials, uid } from '@/lib/utils';
+import { getTagChipStyle } from '@/components/contacts/DataGrid';
 import {
   DotsThree, ArrowSquareOut, Trash, PencilSimple, Phone, EnvelopeSimple, ChatCircle,
   Users, FileText, Handshake, Warning, Columns, FloppyDisk, Check,
@@ -103,9 +104,21 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
           return (
             <div className="flex items-center gap-1.5">
               <span className="text-[length:var(--grid-font)] text-[var(--text-secondary)] truncate">New lead from tag</span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] whitespace-nowrap">
-                <Tag size={9} weight="fill" /> {t.matchedTag}
-              </span>
+              {(() => {
+                // Matched-tag pill — per-value triplet from the shared
+                // `getTagChipStyle` so Client / Prospect / Customer /
+                // Vendor read as distinct colors here AND match the
+                // same tag's color in the contacts grid Tags column.
+                const colors = getTagChipStyle(t.matchedTag);
+                return (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border whitespace-nowrap"
+                    style={{ background: colors.bg, color: colors.text, borderColor: colors.border }}
+                  >
+                    <Tag size={9} /> {t.matchedTag}
+                  </span>
+                );
+              })()}
             </div>
           );
         }
@@ -125,8 +138,8 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
             // looked off in dark mode). Surface-raised + text-secondary
             // is the same pattern the +N overflow tag chip uses, and
             // adapts to dark theme.
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold whitespace-nowrap bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]">
-              <Tag size={10} weight="fill" /> Tagged
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]">
+              <Tag size={10} /> Tagged
             </span>
           );
         }
@@ -147,10 +160,10 @@ function buildSalesColumns(contactById: Map<string, ContactWithEntries>, favIds:
         const r = row.original;
         if (!isDeal(r)) return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">--</span>;
         const status = computeStatus(r);
-        if (status === 'Won') return <span title="Won" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0">Won</span>;
-        if (status === 'Lost') return <span title="Lost" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0">Lost</span>;
-        if (status === 'Stalled') return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><Warning size={10} weight="fill" className="flex-shrink-0" /> <span className="truncate">Stalled</span></span>;
-        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="truncate">On Track</span></span>;
+        if (status === 'Won') return <span title="Won" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0">Won</span>;
+        if (status === 'Lost') return <span title="Lost" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0">Lost</span>;
+        if (status === 'Stalled') return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><Warning size={10} className="flex-shrink-0" /> <span className="truncate">Stalled</span></span>;
+        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="truncate">On Track</span></span>;
       },
     },
     {
@@ -327,10 +340,10 @@ function PriorityPill({ priority }: { priority: DealPriority }) {
   return (
     <span
       title={meta.label}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
+      className="inline-flex items-center gap-1 px-2 py-[7px] rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
       style={{ background: c.bg, color: c.color, border: `1px solid ${c.color}` }}
     >
-      <Warning size={10} weight="fill" className="flex-shrink-0" /> <span className="truncate">{meta.label}</span>
+      <Warning size={10} className="flex-shrink-0" /> <span className="truncate">{meta.label}</span>
     </span>
   );
 }
@@ -342,11 +355,11 @@ function CommPill({ comm }: { comm: { type: CommType; date: string } }) {
   const c = dc(meta, isDark);
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
+      className="inline-flex items-center gap-1 px-2 py-[7px] rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
       style={{ background: c.bg, color: c.color, border: `1px solid ${c.color}` }}
       title={`${comm.type} · ${fmtDate(comm.date)}`}
     >
-      <span className="flex-shrink-0"><Icon size={10} weight="fill" /></span> <span className="truncate">{comm.type}</span>
+      <span className="flex-shrink-0"><Icon size={10} /></span> <span className="truncate">{comm.type}</span>
     </span>
   );
 }

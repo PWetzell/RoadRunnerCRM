@@ -28,7 +28,7 @@ export default function ListFilterChip() {
   };
 
   return (
-    <div data-tour="list-filter-chip" className="flex items-center gap-2 px-3 py-2 mb-2 rounded-[var(--radius-sm)] bg-[var(--brand-bg)] border border-[var(--brand-primary)]">
+    <div data-tour="list-filter-chip" className="w-full flex items-center gap-2 px-3 py-2 mb-2 rounded-[var(--radius-sm)] bg-[var(--brand-bg)] border border-[var(--brand-primary)]">
       <Bookmark size={12} weight="fill" className="text-[var(--brand-primary)] flex-shrink-0" />
       <span className="text-[11px] font-bold text-[var(--brand-primary)]">
         Filtered by list: <span className="font-extrabold">{list.name}</span>

@@ -123,19 +123,19 @@ export default function AdminPage() {
     <>
       <Topbar title="Admin" />
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[1400px] mx-auto px-5 pt-5 pb-2 flex flex-col gap-3 items-start">
+        <div className="max-w-[1400px] mx-auto px-5 pt-3 pb-1 flex flex-col gap-1.5 items-start">
           {/* AI Insights bar — same pattern as all other pages */}
-          <div className="bg-[var(--ai-bg)] border border-[var(--ai-border)] px-3.5 py-2.5 flex items-center gap-2.5 flex-wrap rounded-lg w-full min-h-[48px]">
-            <div className="w-[22px] h-[22px] bg-[var(--ai)] rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0">
-              <ShieldCheck size={13} weight="duotone" className="text-white" />
+          <div className="bg-[var(--ai-bg)] border border-[var(--ai-border)] px-2.5 py-1.5 flex items-center gap-2 rounded-lg w-full h-[32px] overflow-hidden">
+            <div className="w-[18px] h-[18px] bg-[var(--ai)] rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0">
+              <Sparkle size={11} weight="duotone" className="text-white" />
             </div>
-            <div className="text-[13px] text-[var(--text-secondary)]">
+            <div className="text-[11px] text-[var(--text-secondary)]">
               <strong className="font-extrabold text-[var(--text-primary)]">System Admin</strong>
               <span> · {users.length} user{users.length !== 1 ? 's' : ''} · {contacts.length} contacts · {deals.length} deals · {documents.length} documents</span>
             </div>
             {staleCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
-                <Warning size={12} /> {staleCount} incomplete contacts
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]">
+                <Warning size={10} /> {staleCount} incomplete contacts
               </span>
             )}
           </div>

@@ -1092,7 +1092,7 @@ export default function DetailsTab({ contact: c, scrollToCardId, onScrolled }: D
             <p className="text-sm text-[var(--text-secondary)] mb-4">This action cannot be undone.</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] border border-[var(--border)] rounded-[var(--radius-sm)]">Cancel</button>
-              <button onClick={() => deleteEntry(confirmDelete.section, confirmDelete.entryId)} className="px-4 py-2 text-sm font-bold text-white bg-[var(--danger)] rounded-[var(--radius-sm)] flex items-center gap-1">
+              <button onClick={() => deleteEntry(confirmDelete.section, confirmDelete.entryId)} className="px-4 py-2 text-sm font-bold text-white bg-[var(--tag-danger-bg)] rounded-[var(--radius-sm)] flex items-center gap-1">
                 <Trash size={14} /> Remove
               </button>
             </div>
@@ -1678,7 +1678,7 @@ function EntryEditForm({ section, entryId, contact, fields, onSave, onCancel, on
           <button
             type="button"
             onClick={() => { setEntryMode('ai'); }}
-            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer border-none transition-colors ${entryMode === 'ai' ? 'bg-[var(--ai)] text-white' : 'bg-transparent text-[var(--text-secondary)]'}`}
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer border-none transition-colors ${entryMode === 'ai' ? 'bg-[var(--tag-info-bg)] text-white' : 'bg-transparent text-[var(--text-secondary)]'}`}
           >
             <Sparkle size={11} weight="duotone" /> AI Suggestions
           </button>

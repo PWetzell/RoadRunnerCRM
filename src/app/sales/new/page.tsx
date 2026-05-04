@@ -330,7 +330,7 @@ export default function NewLeadPage() {
                 <button
                   onClick={handleSave}
                   disabled={!canSave}
-                  className="px-3 py-1.5 text-[12px] font-semibold text-white bg-[var(--success)] border-none rounded-md cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-[12px] font-semibold text-white bg-[var(--tag-success-bg)] border-none rounded-md cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                 >
                   <FloppyDisk size={12} weight="bold" /> Save deal
                 </button>

@@ -32,7 +32,7 @@ export default function RecruitingPage() {
         </div>
       </Topbar>
       <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="px-5 pt-5 pb-2 flex flex-col gap-3 items-start">
+        <div className="px-5 pt-3 pb-1 flex flex-col gap-1.5 items-start">
           {aiEnabled && insightsBars?.recruiting && <RecruitingInsightsBar />}
           <RecruitingFilterBar view={view} setView={setView} />
 

@@ -128,7 +128,7 @@ export function AIEnrichmentReview({ result, onChange }: Props) {
                         onClick={() => updateField(f.key, true)}
                         className={`w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center cursor-pointer transition-all border ${
                           f.accepted
-                            ? 'bg-[var(--success)] border-[var(--success)] text-white'
+                            ? 'bg-[var(--tag-success-bg)] border-[var(--tag-success-bg)] text-white'
                             : 'bg-transparent border-[var(--border-strong)] text-[var(--text-tertiary)] hover:border-[var(--success)] hover:text-[var(--success)]'
                         }`}
                         title="Accept"
@@ -139,7 +139,7 @@ export function AIEnrichmentReview({ result, onChange }: Props) {
                         onClick={() => updateField(f.key, false)}
                         className={`w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center cursor-pointer transition-all border ${
                           f.accepted === false
-                            ? 'bg-[var(--danger)] border-[var(--danger)] text-white'
+                            ? 'bg-[var(--tag-danger-bg)] border-[var(--tag-danger-bg)] text-white'
                             : 'bg-transparent border-[var(--border-strong)] text-[var(--text-tertiary)] hover:border-[var(--danger)] hover:text-[var(--danger)]'
                         }`}
                         title="Reject"

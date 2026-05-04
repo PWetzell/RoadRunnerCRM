@@ -20,7 +20,7 @@ export default function AINextStepSuggestion({ deal }: { deal: Deal }) {
   return (
     <div className="bg-[var(--surface-card)] border border-[var(--ai-border)] rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-[var(--ai)] flex items-center justify-center"><Sparkle size={12} weight="duotone" className="text-white" /></div>
+        <div className="w-6 h-6 rounded bg-[var(--tag-info-bg)] flex items-center justify-center"><Sparkle size={12} weight="duotone" className="text-white" /></div>
         <div className="text-[13px] font-extrabold text-[var(--text-primary)]">AI Next Step</div>
       </div>
       <div className="px-4 py-3">
@@ -31,7 +31,7 @@ export default function AINextStepSuggestion({ deal }: { deal: Deal }) {
             <ArrowRight size={12} weight="bold" /> Last activity {daysSinceUpdate} days ago — momentum is stalling.
           </div>
         )}
-        <button className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[var(--ai)] border-none rounded-md cursor-pointer hover:opacity-90">
+        <button className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[var(--tag-info-bg)] border-none rounded-md cursor-pointer hover:opacity-90">
           <Sparkle size={12} weight="duotone" /> Draft email with AI
         </button>
       </div>

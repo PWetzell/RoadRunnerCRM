@@ -72,12 +72,12 @@ export default function ViewToolbar({
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap min-h-[40px] w-full">
+    <div className="flex items-center gap-1.5 flex-wrap min-h-[26px] w-full">
       {/* View picker */}
       <div className="relative" ref={viewRef}>
         <button
           onClick={() => setViewMenuOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
         >
           <FloppyDisk size={14} weight="bold" />
           View: {active?.name || 'Default'}
@@ -85,7 +85,7 @@ export default function ViewToolbar({
         </button>
 
         {viewMenuOpen && (
-          <div className="absolute left-0 top-10 z-50 w-[280px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 animate-[fadeUp_0.15s_ease-out]">
+          <div className="absolute left-0 top-8 z-50 w-[280px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 animate-[fadeUp_0.15s_ease-out]">
             <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-1.5 pb-1">Switch view</div>
             <div className="max-h-[200px] overflow-y-auto">
               {views.map((v) => (
@@ -129,11 +129,11 @@ export default function ViewToolbar({
       {/* Add widget */}
       <div className="relative" ref={addRef}>
         <button onClick={() => setAddMenuOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md border cursor-pointer transition-all text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)] hover:opacity-90">
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-md border cursor-pointer transition-all text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)] hover:opacity-90">
           <Plus size={14} weight="bold" /> Add widget
         </button>
         {addMenuOpen && (
-          <div className="absolute left-0 top-10 z-50 w-[300px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 max-h-[400px] overflow-y-auto animate-[fadeUp_0.15s_ease-out]">
+          <div className="absolute left-0 top-8 z-50 w-[300px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 max-h-[400px] overflow-y-auto animate-[fadeUp_0.15s_ease-out]">
             {(['status', 'reporting', 'list', 'work'] as WidgetCategory[]).map((cat) => {
               const items = WIDGET_META.filter((m) => m.category === cat);
               if (!items.length) return null;
@@ -156,7 +156,7 @@ export default function ViewToolbar({
 
       {/* Reset */}
       <button onClick={onReset}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]">
+        className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]">
         <ArrowClockwise size={14} weight="bold" /> Reset
       </button>
 

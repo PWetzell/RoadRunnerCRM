@@ -53,7 +53,7 @@ export default function AIDealScoring({ source, amount, personContactId, orgCont
   return (
     <div className="bg-[var(--surface-card)] border border-[var(--ai-border)] rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-[var(--ai)] flex items-center justify-center"><Sparkle size={12} weight="duotone" className="text-white" /></div>
+        <div className="w-6 h-6 rounded bg-[var(--tag-info-bg)] flex items-center justify-center"><Sparkle size={12} weight="duotone" className="text-white" /></div>
         <div className="text-[13px] font-extrabold text-[var(--text-primary)]">AI Deal Scoring</div>
       </div>
       <div className="px-4 py-3">
@@ -62,7 +62,7 @@ export default function AIDealScoring({ source, amount, personContactId, orgCont
           <span className="text-[11px] text-[var(--text-tertiary)] font-semibold">predicted close</span>
         </div>
         <div className="w-full h-2 bg-[var(--surface-raised)] rounded-full overflow-hidden mb-3">
-          <div className="h-full bg-[var(--ai)]" style={{ width: `${score.value}%` }} />
+          <div className="h-full bg-[var(--tag-info-bg)]" style={{ width: `${score.value}%` }} />
         </div>
         <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">Factors</div>
         <div className="flex flex-col gap-1 mb-3">
@@ -78,7 +78,7 @@ export default function AIDealScoring({ source, amount, personContactId, orgCont
         {onApplyProbability && (
           <button
             onClick={() => onApplyProbability(score.value)}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[var(--ai)] border-none rounded-md cursor-pointer hover:opacity-90"
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[var(--tag-info-bg)] border-none rounded-md cursor-pointer hover:opacity-90"
           >
             <TrendUp size={12} weight="bold" /> Apply {score.value}% probability
           </button>

@@ -14,6 +14,7 @@ import { ContactTypeChooser } from '@/components/contact-flow/ContactTypeChooser
 import { useContactStore } from '@/stores/contact-store';
 import { useUserStore } from '@/stores/user-store';
 import { useGmailStatusStore } from '@/stores/gmail-status-store';
+import { useScoringStore } from '@/stores/scoring-store';
 import type { ContactWithEntries } from '@/types/contact';
 
 export default function ContactsPage() {
@@ -25,6 +26,14 @@ export default function ContactsPage() {
   // Single-flag state now: the slide panel shows the chooser. Selecting
   // Person/Company/resume-upload navigates to the dedicated full-page flow.
   const [chooserOpen, setChooserOpen] = useState(false);
+
+  // Manual hydration for the scoring store (skipHydration:true). Same
+  // pattern used by /dashboard and /reporting for stores that render
+  // seed data on first paint and want persisted overrides to land
+  // post-mount without an SSR flash.
+  useEffect(() => {
+    useScoringStore.persist.rehydrate();
+  }, []);
 
   // Auto-open the chooser panel when the page loads with `?add=1`. Used by
   // the breadcrumbs inside /contacts/new/person and /contacts/new/company:
@@ -95,9 +104,7 @@ export default function ContactsPage() {
                 pattern: one composer hub, reachable from the dedicated
                 nav item rather than living on the contacts list. */}
           </div>
-          <div className="w-full">
-            <ListFilterChip />
-          </div>
+          <ListFilterChip />
         </div>
         <div data-tour="contacts-grid" className="flex-1 overflow-hidden px-5 pb-5">
           {view === 'list' ? <DataGrid /> : <ContactsCardView />}

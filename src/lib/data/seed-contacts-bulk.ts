@@ -409,6 +409,20 @@ export const HM_SEEDS: HMSeed[] = [
 
 function makeHM(hm: HMSeed, i: number): ContactWithEntries {
   const phone = `+1 ${hm.phoneArea} 555 0${(200 + i * 3).toString().padStart(3, '0')}`;
+  // Synthesize an address from the city/state already on the HMSeed.
+  // Was previously `addresses: []` which made the Quality Score
+  // engine's "Has address" rule never fire for any bulk hiring
+  // manager — capped them at 70 instead of 75. The city/state pair
+  // is enough for the score check; building number is decorative.
+  const address = {
+    id: 'a1',
+    type: 'Office' as const,
+    value: `${hm.city} office`,
+    city: hm.city,
+    state: hm.state,
+    zip: '',
+    primary: true,
+  };
   return {
     id: hm.id,
     type: 'person',
@@ -427,7 +441,7 @@ function makeHM(hm: HMSeed, i: number): ContactWithEntries {
     tags: hm.tags ?? ['Contacts Tag'],
     assignedTo: 'Paul Wentzell',
     entries: {
-      addresses: [],
+      addresses: [address],
       emails: [{ id: 'e1', type: 'Work', value: hm.email, primary: true }],
       phones: [{ id: 'p1', type: 'Office', value: phone, primary: true }],
       websites: [{ id: 'w1', type: 'LinkedIn', value: `linkedin.com/in/${hm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`, primary: false }],

@@ -418,7 +418,7 @@ export default function NewPersonPage() {
                   ) : (
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 text-[13px] font-bold text-white bg-[var(--success)] rounded-[var(--radius-sm)] cursor-pointer border-none"
+                      className="px-4 py-2 text-[13px] font-bold text-white bg-[var(--tag-success-bg)] rounded-[var(--radius-sm)] cursor-pointer border-none"
                     >
                       Save Contact ✓
                     </button>

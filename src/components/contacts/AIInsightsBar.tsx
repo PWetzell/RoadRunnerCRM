@@ -36,7 +36,7 @@ export default function AIInsightsBar() {
   if (!showStale && !showAI) return null;
 
   return (
-    <div data-tour="contacts-insights" className="bg-[var(--ai-bg)] border border-[var(--ai-border)] px-2.5 py-1.5 flex items-center gap-2 flex-wrap rounded-lg w-full min-h-[32px]">
+    <div data-tour="contacts-insights" className="bg-[var(--ai-bg)] border border-[var(--ai-border)] px-2.5 py-1.5 flex items-center gap-2 rounded-lg w-full h-[32px] overflow-hidden">
       <div className="w-[18px] h-[18px] bg-[var(--ai)] rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0">
         <Sparkle size={11} weight="duotone" className="text-white" />
       </div>

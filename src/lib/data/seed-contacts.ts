@@ -284,4 +284,168 @@ const CORE_CONTACTS: ContactWithEntries[] = [
 ];
 
 /** Full seed — original 12 story contacts merged with the 2026 bulk book. */
-export const SEED_CONTACTS: ContactWithEntries[] = [...CORE_CONTACTS, ...BULK_CONTACTS];
+const RAW_SEED_CONTACTS: ContactWithEntries[] = [...CORE_CONTACTS, ...BULK_CONTACTS];
+
+/**
+ * Post-processor — applies an engagement-and-recency profile to person
+ * contacts so the Quality Score engine (rule-eng-contacted /
+ * rule-eng-stale / rule-eng-cold) fires on a credible spread.
+ *
+ * Without this, every seed contact has a recent `lastUpdated` and zero
+ * `recentEmail.lastEmailAt`, which collapses the distribution into
+ * a flat 25-35 cluster (no engagement signals can fire). Per Paul's
+ * 2026-04-30 spec, the demo needs visible 0-24 / 25-49 / 50-74 / 75-100
+ * spread so the score story reads.
+ *
+ * Profile assignment is deterministic per-index so reloads produce
+ * the same distribution.
+ *
+ * Buckets, by index in the persons-only array:
+ *   • 0-39   → Hot (recentEmail within 2-7 days)
+ *   • 40-81  → As-is (default lastUpdated, no recent email)
+ *   • 82-96  → Stale (lastUpdated 65-85 days ago, no recent email)
+ *   • 97-111 → Cold (lastUpdated 95-125 days ago, plus stripped tags
+ *              so completeness drops them into the 0-24 band)
+ *
+ * Stale bucket trimmed from 25 → 15 on 2026-04-30 to lift the
+ * mid-band count above the 25% tolerance floor.
+ *
+ * Org-link augmentation (added 2026-04-30 evening):
+ * Bulk candidates (per-33 onwards) are mostly orgId-less in the seed,
+ * so all firmographic rules miss on them — they cluster around the
+ * completeness floor of 25-35. Default `lastUpdated desc` sort puts
+ * recent candidates at the TOP of the grid, which made the visible
+ * grid look monotone (every visible row 25 or 35) even though the
+ * 75-100 band had 13 contacts. Solution: link every other candidate
+ * (skipping cold bucket) to one of the seed orgs via a deterministic
+ * rotation. Each linked candidate inherits firmographic boost and
+ * lands somewhere in 50-75 — spreads variety across the grid's
+ * default sort order.
+ */
+function applyDistributionProfile(contacts: ContactWithEntries[]): ContactWithEntries[] {
+  const NOW_MS = Date.now();
+  const DAY_MS = 86_400_000;
+  const daysAgoIso = (d: number) => new Date(NOW_MS - d * DAY_MS).toISOString();
+  const setRecentEmail = (c: ContactWithEntries, daysAgo: number, attachmentCount = 0) => {
+    // Match bulk-candidate convention: when a contact has attachments,
+    // they're UNREAD. The grid's attachments-desc sort key is
+    // `unreadAttached * 100000 + totalAttached`, so contacts whose
+    // attachments are merely "read" rank far below contacts with
+    // unread attachments. To put high scorers in the visible top tier,
+    // their attachments must register as unread (green badge), not
+    // read (gray badge).
+    const unread = attachmentCount;
+    c.recentEmail = {
+      hasNew: unread > 0,
+      hasAttachment: attachmentCount > 0,
+      attachmentCount,
+      newAttachmentCount: unread,
+      unreadCount: unread,
+      unreadAttachmentCount: unread,
+      lastEmailAt: daysAgoIso(daysAgo),
+    };
+  };
+
+  const persons = contacts.filter((c) => c.type === 'person');
+  const total = persons.length;
+
+  // Orgs we'll rotate through when linking candidates. Picked from the
+  // mid-and-large-firm pool so linked candidates inherit a credible
+  // firmographic boost (large company + enterprise + target industry).
+  const orgs = contacts.filter((c) => c.type === 'org');
+  const linkPool = orgs.filter((o) =>
+    ['org-5', 'org-6', 'org-7', 'org-8', 'org-9', 'org-10', 'org-11', 'org-12',
+     'org-13', 'org-14', 'org-15', 'org-18', 'org-19'].includes(o.id),
+  );
+
+  // Top-of-grid pinning. Contacts grid sorts by lastUpdated desc by
+  // default; without intervention the bulk persons (per-43+) sort first
+  // because their seed lastUpdated values are recent. We want the
+  // 75-scoring contacts to be the first thing the user sees so the
+  // score column shows GREEN at the top, not BLUE/ORANGE.
+  //
+  // The 14 IDs below are exactly the contacts that scored 75 in the
+  // /api/debug/score-distribution snapshot after the org-link
+  // augmentation landed: completeness +30, senior title +10, large
+  // company +10, enterprise +5, target industry +5, contacted recently
+  // +5 ⇒ (yes 75 is correct, the rule weights total 65 firmographic +
+  // engagement floor; the +10 active-deal pushes the sub-floor up).
+  const HIGH_SCORER_IDS = new Set([
+    'per-1', 'per-9', 'per-10', 'per-11', 'per-12', 'per-14', 'per-15',
+    'per-16', 'per-21', 'per-22', 'per-23', 'per-28', 'per-29', 'per-37',
+  ]);
+
+  // Only a STRATEGIC SUBSET of the 14 high scorers gets pinned
+  // attachments — the rest stay attachment-less so they don't all
+  // cluster at the top of the @2-unread tier under the default
+  // attachments-desc sort. The 4 IDs below sit at persons-array
+  // indices 0, 10, 21, and 36 — spread across the array so they
+  // interleave with bulk candidates (idx 32+) instead of dominating
+  // the first 14 rows.
+  //
+  // Visible top tier becomes:
+  //   row 1:  per-1 (Sarah Chen, GREEN)         ← idx 0
+  //   row 2:  per-11 (Andrea Kowalski, GREEN)   ← idx 10
+  //   row 3:  per-22 (Vanessa Shapiro, GREEN)   ← idx 21
+  //   rows 4-7: bulk candidates per-33..per-36  ← idx 32-35 (mixed)
+  //   row 8:  per-37 (Olivia Chen, GREEN)       ← idx 36
+  //   rows 9+: bulk candidates per-38+ (mixed)  ← idx 37+
+  // → 4 greens woven through orange/blue bulk; reds (cold contacts
+  //   with seed-email attachments) appear lower in the tier.
+  const ATTACHMENT_GREENS = new Set(['per-1', 'per-11', 'per-22', 'per-37']);
+
+  persons.forEach((p, i) => {
+    if (i < 40) {
+      // Hot — recent email triggers contactedWithinDays:7 (+5) and
+      // resets the activity clock so Stale/Cold can't fire.
+      const attachments = ATTACHMENT_GREENS.has(p.id) ? 2 : 0;
+      setRecentEmail(p, 2 + (i % 5), attachments);
+    } else if (i >= total - 15) {
+      // Cold — old lastUpdated triggers Stale (-10) AND Cold (-15) =
+      // -25. Strip tags so completeness drops, yielding 0-24 floor.
+      p.lastUpdated = daysAgoIso(95 + (i % 30));
+      p.tags = [];
+    } else if (i >= total - 30) {
+      // Stale — older lastUpdated triggers Stale (-10) only. Keeps
+      // these in the 25-49 band rather than the 0-24 floor.
+      p.lastUpdated = daysAgoIso(65 + (i % 20));
+    }
+    // 40 ≤ i < total-30 → as-is (default mid-band score)
+
+    // Org-link augmentation. Skip cold contacts (we want them low),
+    // skip persons that already have an orgId (HMs from per-9..per-32
+    // are already linked). Link every other remaining candidate to an
+    // org from the rotation pool — spreads the firmographic boost so
+    // mid-band and high-band scorers appear throughout the grid, not
+    // just in the index 0-32 slice.
+    const isCold = i >= total - 15;
+    if (!isCold && !(p as { orgId?: string }).orgId && i % 2 === 0) {
+      const linkedOrg = linkPool[Math.floor(i / 2) % linkPool.length];
+      if (linkedOrg) {
+        (p as { orgId?: string }).orgId = linkedOrg.id;
+        (p as { orgName?: string }).orgName = linkedOrg.name;
+      }
+    }
+
+    // Pin high scorers to today's date so they sort first under the
+    // default lastUpdated-desc grid sort. Without this, the bulk
+    // candidates (with their freshly-stamped post-processor dates) win
+    // the top slots and the user sees a wall of blue/orange instead of
+    // green-led variety.
+    if (HIGH_SCORER_IDS.has(p.id)) {
+      // Stagger over the last 14 days so the 14 high scorers occupy a
+      // continuous block at the top without ties: per-1 newest, per-37
+      // oldest within the high-scorer range.
+      const order = [
+        'per-1', 'per-9', 'per-10', 'per-11', 'per-12', 'per-14', 'per-15',
+        'per-16', 'per-21', 'per-22', 'per-23', 'per-28', 'per-29', 'per-37',
+      ];
+      const rank = order.indexOf(p.id);
+      p.lastUpdated = daysAgoIso(rank >= 0 ? rank : 0);
+    }
+  });
+
+  return contacts;
+}
+
+export const SEED_CONTACTS: ContactWithEntries[] = applyDistributionProfile(RAW_SEED_CONTACTS);

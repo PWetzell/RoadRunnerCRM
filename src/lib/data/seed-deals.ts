@@ -185,4 +185,53 @@ export const SEED_DEALS: Deal[] = [
     notes: 'From sourcing list. Not yet contacted.',
     createdAt: '2026-04-14', lastUpdated: '2026-04-14',
   },
+  // ── Engagement-distribution deals (added 2026-04-30) ─────────────
+  // Spreads `hasActiveDeal` across more person contacts so the Quality
+  // Score engine's +10 active-deal rule fires on a credible portion of
+  // the contact base — pushes top-of-distribution senior+large-company
+  // contacts from 60-65 into the 75-100 high band. Stages chosen from
+  // the active set (lead/qualified/discovery/proposal/negotiation) so
+  // they all count as "active" in the engine's check.
+  ...([
+    ['deal-30', 'per-9',  'org-5',  'lead',        45000, 'Mass General Brigham — Director of Nursing search'],
+    ['deal-31', 'per-10', 'org-5',  'qualified',   58000, 'MGH — Clinical Research Director'],
+    ['deal-32', 'per-13', 'org-7',  'discovery',   72000, 'Pfizer — Senior Director, Regulatory Affairs'],
+    ['deal-33', 'per-14', 'org-7',  'proposal',    65000, 'Pfizer — VP Clinical Operations'],
+    ['deal-34', 'per-17', 'org-9',  'lead',        88000, 'Anthropic — Engineering Director (Safety)'],
+    ['deal-35', 'per-18', 'org-9',  'qualified',   95000, 'Anthropic — Director of Product, API'],
+    ['deal-36', 'per-19', 'org-10', 'negotiation', 70000, 'Snowflake — Senior Engineering Manager'],
+    ['deal-37', 'per-21', 'org-11', 'discovery',   62000, 'Datadog — Director of Observability Eng'],
+    ['deal-38', 'per-23', 'org-12', 'proposal',    75000, 'Figma — Senior Product Designer Lead'],
+    ['deal-39', 'per-25', 'org-13', 'lead',       105000, 'Goldman Sachs — VP, Equity Capital Markets'],
+    ['deal-40', 'per-26', 'org-13', 'qualified',   98000, 'Goldman Sachs — Director, FICC Sales'],
+    ['deal-41', 'per-27', 'org-14', 'discovery',   85000, 'BlackRock — Senior PM, Aladdin Engineering'],
+    ['deal-42', 'per-28', 'org-14', 'proposal',    78000, 'BlackRock — Director of Risk Analytics'],
+    ['deal-43', 'per-29', 'org-19', 'lead',        82000, 'Boeing — Senior Manager, Cleared Talent'],
+    ['deal-44', 'per-31', 'org-21', 'qualified',   55000, 'Meridian Capital — VP People Operations'],
+    ['deal-45', 'per-32', 'org-15', 'discovery',   68000, 'Schwab — Director, Wealth Advisor Tech'],
+    ['deal-46', 'per-33', 'org-16', 'lead',        90000, 'Sidley Austin — Lateral Partner search'],
+    ['deal-47', 'per-34', 'org-17', 'qualified',   88000, 'Kirkland & Ellis — Paralegal Manager'],
+    ['deal-48', 'per-35', 'org-18', 'discovery',   60000, 'Caterpillar — Director, Skilled Trades Recruiting'],
+    ['deal-49', 'per-36', 'org-6',  'proposal',    72000, 'Moderna — Senior Director, Clinical Eng'],
+    ['deal-50', 'per-37', 'org-8',  'lead',        58000, 'Medtronic — Director, Devices Manufacturing'],
+    ['deal-51', 'per-38', 'org-20', 'qualified',   45000, 'Vertex Analytics — Director of Engineering'],
+    ['deal-52', 'per-39', 'org-2',  'discovery',   65000, 'Stripe — Senior Engineering Manager, Payouts'],
+    ['deal-53', 'per-40', 'org-4',  'proposal',    52000, 'Dow Jones — Director of Editorial Tech'],
+    ['deal-54', 'per-41', 'org-3',  'lead',        48000, 'HubSpot — Sr. Product Marketing Manager'],
+  ] as const).map(([id, personId, orgId, stage, amount, name]): Deal => ({
+    id,
+    name,
+    type: 'company',
+    personContactId: personId,
+    orgContactId: orgId,
+    stage: stage as Deal['stage'],
+    amount,
+    probability: 50,
+    expectedCloseDate: '2026-06-30',
+    source: 'Outbound' as Deal['source'],
+    priority: 'medium' as Deal['priority'],
+    owner: 'Paul Wentzell',
+    createdAt: '2026-04-15',
+    lastUpdated: '2026-04-25',
+  })),
 ];

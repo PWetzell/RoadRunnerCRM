@@ -48,7 +48,7 @@ export default function ConvertToCustomerDialog({ deal, org, onCancel, onConfirm
           <button onClick={onCancel} className="px-3 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)] bg-transparent border border-[var(--border)] rounded-md cursor-pointer hover:bg-[var(--surface-raised)]">
             Cancel
           </button>
-          <button onClick={onConfirm} className="px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--success)] border-none rounded-md cursor-pointer hover:opacity-90 inline-flex items-center gap-1.5">
+          <button onClick={onConfirm} className="px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--tag-success-bg)] border-none rounded-md cursor-pointer hover:opacity-90 inline-flex items-center gap-1.5">
             <CheckCircle size={14} weight="fill" /> Convert to Customer
           </button>
         </div>

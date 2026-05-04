@@ -114,26 +114,8 @@ const SECTION_HELP: Record<string, { title: string; icon: React.ReactNode; tips:
       'Enroll a contact, then "Send next step" when due. Reply detection auto-stops it on reply.',
     ],
   },
-  '/sales': {
-    title: 'Sales',
-    icon: <CurrencyDollar size={14} weight="duotone" />,
-    tips: [
-      'Switch between List and Status (kanban) views.',
-      'Filter by People or Company lead types.',
-      'Each deal has Overview, Details, Qualify, and Documents tabs.',
-      'The completeness bar shows how much info has been gathered.',
-      'Edit deal fields by clicking the pencil on any card.',
-      'Move deals through pipeline stages on the Qualify tab.',
-    ],
-    walkthrough: [
-      'The Sales module tracks your deals from Lead to Closed Won.',
-      'Deals can be Person-first (individual leads) or Company-first (org deals).',
-      'The Status view shows a kanban board organized by pipeline stage.',
-      'Click any deal to see its full profile with editable detail cards.',
-      'The Qualify tab has cards for Company Details, Revenue, and Products.',
-      'The completeness bar fills as you add more information.',
-    ],
-  },
+  // Sales help entry removed alongside the sidebar Sales nav entry —
+  // pulled from the demo until styling is reconciled.
   '/recruiting': {
     title: 'Recruiting',
     icon: <UsersFour size={14} weight="duotone" />,
@@ -502,7 +484,7 @@ export default function HelpPanel({ onClose }: Props) {
               ) : (
                 <button
                   onClick={() => { exitTour(); }}
-                  className="h-[30px] px-4 text-[11px] font-bold text-white bg-[var(--success)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90"
+                  className="h-[30px] px-4 text-[11px] font-bold text-white bg-[var(--tag-success-bg)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90"
                 >
                   Done ✓
                 </button>
@@ -519,7 +501,7 @@ export default function HelpPanel({ onClose }: Props) {
                   placeholder="Ask AI: How do I add a deal?"
                   className="flex-1 h-[26px] px-2 text-[11px] bg-[var(--surface-card)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] outline-none focus:border-[var(--ai)]"
                 />
-                <button className="h-[26px] px-2.5 text-[10px] font-bold text-white bg-[var(--ai)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90 whitespace-nowrap">
+                <button className="h-[26px] px-2.5 text-[10px] font-bold text-white bg-[var(--tag-info-bg)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90 whitespace-nowrap">
                   Ask
                 </button>
               </div>

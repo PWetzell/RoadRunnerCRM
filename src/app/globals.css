@@ -56,6 +56,30 @@
   --lavender:    #4F46E5;  --lavender-bg: #EEF2FF;
   --lavender-fg: #3730A3;
 
+  /* Pink triplet — used by tag pills that need to be visually distinct
+     from brand blue, lavender violet, and the success/warning/danger
+     family. Currently used by AI Verified pill (was lavender, too
+     close in hue to brand blue Person pill). */
+  --pink:        #BE185D;  --pink-bg:     #FCE7F3;
+  --pink-fg:     #9D174D;
+
+  /* Teal — for Organization (was success green, conflicting with
+     Complete + Recruiting in same row). True teal, distinct from
+     emerald success AND from cyan ai. */
+  --teal:        #0F766E;  --teal-bg:     #CCFBF1;
+  --teal-fg:     #115E59;
+
+  /* Slate — for default neutral tags like Contacts Tag (was brand
+     blue, conflicting with Person Type pill in same row). */
+  --slate:       #475569;  --slate-bg:    #F1F5F9;
+  --slate-fg:    #1E293B;
+
+  /* Indigo — for Recruiting tag (was success green, conflicting with
+     Complete and Org in same row). Distinct from brand blue and
+     lavender violet. */
+  --indigo:      #4338CA;  --indigo-bg:   #E0E7FF;
+  --indigo-fg:   #312E81;
+
   --ai:          #1FA4B6;  --ai-bg:      #E0F5F8;
   --ai-border:   #7DD4DF;  --ai-dark:    #137585;
 
@@ -64,6 +88,24 @@
   --accent-pink:      #D96FA8;  --accent-pink-dk:   #44AE7C;  --accent-pink-bg:   #F7D7D7;
   --accent-cyan:      #3BAFC4;  --accent-cyan-dk:   #247A8A;  --accent-cyan-bg:   #D2F3F9;
   --accent-purple:    #A255FF;  --accent-purple-dk: #6A0FB8;  --accent-purple-bg: #EACEFF;
+
+  /* Solid-fill tag backgrounds — WCAG AA compliant against #FFFFFF
+     text in BOTH light and dark mode. Light = tailwind 700 shades;
+     dark = tailwind 600 (warning/vendor are 700/700 to keep contrast
+     above 4.5:1 in both modes). Hue stays consistent across modes;
+     only shade varies. Separate from --success / --warning / etc. —
+     those tokens still serve foreground use across the app. */
+  --tag-brand-bg:      #1D4ED8;  /* 6.49:1 */
+  --tag-success-bg:    #047857;  /* 5.91:1 */
+  --tag-danger-bg:     #B91C1C;  /* 6.51:1 */
+  --tag-warning-bg:    #C2410C;  /* 4.69:1 */
+  --tag-info-bg:       #0E7490;  /* 5.99:1 */
+  --tag-lavender-bg:   #6D28D9;  /* 6.83:1 */
+  --tag-neutral-bg:    #334155;  /* 9.09:1 */
+  --tag-recruiting-bg: #0F766E;  /* 6.61:1 */
+  --tag-vendor-bg:     #92400E;  /* 7.04:1 */
+  --tag-pink-bg:       #BE185D;  /* 6.36:1 */
+  --tag-fuchsia-bg:    #A21CAF;  /* 6.61:1 */
 
   --radius-sm: 4px; --radius-md: 6px; --radius-lg: 12px; --radius-full: 9999px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
@@ -128,8 +170,33 @@
   --lavender:    #A5B4FC;  --lavender-bg: #1A1F4D;
   --lavender-fg: #C7D2FE;
 
+  /* Pink triplet — dark-mode pair. */
+  --pink:        #DB2777;  --pink-bg:     #4A0E27;
+  --pink-fg:     #F9A8D4;
+
+  /* Teal / Slate / Indigo — dark-mode pairs. */
+  --teal:        #14B8A6;  --teal-bg:     #042F2E;
+  --teal-fg:     #5EEAD4;
+  --slate:       #64748B;  --slate-bg:    #1E293B;
+  --slate-fg:    #CBD5E1;
+  --indigo:      #6366F1;  --indigo-bg:   #1E1B4B;
+  --indigo-fg:   #C7D2FE;
+
   --ai:          #1FA4B6;  --ai-bg:      #0A3A42;
   --ai-border:   #137585;  --ai-dark:    #7DD4DF;
+
+  /* Solid-fill tag backgrounds — dark-mode pair. All ≥ 4.5:1 vs white. */
+  --tag-brand-bg:      #2563EB;  /* 5.17:1 */
+  --tag-success-bg:    #047857;  /* 5.48:1 — was #059669 (3.77, AA fail) */
+  --tag-danger-bg:     #DC2626;  /* 4.83:1 */
+  --tag-warning-bg:    #C2410C;  /* 5.18:1 */
+  --tag-info-bg:       #0E7490;  /* 5.36:1 — was #0891B2 (3.68, AA fail) */
+  --tag-lavender-bg:   #7C3AED;  /* 5.70:1 */
+  --tag-neutral-bg:    #475569;  /* 7.58:1 */
+  --tag-recruiting-bg: #0F766E;  /* 5.47:1 — was #0D9488 (3.74, AA fail) */
+  --tag-vendor-bg:     #B45309;  /* 5.02:1 */
+  --tag-pink-bg:       #DB2777;  /* 4.60:1 */
+  --tag-fuchsia-bg:    #C026D3;  /* 4.71:1 */
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
@@ -865,17 +932,15 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
    descendants so the visible row floor lands at ~12-14px.
    ===================================================================== */
 
-/* Halve padding on every pill/chip inside a compact-grid cell. We
-   target the `rounded-full` shape which is universal across our chip
-   components (Tags, Type, Status, AI, badges). The !important is
-   needed because Tailwind's px-2 / py-0.5 utilities have higher
-   specificity than the default cascade. */
-[data-density="compact"] td .rounded-full {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  padding-left: 4px !important;
-  padding-right: 4px !important;
-}
+/* Compact-mode .rounded-full overrides removed — they were hijacking
+   the canonical pill class string (`px-2 py-0.5 text-[9px]`) and
+   forcing pills to padding 0/4px and font-size 8px in compact mode,
+   making contacts/recruiting/sales pills render inconsistently
+   depending on which density-aware rules won specificity. The pill
+   styling is now governed entirely by the inline Tailwind utilities
+   on each pill span. The counter-badge rules below stay because
+   they target specific subset patterns (min-w / h-[ classes) used
+   only by the unread/attachment counter badges, not pills. */
 
 /* Counter badges (paperclip count, unread email count, +N overflow)
    sized to fit under the 16px row cap with breathing room. At 12px
@@ -895,30 +960,20 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   height: 12px !important;
 }
 
-/* Pill chips (Person/Tag/Status/AI) — moderate padding so they read
-   as proper chips rather than naked text, but tight enough to fit
-   under the row cap. */
-[data-density="compact"] td .rounded-full {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  padding-left: 4px !important;
-  padding-right: 4px !important;
-  font-size: 8px !important;
-}
-
-/* Force line-height: 1 on every row descendant — kills the residual
-   ~3px of leading that browsers apply by default and lets text-only
-   cells collapse to their actual font height. */
+/* line-height: 1.2 gives glyph descenders (g, y, p, q) room to render
+   without being clipped by `truncate` overflow:hidden. Was 1 — too
+   tight, descenders cut off. Tight enough that text-only cells still
+   collapse compactly under the row cap. */
 [data-density="compact"] tbody td,
 [data-density="compact"] tbody td * {
-  line-height: 1 !important;
+  line-height: 1.2 !important;
 }
 
 /* Header same treatment so the column titles aren't taller than
    the rows they label. */
 [data-density="compact"] thead th,
 [data-density="compact"] thead th * {
-  line-height: 1 !important;
+  line-height: 1.2 !important;
 }
 
 /* Compact row cap at 20px. Settled here after iterating from 12 → 8
@@ -948,6 +1003,25 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
   max-height: 16px !important;
 }
 
+/* Quality Score disc — exempt from the compact 16px clip because a
+   round shape doesn't tolerate cropping (would look like a half-moon).
+   The sm disc is 22px; let the row stretch a couple px in compact when
+   a Score column is present. */
+[data-density="compact"] tbody td .quality-score-disc,
+[data-density="compact"] tbody td button.quality-score-disc {
+  max-height: none !important;
+  overflow: visible;
+}
+
+/* `.grid-pill` CSS rule deleted — pill sizing is now controlled
+   entirely by per-instance Tailwind utilities (px-2 py-0.5 text-[9px]
+   font-bold border) in each pill's className, matching the canonical
+   AI Insights pill style. No CSS rule means no specificity fights
+   with the compact-mode overrides earlier in this file. The
+   `grid-pill` class itself may still appear on some elements as a
+   harmless dead marker — kept so existing element-targeting selectors
+   (e.g., the compact-mode SVG exemption above) still resolve. */
+
 /* Avatar stays visible in compact mode now that we have a 20px row
    cap — fits comfortably at 14px (the size set in DENSITY config).
    Removed the display:none rule from the 8px iteration. */
@@ -966,6 +1040,16 @@ ul > li:nth-child(n+6) { animation-delay: 150ms; }
 [data-density="compact"] tbody td:not([data-actions]) svg {
   width: 7px !important;
   height: 7px !important;
+}
+
+/* Exempt opt-in icons (favorite star, private eye-slash, edit, delete)
+   from the 7px clamp. Anything tagged `data-icon-keep-size="14"` keeps
+   14x14 in compact density too — these are interactive controls and
+   need a legible target without overflowing tight columns. */
+[data-density="compact"] tbody td [data-icon-keep-size="14"] svg,
+[data-density="compact"] tbody td[data-actions] [data-icon-keep-size="14"] svg {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 /* =====================================================================

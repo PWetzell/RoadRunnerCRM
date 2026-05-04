@@ -36,12 +36,10 @@ export default function DocumentsPage() {
       </Topbar>
       <div className="flex-1 overflow-hidden flex">
         <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="px-5 pt-5 pb-2 flex flex-col gap-3 items-start">
+          <div className="px-5 pt-3 pb-1 flex flex-col gap-1.5 items-start">
             {aiEnabled && insightsBars?.documents && <DocumentInsightsBar />}
             <DocumentFilterBar onUpload={() => setUploadOpen(true)} />
-            <div className="w-full">
-              <ListFilterChip />
-            </div>
+            <ListFilterChip />
           </div>
           <div data-tour="documents-grid" className="flex-1 overflow-auto px-5 pb-8">
             {view === 'grid' ? (

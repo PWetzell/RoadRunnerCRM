@@ -92,7 +92,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           <div className="px-6 py-3 border-t border-[var(--border)] bg-[var(--surface-card)] flex justify-end">
             <button
               onClick={() => setShowConvert(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--success)] border-none rounded-md cursor-pointer hover:opacity-90"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--tag-success-bg)] border-none rounded-md cursor-pointer hover:opacity-90"
             >
               Convert to Customer
             </button>

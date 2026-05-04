@@ -358,15 +358,19 @@ export const useContactStore = create<ContactStore>()(
   }),
     }),
     {
-      // Bumped v6 → v7 with the demo-vs-real-account split. The previous
-      // v6 cache held SEED_CONTACTS for every user (because the store's
-      // initial state was the seed array); under v7 the initial state is
-      // empty and seed data is hydrated on demand for demo accounts only.
-      // Bumping the cache name is the simplest cache-bust — every browser
-      // discards its v6 entry and starts fresh under v7. One-time UX cost
-      // (anyone who had locally-modified demo data loses it) in exchange
-      // for not having stale 170-contact lists leak into real accounts.
-      name: 'roadrunner-contacts-v7',
+      // Bumped v7 → v8 with the Quality Score seed-distribution fix. The
+      // applyDistributionProfile post-processor in seed-contacts.ts now
+      // assigns engagement buckets and links candidate persons to bulk
+      // orgs so the score column shows the full red/orange/blue/green
+      // spread. Anyone holding a v7 cache sees the OLD seed (no orgIds
+      // on candidates → everyone clusters at 25-35). Bumping the name
+      // makes every browser re-seed from the new SEED_CONTACTS on next
+      // mount.
+      //
+      // Earlier history: v6 → v7 was the demo-vs-real-account split (v6
+      // cached SEED_CONTACTS for every user; v7's initial state is
+      // empty and seed data is hydrated on demand for demo accounts only).
+      name: 'roadrunner-contacts-v13',
       partialize: (s) => ({
         contacts: s.contacts,
         notes: s.notes,

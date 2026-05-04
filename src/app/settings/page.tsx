@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Topbar from '@/components/layout/Topbar';
 import { useUserStore } from '@/stores/user-store';
 import { useTheme } from '@/hooks/useTheme';
-import { Sun, Moon, Bell, Warning, Sparkle, X as XIcon, Users, CurrencyDollar, UsersFour, Files, Lock, PencilSimple, House, ChartPieSlice, Rows } from '@phosphor-icons/react';
+import { Sun, Moon, Bell, Warning, Sparkle, X as XIcon, Users, CurrencyDollar, UsersFour, Files, Lock, PencilSimple, House, ChartPieSlice, Rows, ChartBar, ArrowRight } from '@phosphor-icons/react';
 import { isEmail } from '@/lib/validation';
 import { DENSITY_LABELS, DENSITY_HINTS, GridDensity } from '@/lib/grid-density';
 import { toast } from '@/lib/toast';
@@ -374,6 +374,28 @@ export default function SettingsPage() {
               checked={aiEnabled && (insightsBars?.reporting ?? true)}
               disabled={!aiEnabled}
               onChange={(v) => updateInsightsBars({ reporting: v })}
+            />
+          </Section>
+
+          {/* Quality Score — discoverability path to the rules editor.
+              The editor lives as a draggable widget on /admin. Settings
+              surfaces a link so users who never click a badge can still
+              find it; "Manage scoring rules →" lands them on the admin
+              page where the widget hosts the KPIs + chart + table. */}
+          <Section tourId="settings-scoring" title="Quality Score" description="The 0–100 score on every contact is rule-driven. Manage the rules in Admin.">
+            <Row
+              label="Scoring rules"
+              hint="Toggle, edit, add, or reset the rules that compute every contact's quality score."
+              control={
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--surface-raised)] border border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-all cursor-pointer"
+                >
+                  <ChartBar size={14} weight="bold" />
+                  Manage scoring rules
+                  <ArrowRight size={12} weight="bold" />
+                </button>
+              }
             />
           </Section>
 

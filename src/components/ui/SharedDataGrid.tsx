@@ -26,6 +26,11 @@ import SearchInput from '@/components/ui/SearchInput';
 export type { ColumnDef, SortingState } from '@tanstack/react-table';
 
 const EMPTY_WIDTHS: Record<string, number> = {};
+// Module-scope stable empty objects so the persisted-state fallbacks
+// don't return a fresh `{}` reference each render — TanStack treats
+// any new state reference as a real change and the morning's failed
+// persistence refactor learned this the painful way.
+const EMPTY_VISIBILITY: VisibilityState = {};
 
 // ─── Grid View Types ───
 export interface GridView {
@@ -377,35 +382,77 @@ export default function SharedDataGrid<T>({
   const currentColumnIds = useMemo(() => columns.map((c) => c.id!), [columns]);
 
   const [sorting, setSorting] = useState<SortingState>(defaultSorting ?? []);
-  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(currentColumnIds);
-
-  // Sync column order when columns change (e.g. group expand/collapse)
-  useEffect(() => {
-    setColumnOrder((prev) => {
-      const newIds = new Set(currentColumnIds);
-      const result: string[] = [];
-      const placed = new Set<string>();
-
-      for (const id of prev) {
-        if (newIds.has(id)) {
-          result.push(id);
-          placed.add(id);
-        }
-      }
-
-      // Any remaining new columns not yet placed (safety net)
-      for (const id of currentColumnIds) {
-        if (!placed.has(id)) result.push(id);
-      }
-
-      return result;
-    });
-  }, [currentColumnIds]);
-
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const gridLayoutRaw = useGridLayoutStore((s) => s.grids[gridId]);
   const columnWidths = gridLayoutRaw?.columnWidths ?? EMPTY_WIDTHS;
+
+  // ──────────────────────────────────────────────────────────────────
+  // Column order — persisted in `useGridLayoutStore` keyed by `gridId`.
+  // Was previously local `useState`, which is why a refresh always
+  // dropped the user's column order back to the columns-prop default.
+  // The store has had `setColumnOrder` and `setColumnVisibility`
+  // actions since April; this wiring connects SharedDataGrid to them.
+  //
+  // Reconciliation in the useMemo: persisted order may have been saved
+  // when a different set of columns was visible (e.g. before the user
+  // expanded a group). We keep saved-order ids in their saved order,
+  // drop ids no longer in the columns prop, and append any new ids.
+  //
+  // Fallback to `currentColumnIds` (a useMemo on the columns prop)
+  // when nothing is persisted — the reference is stable, so TanStack
+  // doesn't see a fresh state on every render.
+  // ──────────────────────────────────────────────────────────────────
+  const persistedOrder = gridLayoutRaw?.columnOrder;
+  const setStoreColumnOrder = useGridLayoutStore((s) => s.setColumnOrder);
+  const columnOrder = useMemo<ColumnOrderState>(() => {
+    if (!persistedOrder || persistedOrder.length === 0) return currentColumnIds;
+    const validIds = new Set(currentColumnIds);
+    const known = new Set(persistedOrder);
+    const result = persistedOrder.filter((id) => validIds.has(id));
+    for (const id of currentColumnIds) {
+      if (!known.has(id)) result.push(id);
+    }
+    // If reconciliation produced exactly the natural order, return the
+    // memoized currentColumnIds reference so TanStack doesn't see a
+    // shallow-different array on every render.
+    if (result.length === currentColumnIds.length &&
+        result.every((id, i) => id === currentColumnIds[i])) {
+      return currentColumnIds;
+    }
+    return result;
+  }, [persistedOrder, currentColumnIds]);
+  const setColumnOrder = useCallback(
+    (updater: ColumnOrderState | ((prev: ColumnOrderState) => ColumnOrderState)) => {
+      // Read fresh from the store (not closure) so batched updates
+      // — drag-end + TanStack's own onChange on the same tick — don't
+      // stomp each other.
+      const stored = useGridLayoutStore.getState().grids[gridId]?.columnOrder;
+      const current = stored && stored.length > 0 ? stored : currentColumnIds;
+      const next =
+        typeof updater === 'function'
+          ? (updater as (p: ColumnOrderState) => ColumnOrderState)(current)
+          : updater;
+      setStoreColumnOrder(gridId, next);
+    },
+    [setStoreColumnOrder, gridId, currentColumnIds],
+  );
+
+  // Column visibility — same pattern. Defaults to empty object (all
+  // visible). Stable EMPTY_VISIBILITY constant prevents fresh refs.
+  const persistedVisibility = gridLayoutRaw?.columnVisibility;
+  const setStoreColumnVisibility = useGridLayoutStore((s) => s.setColumnVisibility);
+  const columnVisibility: VisibilityState = persistedVisibility ?? EMPTY_VISIBILITY;
+  const setColumnVisibility = useCallback(
+    (updater: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => {
+      const stored = useGridLayoutStore.getState().grids[gridId]?.columnVisibility ?? EMPTY_VISIBILITY;
+      const next =
+        typeof updater === 'function'
+          ? (updater as (p: VisibilityState) => VisibilityState)(stored)
+          : updater;
+      setStoreColumnVisibility(gridId, next);
+    },
+    [setStoreColumnVisibility, gridId],
+  );
 
   // Column pinning — hydrated from the persisted store so pins survive refreshes.
   const persistedPinning = gridLayoutRaw?.columnPinning ?? { left: [], right: [] };
@@ -798,6 +845,7 @@ export default function SharedDataGrid<T>({
                   })}
                   {renderActions && (
                     <td
+                      data-actions
                       className="px-2 w-[72px] border-l border-l-[var(--border-subtle)]"
                       style={{
                         position: 'sticky',
@@ -807,9 +855,10 @@ export default function SharedDataGrid<T>({
                         paddingTop: 'var(--grid-row-py, 10px)',
                         paddingBottom: 'var(--grid-row-py, 10px)',
                         boxShadow: '-4px 0 6px -4px rgba(0,0,0,0.08)',
+                        verticalAlign: 'middle',
                       }}
                     >
-                      <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
                         {renderActions(row.original)}
                       </div>
                     </td>

@@ -443,7 +443,7 @@ export function AddRelationshipDialog({ open, fromContact, restrictToType, onClo
               </button>
               <button
                 onClick={() => persistAndClose(true)}
-                className="px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--warning)] rounded-[var(--radius-sm)] cursor-pointer border-none"
+                className="px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--tag-warning-bg)] rounded-[var(--radius-sm)] cursor-pointer border-none"
               >
                 Replace
               </button>

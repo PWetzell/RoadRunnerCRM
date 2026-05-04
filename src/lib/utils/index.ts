@@ -27,21 +27,22 @@ export const uid = (prefix: string): string =>
   `${prefix}-${Date.now()}`;
 
 // Avatar palette — 14 distinct hues, all WCAG AA on white text (>= 4.5:1).
-// No yellows (insufficient contrast). Wide spectrum so adjacent contacts/deals
-// don't repeat colors.
+// One color per hue family — no near-duplicates. Previously had navy
+// + dark cyan + emerald-800 + dark pink (#9D174D) all looking like
+// "dark blue-green" or "dark red" at small avatar sizes, which made
+// adjacent rows blur together. New palette: 12 distinct hues each
+// from a different family, all WCAG AA against white text.
 const AVATAR_COLORS = [
-  '#1955A6', // brand blue
-  '#0B2F5C', // navy
-  '#247A8A', // dark cyan
+  '#1D4ED8', // blue-700
   '#0E7490', // cyan-700
+  '#0F766E', // teal-700
   '#047857', // emerald-700
-  '#065F46', // emerald-800
-  '#6A0FB8', // deep purple
-  '#7C3AED', // violet-600
+  '#6D28D9', // violet-700
+  '#C026D3', // fuchsia-600
   '#BE185D', // pink-700
-  '#9D174D', // pink-800
   '#DC2626', // red-600
   '#C2410C', // orange-700
+  '#B45309', // amber-700
   '#4F46E5', // indigo-600
   '#475569', // slate-600
 ];

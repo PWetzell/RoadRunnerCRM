@@ -299,38 +299,9 @@ export const TOUR_STEPS: Record<string, TourStep[]> = {
       navigateTo: '/bulk',
     },
   ],
-  '/sales': [
-    {
-      content: 'The Sales module tracks your deals from Lead to Closed Won. Switch between List, Card, and Status views.',
-      target: 'sales-filter-bar',
-      placement: 'bottom',
-    },
-    {
-      content: 'The AI Pipeline Forecast shows weighted revenue, total open pipeline, and highlights stalled deals.',
-      target: 'sales-insights',
-      placement: 'bottom',
-    },
-    {
-      content: 'Your deals appear here. In List view you get a full data grid with sort, search, drag-to-reorder columns, and column visibility controls.',
-      target: 'sales-grid',
-      placement: 'top',
-    },
-    {
-      content: 'Filter deals by type — People or Company — to focus on individual candidates or corporate clients.',
-      target: 'sales-type-filter',
-      placement: 'bottom',
-    },
-    {
-      content: 'Filter by deal stage — All, Open, Won, or Lost — to quickly narrow your pipeline view.',
-      target: 'sales-stage-filter',
-      placement: 'bottom',
-    },
-    {
-      content: 'Create a new lead directly from here. The form slides out from the right with full validation on every field.',
-      target: 'sales-new-lead',
-      placement: 'bottom',
-    },
-  ],
+  // Sales tour removed alongside the sidebar Sales nav entry — pulled
+  // from the demo until the sales-grid pill styling is reconciled with
+  // the contacts/recruiting grids.
   '/recruiting': [
     {
       content: 'The Recruiting module visualizes your candidate pipeline. Data is projected from your Sales deals — person-type deals become candidates.',

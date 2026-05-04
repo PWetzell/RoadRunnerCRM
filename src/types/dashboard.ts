@@ -33,14 +33,32 @@ export type WidgetType =
   | 'kpi-total-revenue'
   | 'kpi-deals-count'
   // Custom reports — dispatches on config.reportId
-  | 'custom-report';
+  | 'custom-report'
+  // Quality Score split into three independently-draggable cards:
+  // - score-kpis: 3 KPI tiles (avg / top / critical)
+  // - score-distribution: horizontal bar chart of the four bands
+  // - scoring-rules: collapsible rules table + edit/add/reset
+  | 'score-kpis'
+  | 'score-distribution'
+  | 'scoring-rules';
 
 export type WidgetCategory = 'status' | 'reporting' | 'list' | 'work' | 'custom';
 
 /** col × row span in a 4-column grid. */
 export interface WidgetSize {
   cols: 1 | 2 | 3 | 4;
-  rows: 1 | 2 | 3;
+  /**
+   * Was 1|2|3 (max card 480px). Extended to 1-6 (max 960px) for cards
+   * whose content is naturally tall — specifically the Quality Score
+   * rules editor, which can host 16+ rules across 3 categories.
+   *
+   * Cards never scroll internally; if content exceeds the card height
+   * the page (browser) scrolls. So a card that hosts tall content
+   * needs to size large enough to fit it. The 6-row ceiling is the
+   * pragmatic upper bound — beyond that the card dominates the
+   * viewport and dragging it becomes awkward anyway.
+   */
+  rows: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 /**
@@ -120,6 +138,9 @@ export const WIDGET_ICON_SUGGESTIONS: Partial<Record<WidgetType, string[]>> = {
   'todo':                      ['CheckSquare', 'ListChecks', 'ClipboardText'],
   'ai-suggestions':            ['Sparkle', 'MagicWand', 'Brain', 'Robot'],
   'custom-report':             ['Funnel', 'ChartBar', 'ChartPieSlice', 'Table', 'TrendUp'],
+  'score-kpis':                ['Gauge', 'Sparkle', 'ChartBar', 'TrendUp'],
+  'score-distribution':        ['ChartBar', 'ChartBarHorizontal', 'ChartPieSlice'],
+  'scoring-rules':             ['ShieldCheck', 'Sliders', 'Gear', 'Star'],
 };
 
 /** Where a new widget goes when you add it via the toolbar. */
@@ -193,6 +214,13 @@ export const WIDGET_META: WidgetTypeMeta[] = [
   { type: 'todo',                   category: 'work',      label: 'To-do list',          description: 'Personal task list with checkboxes.',      defaultSize: { cols: 2, rows: 2 } },
   { type: 'ai-suggestions',         category: 'work',      label: 'AI suggestions',      description: 'Smart next-best actions.',                 defaultSize: { cols: 2, rows: 2 } },
   { type: 'custom-report',          category: 'custom',    label: 'Custom report',       description: 'User-defined metric built in the Report Builder.', defaultSize: { cols: 2, rows: 2 } },
+  // Quality Score split into three independently-draggable cards so
+  // each piece can be hidden, repositioned, or resized on its own.
+  // Defaults sized to fit content without internal scrolling — the
+  // browser handles overflow at the page level.
+  { type: 'score-kpis',             category: 'status',    label: 'Score KPIs',          description: 'Average score, top performers, and need-attention counts.',         defaultSize: { cols: 4, rows: 1 } },
+  { type: 'score-distribution',     category: 'reporting', label: 'Score distribution',  description: 'Counts per band — Critical, Building, Strong, Top performers.',     defaultSize: { cols: 4, rows: 2 } },
+  { type: 'scoring-rules',          category: 'work',      label: 'Scoring rules',       description: 'Tune the rules that compute every contact’s 0–100 quality score.',  defaultSize: { cols: 4, rows: 6 } },
 ];
 
 export const WIDGET_META_MAP: Record<WidgetType, WidgetTypeMeta> = WIDGET_META.reduce(

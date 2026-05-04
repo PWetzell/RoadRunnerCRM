@@ -36,6 +36,7 @@ export default function FavoriteCell({ entityId, entityType, size = 14 }: Props)
       title={isFav ? 'Remove from Favorites' : 'Add to Favorites'}
       aria-label={isFav ? 'Remove from Favorites' : 'Add to Favorites'}
       aria-pressed={isFav}
+      data-icon-keep-size="14"
       className="w-7 h-7 inline-flex items-center justify-center rounded-[var(--radius-sm)] bg-transparent border-none cursor-pointer hover:bg-[var(--warning-bg)] transition-colors"
     >
       <Star

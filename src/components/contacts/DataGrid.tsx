@@ -11,6 +11,11 @@ import {
 import { ContactWithEntries, ContactTag } from '@/types/contact';
 import { useContactStore } from '@/stores/contact-store';
 import { useListStore } from '@/stores/list-store';
+import { useSalesStore } from '@/stores/sales-store';
+import { useSequenceStore } from '@/stores/sequence-store';
+import { useScoringStore } from '@/stores/scoring-store';
+import { computeScore } from '@/lib/scoring/computeScore';
+import QualityScoreBadge from '@/components/scoring/QualityScoreBadge';
 import { computeMissingFields } from '@/lib/contact-completeness';
 import FavoriteCell from '@/components/lists/FavoriteCell';
 import { FAVORITES_LIST_IDS } from '@/lib/data/seed-lists';
@@ -25,7 +30,7 @@ import { Paperclip } from '@phosphor-icons/react';
 // ─── Helpers ───
 function IncompletePill() {
   return (
-    <span title="Incomplete" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0">
+    <span title="Incomplete" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0">
       <Warning size={10} className="flex-shrink-0" /> <span className="truncate">Incomplete</span>
     </span>
   );
@@ -38,13 +43,38 @@ function IncompletePill() {
  * the two surfaces have slightly different chip sizing — duplicating
  * a 5-line lookup is cheaper than an over-engineered shared module.
  */
-function getTagChipStyle(tag: string): { bg: string; text: string; border: string } {
-  if (tag === 'Contacts Tag' || tag === 'VIP' || tag === 'Follow Up')
+/**
+ * Tag-value → triplet color lookup. Each distinct tag value gets its
+ * own color family so Client, Prospect, Customer, etc. don't all
+ * collapse to the same hue. EXPORTED so the sales grid (where these
+ * same tags appear as "matched-tag" pills) can reuse the same mapping
+ * and the same tag renders the same color in both grids.
+ */
+export function getTagChipStyle(tag: string): { bg: string; text: string; border: string } {
+  // Contacts Tag → slate (was brand blue, conflicted with Person Type
+  // pill on same row). VIP / Follow Up keep brand blue since they're
+  // not on Person rows that already use brand.
+  if (tag === 'Contacts Tag')
+    return { bg: 'var(--slate-bg)', text: 'var(--slate-fg)', border: 'var(--slate)' };
+  if (tag === 'VIP' || tag === 'Follow Up')
     return { bg: 'var(--brand-bg)', text: 'var(--brand-primary)', border: 'var(--brand-primary)' };
-  if (tag === 'Sales Tag' || tag === 'Prospect' || tag === 'Client')
-    return { bg: 'var(--danger-bg)', text: 'var(--danger)', border: 'var(--danger)' };
-  if (tag === 'Recruiting' || tag === 'Partner' || tag === 'Vendor')
+  // Client = established/active customer relationship → green (success).
+  if (tag === 'Client' || tag === 'Customer')
     return { bg: 'var(--success-bg)', text: 'var(--success)', border: 'var(--success)' };
+  // Prospect = potential future value → lavender (violet, distinct from
+  // Client green so the two read as different categories).
+  if (tag === 'Prospect' || tag === 'Sales Tag')
+    return { bg: 'var(--lavender-bg)', text: 'var(--lavender-fg)', border: 'var(--lavender)' };
+  // Recruiting / Partner → indigo (was success green, conflicted with
+  // Complete/Org green in same row).
+  if (tag === 'Recruiting' || tag === 'Partner')
+    return { bg: 'var(--indigo-bg)', text: 'var(--indigo-fg)', border: 'var(--indigo)' };
+  // Vendor — info/cyan. Distinct from Recruiting green and from
+  // amber warning — no brown collision. Border uses --ai-dark
+  // (saturated cyan) instead of --ai-border (medium tint) so it
+  // reads as a proper border, not a faint glow.
+  if (tag === 'Vendor')
+    return { bg: 'var(--info-bg)', text: 'var(--ai-dark)', border: 'var(--ai-dark)' };
   if (tag === 'Do Not Contact')
     return { bg: 'var(--warning-bg)', text: 'var(--warning)', border: 'var(--warning)' };
   return { bg: 'var(--surface-raised)', text: 'var(--text-secondary)', border: 'var(--border)' };
@@ -87,16 +117,26 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
         <span
           key="ai"
           title="Added by AI"
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)]"
         >
-          <Sparkle size={9} weight="duotone" /> AI
+          <Sparkle size={9} /> AI
         </span>
       ),
     });
   }
 
+  // Display-name overrides for tags whose data-value reads redundant
+  // in the UI. "Contacts Tag" displays as "Contacts" — the pill itself
+  // already conveys "this is a tag" via the icon and shape, so the
+  // word "Tag" in the label is duplicate noise. Tooltip keeps the
+  // full data value so admins can still identify what's stored.
+  const TAG_DISPLAY_OVERRIDES: Record<string, string> = {
+    'Contacts Tag': 'Contacts',
+  };
+
   for (const tag of userTags) {
     const colors = getTagChipStyle(tag);
+    const displayLabel = TAG_DISPLAY_OVERRIDES[tag] ?? tag;
     chips.push({
       key: `tag-${tag}`,
       label: tag,
@@ -104,10 +144,11 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
         <span
           key={`tag-${tag}`}
           title={tag}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold border"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border truncate min-w-0"
           style={{ background: colors.bg, color: colors.text, borderColor: colors.border }}
         >
-          <Tag size={9} weight="bold" /> {tag}
+          <Tag size={10} className="flex-shrink-0" />
+          <span className="truncate">{displayLabel}</span>
         </span>
       ),
     });
@@ -123,7 +164,7 @@ function TagsCell({ contact: c }: { contact: ContactWithEntries }) {
       {overflow.length > 0 && (
         <span
           title={overflow.map((c) => c.label).join(', ')}
-          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
+          className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)] flex-shrink-0"
         >
           +{overflow.length}
         </span>
@@ -193,6 +234,7 @@ function buildColumns(
   totalUnreadAttachments: number,
   attachmentSortMode: 0 | 1 | 2,
   cycleAttachmentSort: () => void,
+  scoreMap: Map<string, number>,
 ): ColumnDef<ContactWithEntries, any>[] {
   return [
     {
@@ -260,7 +302,7 @@ function buildColumns(
             {totalUnreadAttachments > 0 ? (
               <span
                 aria-label={`${totalUnreadAttachments} new emails with attachments`}
-                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--success)] text-white text-[length:var(--grid-font)] font-bold leading-none"
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--tag-success-bg)] text-white text-[length:var(--grid-font)] font-bold leading-none"
               >
                 {totalUnreadAttachments}
               </span>
@@ -381,7 +423,7 @@ function buildColumns(
               }
               className={`inline-flex items-center gap-0.5 px-1.5 h-[18px] rounded-full text-[length:var(--grid-font)] font-bold leading-none flex-shrink-0 ${
                 hasUnreadAttachment
-                  ? 'bg-[var(--success)] text-white border border-[var(--success)]'
+                  ? 'bg-[var(--tag-success-bg)] text-white border border-[var(--tag-success-bg)]'
                   : 'bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]'
               }`}
             >
@@ -422,7 +464,16 @@ function buildColumns(
                 <div className="text-[var(--text-secondary)] truncate max-w-[160px]" style={{ fontSize: 'calc(var(--grid-font, 13px) - 2px)' }}>{c.orgName}</div>
               )}
             </div>
-            {c.isPrivate && <EyeSlash size={14} className="text-[var(--danger)] flex-shrink-0" />}
+            {c.isPrivate && (
+              <span
+                title="Private — only you can see this contact"
+                aria-label="Private contact"
+                data-icon-keep-size="14"
+                className="inline-flex flex-shrink-0"
+              >
+                <EyeSlash size={14} className="text-[var(--danger)]" />
+              </span>
+            )}
           </div>
         );
       },
@@ -435,11 +486,13 @@ function buildColumns(
       cell: ({ getValue }) => {
         const t = getValue() as string;
         return (
-          <span title={t === 'org' ? 'Organization' : 'Person'} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold border truncate min-w-0 ${
-            t === 'org' ? 'bg-[var(--success-bg)] text-[var(--success)] border-[var(--success)]' : 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
+          <span title={t === 'org' ? 'Organization' : 'Person'} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold truncate min-w-0 border ${
+            t === 'org'
+              ? 'bg-[var(--teal-bg)] text-[var(--teal-fg)] border-[var(--teal)]'
+              : 'bg-[var(--brand-bg)] text-[var(--brand-primary)] border-[var(--brand-primary)]'
           }`}>
             {t === 'org' ? <Buildings size={10} className="flex-shrink-0" /> : <User size={10} className="flex-shrink-0" />}
-            <span className="truncate">{t === 'org' ? 'Org' : 'Person'}</span>
+            <span className="truncate">{t === 'org' ? 'Organization' : 'Person'}</span>
           </span>
         );
       },
@@ -471,7 +524,7 @@ function buildColumns(
           return (
             <span
               title="All required fields are filled in"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"
             >
               <CheckCircle size={10} className="flex-shrink-0" />
               <span className="truncate">Complete</span>
@@ -481,7 +534,7 @@ function buildColumns(
         return (
           <span
             title={`Missing: ${missing.join(', ')}`}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"
           >
             <Warning size={10} className="flex-shrink-0" />
             <span className="truncate">Incomplete · {missing.length}</span>
@@ -517,10 +570,36 @@ function buildColumns(
       size: 95,
       cell: ({ getValue }) => {
         const v = getValue() as string;
-        if (v === 'new') return <span title="AI Suggestion" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-dark)] truncate min-w-0"><Sparkle size={10} className="flex-shrink-0" /> AI</span>;
+        if (v === 'new') return <span title="AI Suggestion" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--ai-bg)] text-[var(--ai-dark)] border border-[var(--ai-border)] truncate min-w-0"><Sparkle size={10} className="flex-shrink-0" /> AI</span>;
         if (v === 'stale') return <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">—</span>;
-        return <span className="text-[length:var(--grid-font)] text-[var(--success)]">Verified</span>;
+        return (
+          <span title="AI-verified" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--pink-bg)] text-[var(--pink-fg)] border border-[var(--pink)] truncate min-w-0">
+            <CheckCircle size={10} className="flex-shrink-0" />
+            <span className="truncate">Verified</span>
+          </span>
+        );
       },
+    },
+    {
+      // Quality Score column. Sort key is the precomputed numeric score
+      // from `scoreMap`; Org rows return -1 so they sink to the bottom of
+      // a descending sort and the top of an ascending one without
+      // pretending they have a value. Cell renders the badge component
+      // which does its own hook lookup for the breakdown popover.
+      id: 'score',
+      accessorFn: (row) =>
+        row.type === 'person' ? scoreMap.get(row.id) ?? 0 : -1,
+      header: 'Score',
+      size: 110,
+      enableSorting: true,
+      sortDescFirst: true,
+      meta: { label: 'Quality Score' },
+      cell: ({ row }) =>
+        row.original.type === 'person' ? (
+          <QualityScoreBadge contactId={row.original.id} size="sm" />
+        ) : (
+          <span className="text-[length:var(--grid-font)] text-[var(--text-tertiary)]">—</span>
+        ),
     },
     {
       id: 'industry',
@@ -773,10 +852,40 @@ export default function DataGrid() {
     setAttachmentSortMode((m) => ((m + 1) % 3) as 0 | 1 | 2);
   };
 
+  // Quality Score map — built once per render against current contacts /
+  // rules / deals / enrollments. Each Person row gets its score precomputed
+  // here so the column's accessorFn (which TanStack calls per-row during
+  // sort + filter) can read O(1) from the map instead of re-running the
+  // engine. The badge cell renderer uses its own hook for tooltip data;
+  // both paths converge on the same numbers via the same engine.
+  const deals = useSalesStore((s) => s.deals);
+  const enrollments = useSequenceStore((s) => s.enrollments);
+  const scoringRules = useScoringStore((s) => s.rules);
+  const scoreMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const ctx = {
+      contacts,
+      deals,
+      enrollments: enrollments.map((e) => ({
+        contactId: e.contactId,
+        status: e.status,
+        enrolledAt: e.enrolledAt,
+        sendLog: e.sendLog,
+      })),
+      now: Date.now(),
+    };
+    for (const c of contacts) {
+      if (c.type === 'person') {
+        map.set(c.id, computeScore(c, scoringRules, ctx).total);
+      }
+    }
+    return map;
+  }, [contacts, deals, enrollments, scoringRules]);
+
   const columns = useMemo(
-    () => buildColumns(expandedGroups, contacts, favIds, readOverrides, totalUnread, totalAttachments, totalUnreadAttachments, attachmentSortMode, cycleAttachmentSort),
+    () => buildColumns(expandedGroups, contacts, favIds, readOverrides, totalUnread, totalAttachments, totalUnreadAttachments, attachmentSortMode, cycleAttachmentSort, scoreMap),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [expandedGroups, contacts, favIds, readOverrides, totalUnread, totalAttachments, totalUnreadAttachments, attachmentSortMode],
+    [expandedGroups, contacts, favIds, readOverrides, totalUnread, totalAttachments, totalUnreadAttachments, attachmentSortMode, scoreMap],
   );
 
   // Filter data
@@ -818,11 +927,10 @@ export default function DataGrid() {
         columns={columns}
         gridId="contacts"
         onRowClick={(c) => router.push(`/contacts/${c.id}`)}
-        // Default to attachments-mode-0 sort (greens at top) on first
-        // load so the user lands on "what needs my attention" without
-        // clicking. The down-arrow indicator renders on the 📎 header
-        // because enableSorting:true on the column. Clicking other
-        // columns overrides this; clicking 📎 again forces it back.
+        // Default to attachments-desc — preserves the "what needs my
+        // attention" signal on first load. Score variety in the visible
+        // rows comes from spreading scores across attachment tiers in
+        // the seed, NOT from sort.
         defaultSorting={[{ id: 'attachments', desc: true }]}
         countLabel="contacts"
         onToggleGroup={toggleGroup}
@@ -830,13 +938,19 @@ export default function DataGrid() {
           <>
             <button
               onClick={(e) => { e.stopPropagation(); router.push(`/contacts/${c.id}`); }}
-              className="p-1 text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
+              title="Edit contact"
+              aria-label="Edit contact"
+              data-icon-keep-size="14"
+              className="inline-flex items-center justify-center p-1 text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] bg-transparent border-none cursor-pointer"
             >
               <PencilSimple size={14} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}
-              className="p-1 text-[var(--text-tertiary)] hover:text-[var(--danger)] bg-transparent border-none cursor-pointer"
+              title="Delete contact"
+              aria-label="Delete contact"
+              data-icon-keep-size="14"
+              className="inline-flex items-center justify-center p-1 text-[var(--text-tertiary)] hover:text-[var(--danger)] bg-transparent border-none cursor-pointer"
             >
               <Trash size={14} />
             </button>

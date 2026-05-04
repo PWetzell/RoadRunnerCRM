@@ -41,7 +41,7 @@ export default function AIDealDuplicateDetection({ dealName, personContactId, or
   return (
     <div className="bg-[var(--surface-card)] border border-[var(--ai-border)] rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-[var(--ai)] flex items-center justify-center"><Sparkle size={12} weight="duotone" className="text-white" /></div>
+        <div className="w-6 h-6 rounded bg-[var(--tag-info-bg)] flex items-center justify-center"><Sparkle size={12} weight="duotone" className="text-white" /></div>
         <div className="text-[13px] font-extrabold text-[var(--text-primary)]">AI Duplicate Detection</div>
       </div>
       <div className="px-4 py-3 flex flex-col gap-2.5">
@@ -62,7 +62,7 @@ export default function AIDealDuplicateDetection({ dealName, personContactId, or
             <div key={deal.id} className="border border-[var(--warning)] bg-[var(--warning-bg)] rounded-md px-3 py-2 flex flex-col gap-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-[12px] font-bold text-[var(--text-primary)] truncate">{deal.name}</div>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--warning)] text-white">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--tag-warning-bg)] text-white">
                   <Warning size={10} weight="fill" /> {Math.min(score, 99)}%
                 </span>
               </div>

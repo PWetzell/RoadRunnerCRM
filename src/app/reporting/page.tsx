@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { Sparkle, DownloadSimple, Printer, ArrowClockwise, CaretDown, FloppyDisk, Check, PencilSimple, Trash, Plus, FileCsv, FilePdf, Stack, X as XIcon } from '@phosphor-icons/react';
+import { Sparkle, DownloadSimple, Printer, ArrowClockwise, CaretDown, FloppyDisk, Check, PencilSimple, Trash, Plus, FileCsv, FilePdf, Stack, X as XIcon, ChartBar, Books } from '@phosphor-icons/react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useSalesStore } from '@/stores/sales-store';
 import { useContactStore } from '@/stores/contact-store';
@@ -140,14 +140,14 @@ export default function ReportingPage() {
     <>
       <Topbar title="Reporting" />
       <div className="flex-1 overflow-y-auto">
-        <div className="px-5 pt-5 pb-2 flex flex-col gap-3 items-start">
+        <div className="px-5 pt-3 pb-1 flex flex-col gap-1.5 items-start">
           {/* AI Summary */}
           {aiEnabled && insightsBars?.reporting && (
-            <div data-tour="reporting-ai-summary" className="bg-[var(--ai-bg)] border border-[var(--ai-border)] px-3.5 py-2.5 flex items-center gap-2.5 flex-wrap rounded-lg w-full min-h-[48px]">
-              <div className="w-[22px] h-[22px] bg-[var(--ai)] rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0">
-                <Sparkle size={13} weight="duotone" className="text-white" />
+            <div data-tour="reporting-ai-summary" className="bg-[var(--ai-bg)] border border-[var(--ai-border)] px-2.5 py-1.5 flex items-center gap-2 rounded-lg w-full h-[32px] overflow-hidden">
+              <div className="w-[18px] h-[18px] bg-[var(--ai)] rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0">
+                <Sparkle size={11} weight="duotone" className="text-white" />
               </div>
-              <div className="text-[13px] text-[var(--text-secondary)]">
+              <div className="text-[11px] text-[var(--text-secondary)] whitespace-nowrap truncate min-w-0">
                 <strong className="font-extrabold text-[var(--text-primary)]">AI Report Summary</strong>
                 <span> · {stats.winRate}% win rate · {fmtMoney(stats.weightedPipeline)} forecast</span>
               </div>
@@ -156,30 +156,43 @@ export default function ReportingPage() {
 
           {/* Tab switcher — Report Dashboards vs Report Library
                Naming matches Salesforce/HubSpot/Monday: single reports live in the
-               library; multi-chart packets live in dashboards. */}
-          <div data-tour="reporting-tabs" className="inline-flex items-center gap-0 p-1 rounded-lg bg-[var(--surface-raised)] border border-[var(--border)]">
-            {(['dashboards', 'reports'] as const).map((t) => {
-              const active = tab === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTab(t)}
-                  className={`h-7 px-3 rounded text-[12px] font-bold transition-colors ${
-                    active
-                      ? 'bg-[var(--surface-card)] text-[var(--brand-primary)] shadow-sm'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {t === 'dashboards' ? 'Report Dashboards' : 'Report Library'}
-                </button>
-              );
-            })}
+               library; multi-chart packets live in dashboards.
+               Wrapped in a min-h-[40px] row so the row matches the filter-bar
+               height on Contacts/Documents/Recruiting (the pill itself is ~26px
+               tall, but the row needs to be 40px so subsequent rows line up). */}
+          <div className="flex items-center w-full min-h-[40px]">
+            <div data-tour="reporting-tabs" className="flex items-center gap-0.5 bg-[var(--surface-card)] border border-[var(--border)] rounded-full p-1">
+              {(['dashboards', 'reports'] as const).map((t) => {
+                const active = tab === t;
+                const Icon = t === 'dashboards' ? ChartBar : Books;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTab(t)}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer border-none transition-colors ${
+                      active
+                        ? 'bg-[var(--brand-primary)] text-white'
+                        : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <Icon size={12} weight="bold" />
+                    {t === 'dashboards' ? 'Dashboards' : 'Library'}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        </div>
 
-          {/* Toolbar — same pattern as main Dashboard toolbar */}
-          {tab === 'dashboards' && (
-          <div data-tour="reporting-kpis" className="flex items-center gap-2 flex-wrap min-h-[40px] w-full">
+        {/* Toolbar — moved OUT of the page wrapper into its own sibling so the
+             vertical spacing matches the Documents/Contacts grid toolbar
+             (which lives inside SharedDataGrid in a wrapper with no top
+             padding). Adding the toolbar to the page wrapper above gave it an
+             extra `gap-1.5` slot that didn't exist on Documents. */}
+        {tab === 'dashboards' && (
+          <div className="px-5 pb-1">
+          <div data-tour="reporting-kpis" className="flex items-center gap-1.5 flex-wrap min-h-[26px] w-full">
             {/* View picker — OR inline rename of the active view */}
             {renamingActive && activeView ? (
               <div className="inline-flex items-center gap-1">
@@ -195,7 +208,7 @@ export default function ReportingPage() {
                   }}
                   autoFocus
                   placeholder="New name"
-                  className="h-8 px-3 text-[12px] font-bold bg-[var(--surface-card)] border border-[var(--brand-primary)] rounded-md text-[var(--text-primary)] outline-none shadow-[0_0_0_2px_var(--brand-primary-tint)] min-w-[240px]"
+                  className="h-[26px] px-2 text-[10px] font-bold bg-[var(--surface-card)] border border-[var(--brand-primary)] rounded-md text-[var(--text-primary)] outline-none shadow-[0_0_0_2px_var(--brand-primary-tint)] min-w-[240px]"
                 />
                 <button
                   type="button"
@@ -207,19 +220,19 @@ export default function ReportingPage() {
                   disabled={!renameVal.trim()}
                   aria-label="Save name"
                   title="Save (Enter)"
-                  className="h-8 w-8 rounded flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer"
+                  className="h-[26px] w-[26px] rounded flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer"
                   style={{ background: 'var(--brand-primary)' }}
                 >
-                  <Check size={14} weight="bold" />
+                  <Check size={12} weight="bold" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setRenamingActive(false)}
                   aria-label="Cancel rename"
                   title="Cancel (Esc)"
-                  className="h-8 w-8 rounded flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] bg-transparent border border-[var(--border)] cursor-pointer"
+                  className="h-[26px] w-[26px] rounded flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] bg-transparent border border-[var(--border)] cursor-pointer"
                 >
-                  <XIcon size={14} weight="bold" />
+                  <XIcon size={12} weight="bold" />
                 </button>
               </div>
             ) : (
@@ -227,7 +240,7 @@ export default function ReportingPage() {
               <button
                 data-tour="reporting-views"
                 onClick={() => setViewMenuOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
               >
                 <FloppyDisk size={14} weight="bold" />
                 View: {activeView?.name || 'Default'}
@@ -235,7 +248,7 @@ export default function ReportingPage() {
               </button>
 
               {viewMenuOpen && (
-                <div className="absolute left-0 top-10 z-50 w-[320px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 animate-[fadeUp_0.15s_ease-out]">
+                <div className="absolute left-0 top-8 z-50 w-[320px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 animate-[fadeUp_0.15s_ease-out]">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-1.5 pb-1">Report Views</div>
                   <div className="max-h-[300px] overflow-y-auto">
                     {views.map((v) => (
@@ -296,18 +309,18 @@ export default function ReportingPage() {
                   onClick={() => { setRenameVal(activeView.name); setRenamingActive(true); }}
                   title="Rename this dashboard"
                   aria-label="Rename dashboard"
-                  className="h-8 w-8 rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] bg-transparent border border-[var(--border)] cursor-pointer"
+                  className="h-[26px] w-[26px] rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-bg)] bg-transparent border border-[var(--border)] cursor-pointer"
                 >
-                  <PencilSimple size={13} weight="bold" />
+                  <PencilSimple size={12} weight="bold" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteId(activeView.id)}
                   title="Delete this dashboard"
                   aria-label="Delete dashboard"
-                  className="h-8 w-8 rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-tint)] bg-transparent border border-[var(--border)] cursor-pointer ml-1"
+                  className="h-[26px] w-[26px] rounded-md flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-tint)] bg-transparent border border-[var(--border)] cursor-pointer ml-1"
                 >
-                  <Trash size={13} weight="bold" />
+                  <Trash size={12} weight="bold" />
                 </button>
               </div>
             )}
@@ -315,11 +328,11 @@ export default function ReportingPage() {
             {/* Add widget */}
             <div className="relative" ref={addRef}>
               <button data-tour="reporting-add-widget" onClick={() => setAddMenuOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md border cursor-pointer transition-all text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)] hover:opacity-90">
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-md border cursor-pointer transition-all text-[var(--brand-primary)] bg-[var(--brand-bg)] border-[var(--brand-primary)] hover:opacity-90">
                 <Plus size={14} weight="bold" /> Add widget
               </button>
               {addMenuOpen && (
-                <div className="absolute left-0 top-10 z-50 w-[420px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 max-h-[540px] overflow-y-auto animate-[fadeUp_0.15s_ease-out]">
+                <div className="absolute left-0 top-8 z-50 w-[420px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-2 max-h-[540px] overflow-y-auto animate-[fadeUp_0.15s_ease-out]">
                   {/* Custom Reports section — saved reports + New Report CTA */}
                   <div className="mb-2">
                     <div className="flex items-center justify-between px-1.5 pb-1">
@@ -359,7 +372,7 @@ export default function ReportingPage() {
                             <div className={`flex-shrink-0 relative ${alreadyAdded ? 'opacity-80' : ''}`}>
                               <WidgetPreview type="custom-report" reportId={r.id} />
                               {alreadyAdded && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--success)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
+                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--tag-success-bg)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
                                   <Check size={10} weight="bold" />
                                 </span>
                               )}
@@ -405,7 +418,7 @@ export default function ReportingPage() {
                               <div className={`flex-shrink-0 relative ${alreadyAdded ? 'opacity-80' : ''}`}>
                                 <WidgetPreview type={m.type as WidgetType} />
                                 {alreadyAdded && (
-                                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--success)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
+                                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--tag-success-bg)] text-white flex items-center justify-center shadow-sm" aria-hidden="true">
                                     <Check size={10} weight="bold" />
                                   </span>
                                 )}
@@ -433,13 +446,13 @@ export default function ReportingPage() {
               <button
                 data-tour="reporting-export"
                 onClick={() => setExportMenuOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
               >
                 <DownloadSimple size={14} weight="bold" /> Export
                 <CaretDown size={10} weight="bold" />
               </button>
               {exportMenuOpen && (
-                <div className="absolute left-0 top-10 z-[70] w-[280px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-1 animate-[fadeUp_0.15s_ease-out]">
+                <div className="absolute left-0 top-8 z-[70] w-[280px] bg-[var(--surface-card)] border border-[var(--border)] rounded-lg shadow-lg p-1 animate-[fadeUp_0.15s_ease-out]">
                   <button
                     onClick={handleExportPDF}
                     className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-md hover:bg-[var(--surface-raised)] bg-transparent border-none cursor-pointer text-left"
@@ -466,13 +479,13 @@ export default function ReportingPage() {
 
             {activeView?.preset === false && (
               <button onClick={resetActiveView}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]">
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border)] rounded-md cursor-pointer hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]">
                 <ArrowClockwise size={14} weight="bold" /> Reset
               </button>
             )}
 
             <button data-tour="reporting-print" onClick={() => window.print()}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-white bg-[var(--brand-primary)] border-none rounded-md cursor-pointer hover:opacity-90">
+              className="ml-auto inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-white bg-[var(--brand-primary)] border-none rounded-md cursor-pointer hover:opacity-90">
               <Printer size={14} weight="bold" /> Print
             </button>
 
@@ -480,8 +493,8 @@ export default function ReportingPage() {
               {storeWidgets.length} widgets
             </span>
           </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {tab === 'dashboards' ? (
           <>

@@ -90,7 +90,7 @@ export default function Topbar({ title = 'Contacts', children }: TopbarProps) {
           >
             <Bell size={20} weight={alertPanelOpen ? 'fill' : 'regular'} />
             {mounted && unreadAlertCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--danger)] text-white text-[9px] font-extrabold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--tag-danger-bg)] text-white text-[9px] font-extrabold flex items-center justify-center">
                 {unreadAlertCount}
               </span>
             )}

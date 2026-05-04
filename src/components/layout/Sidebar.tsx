@@ -43,7 +43,10 @@ const NAV_ITEMS: NavItem[] = [
       { href: '/sequences', icon: ListNumbers, label: 'Sequencing' },
     ],
   },
-  { kind: 'link', href: '/sales', icon: CurrencyDollar, label: LABELS.navSales, badgeKey: 'sales' },
+  // Sales nav entry hidden — pulled from the demo per Paul's request
+  // until the sales-grid pill styling is reconciled with the contacts/
+  // recruiting grids. Restore by uncommenting:
+  //   { kind: 'link', href: '/sales', icon: CurrencyDollar, label: LABELS.navSales, badgeKey: 'sales' },
   { kind: 'link', href: '/recruiting', icon: UsersFour, label: 'Recruiting', badgeKey: 'recruiting' },
   { kind: 'link', href: '/documents', icon: Files, label: 'Documents', badgeKey: 'documents' },
   { kind: 'link', href: '/reporting', icon: ChartPieSlice, label: 'Reporting' },

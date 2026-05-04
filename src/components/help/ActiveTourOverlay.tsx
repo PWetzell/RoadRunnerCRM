@@ -115,7 +115,7 @@ export default function ActiveTourOverlay() {
           ) : (
             <button
               onClick={exitTour}
-              className="h-[28px] px-4 text-[11px] font-bold text-white bg-[var(--success)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90"
+              className="h-[28px] px-4 text-[11px] font-bold text-white bg-[var(--tag-success-bg)] rounded-[var(--radius-sm)] border-none cursor-pointer hover:opacity-90"
             >
               Done
             </button>

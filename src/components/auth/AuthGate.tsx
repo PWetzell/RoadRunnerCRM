@@ -699,7 +699,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 z-[200] bg-[var(--surface-bg)] flex overflow-auto">
       {/* ═══ LEFT — BRAND HERO ═══ */}
       <div
-        className="hidden md:flex relative flex-1 min-h-screen flex-col justify-between px-12 py-12 overflow-hidden"
+        className="hidden md:flex relative flex-1 min-h-screen flex-col justify-between px-8 py-6 xl:px-12 xl:py-12 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #0A2540 0%, #1955A6 55%, #2E7BD6 100%)',
         }}
@@ -726,7 +726,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
              flex position (20px lower than the previous commit), while
              the hero stack below still has its own translateY(-20px)
              keeping it in place. */}
-        <div className="relative z-10 mt-12">
+        <div className="relative z-10 mt-4 xl:mt-12">
           <span className="text-white text-[22px] font-extrabold tracking-tight">Roadrunner CRM</span>
         </div>
 
@@ -735,7 +735,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                WITHOUT changing its layout box — siblings below (the
                headline, paragraph, bullets) stay put. Margin would
                have dragged the entire stack up; transform doesn't. */}
-          <div className="relative w-[200px] h-[200px]" style={{ transform: 'translateY(-20px)' }}>
+          <div className="relative w-[140px] h-[140px] xl:w-[200px] xl:h-[200px]" style={{ transform: 'translateY(-20px)' }}>
             {/* Spotlight flash behind the bird — radial gradient anchored
                 at the geometric center of the bird container. Animation
                 stays hidden during the run-in, bursts when the bird
@@ -771,7 +771,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             <img
               src="/roadrunner-logo-white.svg"
               alt=""
-              className="relative w-[200px] h-[200px] drop-shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+              className="relative w-[140px] h-[140px] xl:w-[200px] xl:h-[200px] drop-shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
               style={{
                 animation:
                   'roadrunner-run-in 1.4s cubic-bezier(.2,.7,.3,1) both, roadrunner-idle-bob 3.2s ease-in-out 1.6s infinite',
@@ -779,11 +779,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             />
           </div>
 
-          {/* -mt-12 pulls the headline + paragraph up into the bottom
-               whitespace of the bird's 200x200 container, eliminating the
-               visual gap between the graphic and the copy without
-               cropping the bird. */}
-          <div className="flex flex-col gap-4 -mt-12">
+          {/* -mt-8 (-32px) at lg, -mt-12 (-48px) at xl+. Pulls the
+               headline up into the bird's bottom whitespace; the smaller
+               bird below xl needs less negative margin to avoid cropping. */}
+          <div className="flex flex-col gap-3 xl:gap-4 -mt-8 xl:-mt-12">
             {/* Fluid title — scales with viewport so it never overflows
                  the panel. clamp() reads: never smaller than 28px,
                  grows at 3.4vw, never larger than 44px. At wide
@@ -794,22 +793,21 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                  two visual lines regardless of font size. */}
             <h1
               className="text-white font-black leading-[1.05] tracking-[-0.02em]"
-              style={{ fontSize: 'clamp(28px, 3.4vw, 44px)' }}
+              style={{ fontSize: 'clamp(24px, 2.6vw, 44px)' }}
             >
               Contact creation,
               <br />
               reimagined with intelligent AI
             </h1>
-            <p className="text-white/70 text-[15px] leading-relaxed font-medium">
+            <p className="text-white/70 text-[14px] xl:text-[15px] leading-relaxed font-medium">
               The modern CRM for teams that move fast. Auto-enriched profiles, smart duplicate detection, and a pipeline that thinks ahead.
             </p>
           </div>
 
-          {/* mt-6 (24px) — half of the prior mt-12 — restores moderate
-               breathing room between the paragraph and the bullets
-               without overshooting. mb-4 keeps modest separation from
-               the copyright but leaves the footer in view. */}
-          <div className="flex flex-col gap-3 max-w-md mt-6 mb-4">
+          {/* mt-4 (16px) below xl, mt-6 (24px) at xl+. Keeps the bullets
+               close to the paragraph at narrow widths so the footer stays
+               in view without scrolling on a 1080-wide viewport. */}
+          <div className="flex flex-col gap-2 xl:gap-3 max-w-md mt-4 xl:mt-6 mb-3 xl:mb-4">
             <FeatureLine icon={<Sparkle size={16} weight="fill" />} label="AI-assisted contact enrichment" />
             <FeatureLine icon={<Lightning size={16} weight="fill" />} label="Real-time pipeline insights" />
             <FeatureLine icon={<ShieldCheck size={16} weight="fill" />} label="Smart duplicate detection" />

@@ -15,20 +15,26 @@ const STAGE_ICONS: Record<DealStage, React.ComponentType<{ size?: number; weight
   'closed-lost':  XCircle,
 };
 
+/**
+ * Sales-stage pill — triplet style (light bg + colored text + colored
+ * border). Per-stage colors come from `STAGE_META[stage]` in
+ * `types/deal.ts`, which already carries the canonical light/dark
+ * pairs (color/bg/darkColor/darkBg). `dc()` picks the right pair for
+ * the active theme.
+ */
 export default function StagePill({ stage, size = 'sm' }: { stage: DealStage; size?: 'sm' | 'md' }) {
   const meta = STAGE_META[stage];
   const Icon = STAGE_ICONS[stage];
   const isDark = useIsDark();
   const c = dc(meta, isDark);
-  const text = size === 'md' ? 'text-[11px]' : 'text-[10px]';
   const iconSize = size === 'md' ? 12 : 10;
   return (
     <span
       title={meta.label}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold truncate min-w-0 ${text}`}
-      style={{ background: c.bg, color: c.color, border: `1px solid ${c.color}` }}
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold truncate min-w-0 border"
+      style={{ background: c.bg, color: c.color, borderColor: c.color }}
     >
-      <span className="flex-shrink-0"><Icon size={iconSize} weight="fill" /></span> <span className="truncate">{meta.label}</span>
+      <span className="flex-shrink-0"><Icon size={iconSize} /></span> <span className="truncate">{meta.label}</span>
     </span>
   );
 }

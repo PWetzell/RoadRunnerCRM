@@ -26,6 +26,12 @@ const STAGE_META_MAP = RECRUITING_STAGES.reduce((acc, s) => {
   return acc;
 }, {} as Record<RecruitingStage, typeof RECRUITING_STAGES[number]>);
 
+// Stage pill triplet — light bg + colored text + colored border.
+// Each entry mirrors the per-stage entry in `RECRUITING_STAGES`
+// (types/recruiting.ts) which already carries the canonical
+// light/dark color/bg pairs. Using `dc()` at call-time keeps the
+// theme-aware swap centralized.
+
 const STAGE_ICONS: Record<RecruitingStage, typeof Warning> = {
   sourced: Funnel,
   screening: MagnifyingGlass,
@@ -114,10 +120,10 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
         return (
           <span
             title={RECRUITING_STAGES.find((s) => s.id === c.stage)?.label}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold truncate min-w-0"
-            style={{ ...(() => { const cl = dc(STAGE_META_MAP[c.stage], isDark); return { background: cl.bg, color: cl.color, border: `1px solid ${cl.color}` }; })() }}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold truncate min-w-0 border"
+            style={(() => { const cl = dc(STAGE_META_MAP[c.stage], isDark); return { background: cl.bg, color: cl.color, borderColor: cl.color }; })()}
           >
-            <span className="flex-shrink-0"><StageIcon size={10} weight="fill" /></span>
+            <span className="flex-shrink-0"><StageIcon size={10} /></span>
             <span className="truncate">{RECRUITING_STAGES.find((s) => s.id === c.stage)?.label}</span>
           </span>
         );
@@ -131,14 +137,14 @@ function buildColumns(isDark: boolean, favIds: Set<string>): ColumnDef<Candidate
       cell: ({ row }) => {
         const status = computeStatus(row.original);
         if (status === 'Placed')
-          return <span title="Placed" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><CheckCircle size={10} weight="fill" /></span> <span className="truncate">Placed</span></span>;
+          return <span title="Placed" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><CheckCircle size={10} /></span> <span className="truncate">Placed</span></span>;
         if (status === 'Rejected')
-          return <span title="Rejected" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0"><span className="flex-shrink-0"><XCircle size={10} weight="fill" /></span> <span className="truncate">Rejected</span></span>;
+          return <span title="Rejected" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger)] truncate min-w-0"><span className="flex-shrink-0"><XCircle size={10} /></span> <span className="truncate">Rejected</span></span>;
         if (status === 'Stalled')
-          return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Clock size={10} weight="fill" /></span> <span className="truncate">Stalled</span></span>;
+          return <span title="Stalled" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Clock size={10} /></span> <span className="truncate">Stalled</span></span>;
         if (status === 'Needs Action')
-          return <span title="Needs Action" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Warning size={10} weight="fill" /></span> <span className="truncate">Needs Action</span></span>;
-        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--grid-font)] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><ArrowRight size={10} weight="bold" /></span> <span className="truncate">On Track</span></span>;
+          return <span title="Needs Action" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)] truncate min-w-0"><span className="flex-shrink-0"><Warning size={10} /></span> <span className="truncate">Needs Action</span></span>;
+        return <span title="On Track" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] truncate min-w-0"><span className="flex-shrink-0"><ArrowRight size={10} /></span> <span className="truncate">On Track</span></span>;
       },
     },
     {

@@ -11,6 +11,9 @@ import DealsBySourceWidget from './widgets/DealsBySourceWidget';
 import TodoWidget from './widgets/TodoWidget';
 import AISuggestionsWidget from './widgets/AISuggestionsWidget';
 import CustomReportWidget from './widgets/CustomReportWidget';
+import ScoringRulesWidget from './widgets/ScoringRulesWidget';
+import ScoreKPIsWidget from './widgets/ScoreKPIsWidget';
+import ScoreDistributionWidget from './widgets/ScoreDistributionWidget';
 
 function renderWidget(widget: WidgetConfig) {
   switch (widget.type) {
@@ -35,6 +38,12 @@ function renderWidget(widget: WidgetConfig) {
       return <AISuggestionsWidget widget={widget} />;
     case 'custom-report':
       return <CustomReportWidget widget={widget} />;
+    case 'score-kpis':
+      return <ScoreKPIsWidget widget={widget} />;
+    case 'score-distribution':
+      return <ScoreDistributionWidget widget={widget} />;
+    case 'scoring-rules':
+      return <ScoringRulesWidget widget={widget} />;
     default:
       return null;
   }
@@ -62,8 +71,12 @@ export default function GenericWidgetGrid({ widgets, onReorder }: Props) {
     onReorder(String(active.id), String(over.id));
   }
 
+  // auto-rows uses minmax(160px,auto) so a row containing an
+  // autoHeight widget (like the scoring-rules card) can grow to fit
+  // its content. Rows containing only fixed-height widgets (KPIs,
+  // charts) stay at 160px because nothing in those rows exceeds it.
   return (
-    <div data-tour="widget-grid" className="grid grid-cols-1 md:grid-cols-4 gap-3 auto-rows-[160px]">
+    <div data-tour="widget-grid" className="grid grid-cols-1 md:grid-cols-4 gap-3 auto-rows-[minmax(160px,auto)]">
       {mounted ? (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={widgets.map((w) => w.id)} strategy={rectSortingStrategy}>
